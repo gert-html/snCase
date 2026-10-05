@@ -29,8 +29,7 @@ input,select,textarea{user-select:text;-webkit-user-select:text}
   </div>
   <div class="flex items-center gap-2 text-xs font-black">
     <div class="bg-slate-800/80 border border-slate-700 px-2.5 py-1 rounded-full">🪙 <span id="b-coins"></span></div>
-    <div class="bg-amber-500/20 border border-amber-500/40 px-2.5 py-1 rounded-full text-amber-300">⭐ <span id="b-stars"></span>
-      <button onclick="bonusStars()" class="ml-1 w-4 h-4 rounded-full bg-amber-400 text-black text-[10px] leading-none">+</button></div>
+    <div class="bg-amber-500/20 border border-amber-500/40 px-2.5 py-1 rounded-full text-amber-300">⭐ <span id="b-stars"></span></div>
   </div>
 </header>
 <main id="main" class="flex-1 px-4 py-4 pb-28"></main>
@@ -77,31 +76,39 @@ ring:(A,R,a,b,c)=>`<circle cx="50" cy="62" r="28" fill="none" stroke="${c}" stro
 box:(A,R,a,b,c)=>`<rect x="10" y="40" width="80" height="48" rx="6" fill="${A}" stroke="${c}" stroke-width="2.5"/><path d="M10,46C10,16 90,16 90,46Z" fill="${R}" stroke="${c}" stroke-width="2.5"/><rect x="10" y="46" width="80" height="7" fill="#000" opacity=".25"/><rect x="42" y="44" width="16" height="22" rx="3" fill="${b}" stroke="#fff" stroke-opacity=".8" stroke-width="2"/><circle cx="50" cy="54" r="3.2" fill="#14213a"/><rect x="49" y="55" width="2" height="6" fill="#14213a"/><path d="M20,32c8-8 20-11 32-11" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none" opacity=".7"/><path d="M14,76h72" stroke="#fff" stroke-opacity=".3" stroke-width="2"/>`
 };
 
-/* ============ 75 NFT ITEMS: [kind, name, palette] by rarity ============ */
+/* ============ 115 NFT ITEMS: [kind, name, palette] by rarity ============ */
 const RAW={
-common:[['gem','Quartz',0],['gem','Amber',1],['gem','Jade',2],['potion','Healing Vial',13],['potion','Mana Vial',12],['star','Bronze Star',1],['star','Silver Star',8],['cat','Tabby Cat',1],['cat','Snow Cat',0],['flower','Daisy',0],['flower','Tulip',3],['bolt','Spark',6],['key','Iron Key',8],['shield','Wooden Shield',1],['sword','Rusty Blade',8],['cup','Clay Cup',7],['heart','Candy Heart',10],['orb','Glass Orb',4],['ghost','Little Boo',0],['rocket','Toy Rocket',13],['skull','Bone Skull',0],['crown','Tin Crown',8],['mask','Party Mask',10],['ring','Copper Ring',7],['potion','Lime Elixir',11],['gem','Opal',17],['gem','Citrine',16],['potion','Sunrise Tonic',16],['star','Mint Star',17],['cat','Orange Cat',16],['cat','Mint Kitty',17],['flower','Cherry Blossom',3],['flower','Violet',5],['bolt','Mini Bolt',16],['key','Brass Key',1],['shield','Buckler',8],['heart','Mint Heart',17],['ghost','Pinky Ghost',10],['orb','Dew Orb',17]],
-rare:[['gem','Aquamarine',4],['gem','Emerald',2],['gem','Amethyst',5],['gem','Topaz',1],['potion','Dragon Blood',13],['potion','Frost Tonic',4],['star','Gold Star',6],['star','Nova Star',10],['cat','Neon Cat',9],['cat','Jade Cat',2],['flower','Lotus',10],['crown','Bronze Crown',1],['bolt','Thunder',4],['key','Silver Key',0],['shield','Knight Shield',12],['sword','Steel Sword',8],['cup','Silver Cup',0],['heart','Rose Heart',3],['orb','Storm Orb',12],['ghost','Spooky Ghost',5],['mask','Venice Mask',3],['skull','Pirate Skull',8],['gem','Garnet',13],['gem','Peridot',11],['gem','Moonstone',18],['potion','Elixir of Luck',2],['potion','Venom Flask',11],['star','Pink Star',18],['cat','Midnight Cat',12],['flower','Orchid',18],['bolt','Storm Bolt',9],['key','Crystal Key',4],['shield','Frost Shield',4],['sword','Cutlass',8],['cup','Ruby Goblet',13],['heart','Ice Heart',19],['rocket','Cyan Rocket',19],['ring','Silver Ring',0]],
-epic:[['gem','Sapphire',12],['gem','Blood Ruby',13],['potion','Phoenix Elixir',7],['star','Comet Star',9],['cat','Cosmic Cat',5],['flower','Crystal Rose',3],['ring','Sapphire Ring',12],['key','Golden Key',6],['shield','Dragon Shield',7],['sword','Flame Sword',7],['cup','Golden Chalice',6],['heart','Crystal Heart',4],['crown','Royal Crown',5],['mask','Cyber Mask',9],['rocket','Stellar Rocket',14],['gem','Black Opal',15],['gem','Tanzanite',5],['potion','Dragon Tears',9],['star','Aurora Star',19],['cat','Sphinx Cat',6],['flower','Fire Lily',7],['bolt','Plasma Bolt',14],['key','Jade Key',2],['ghost','Spectre',15],['orb','Plasma Orb',10],['skull','Crystal Skull',19],['sword','Frost Blade',19],['ring','Emerald Ring',2],['crown','Frost Crown',4]],
-legendary:[['crown','Emperor Crown',6],['mask','Phantom Mask',15],['ring','Signet Ring',4],['heart','Trapped Heart',13],['sword','Excalibur',14],['cup','Holy Grail',6],['star','Supernova',14],['skull','Golden Skull',6],['orb','Time Orb',15],['gem','Dragon Heart',13],['crown','Dragon Crown',7],['sword','Void Blade',15],['cat','Golden Sphinx',6],['star','Solar Star',7],['potion','Elixir of Life',2],['shield','Aegis',6],['cup','Cup of Eternity',14],['flower','Eternal Rose',13],['key','Master Key',14],['ghost','Reaper',15]],
-mythic:[['gem','TON Crystal',4],['crown','Void Crown',15],['cat','Galaxy Cat',14],['rocket','Quantum Rocket',14],['gem','Infinity Diamond',19],['star','Big Bang',14],['heart','Heart of Cosmos',14],['orb','Singularity',15],['ring','Ring of Gods',6]]
+common:[['gem','Quartz',0],['gem','Amber',1],['gem','Jade',2],['potion','Healing Vial',13],['potion','Mana Vial',12],['star','Bronze Star',1],['star','Silver Star',8],['cat','Tabby Cat',1],['cat','Snow Cat',0],['flower','Daisy',0],['flower','Tulip',3],['bolt','Spark',6],['key','Iron Key',8],['shield','Wooden Shield',1],['sword','Rusty Blade',8],['cup','Clay Cup',7],['heart','Candy Heart',10],['orb','Glass Orb',4],['ghost','Little Boo',0],['rocket','Toy Rocket',13],['skull','Bone Skull',0],['crown','Tin Crown',8],['mask','Party Mask',10],['ring','Copper Ring',7],['potion','Lime Elixir',11],['gem','Opal',17],['gem','Citrine',16],['potion','Sunrise Tonic',16],['star','Mint Star',17],['cat','Orange Cat',16],['cat','Mint Kitty',17],['flower','Cherry Blossom',3],['flower','Violet',5],['bolt','Mini Bolt',16],['key','Brass Key',1],['shield','Buckler',8],['heart','Mint Heart',17],['ghost','Pinky Ghost',10],['orb','Dew Orb',17],
+['gem','Onyx Chip',8],['gem','Pearl',0],['potion','Berry Potion',3],['star','Pearl Star',0],['cat','Black Cat',8],['flower','Sunflower',1],['bolt','Zap',17],['key','Bone Key',0],['heart','Peach Heart',16],['rocket','Paper Rocket',0]],
+rare:[['gem','Aquamarine',4],['gem','Emerald',2],['gem','Amethyst',5],['gem','Topaz',1],['potion','Dragon Blood',13],['potion','Frost Tonic',4],['star','Gold Star',6],['star','Nova Star',10],['cat','Neon Cat',9],['cat','Jade Cat',2],['flower','Lotus',10],['crown','Bronze Crown',1],['bolt','Thunder',4],['key','Silver Key',0],['shield','Knight Shield',12],['sword','Steel Sword',8],['cup','Silver Cup',0],['heart','Rose Heart',3],['orb','Storm Orb',12],['ghost','Spooky Ghost',5],['mask','Venice Mask',3],['skull','Pirate Skull',8],['gem','Garnet',13],['gem','Peridot',11],['gem','Moonstone',18],['potion','Elixir of Luck',2],['potion','Venom Flask',11],['star','Pink Star',18],['cat','Midnight Cat',12],['flower','Orchid',18],['bolt','Storm Bolt',9],['key','Crystal Key',4],['shield','Frost Shield',4],['sword','Cutlass',8],['cup','Ruby Goblet',13],['heart','Ice Heart',19],['rocket','Cyan Rocket',19],['ring','Silver Ring',0],
+['gem','Rose Quartz',18],['potion','Storm Brew',12],['star','Ember Star',7],['cat','Shadow Cat',15],['flower','Blue Rose',4],['bolt','Aqua Bolt',4],['shield','Emerald Shield',2],['sword','Ice Dagger',19],['cup','Bronze Goblet',1],['ghost','Frost Ghost',4]],
+epic:[['gem','Sapphire',12],['gem','Blood Ruby',13],['potion','Phoenix Elixir',7],['star','Comet Star',9],['cat','Cosmic Cat',5],['flower','Crystal Rose',3],['ring','Sapphire Ring',12],['key','Golden Key',6],['shield','Dragon Shield',7],['sword','Flame Sword',7],['cup','Golden Chalice',6],['heart','Crystal Heart',4],['crown','Royal Crown',5],['mask','Cyber Mask',9],['rocket','Stellar Rocket',14],['gem','Black Opal',15],['gem','Tanzanite',5],['potion','Dragon Tears',9],['star','Aurora Star',19],['cat','Sphinx Cat',6],['flower','Fire Lily',7],['bolt','Plasma Bolt',14],['key','Jade Key',2],['ghost','Spectre',15],['orb','Plasma Orb',10],['skull','Crystal Skull',19],['sword','Frost Blade',19],['ring','Emerald Ring',2],['crown','Frost Crown',4],
+['gem','Void Opal',15],['potion','Nebula Elixir',5],['star','Void Star',15],['cat','Lava Cat',7],['flower','Moon Lotus',9],['bolt','Solar Bolt',6],['shield','Obsidian Shield',15],['heart','Phoenix Heart',7],['rocket','Photon Rocket',19],['mask','Oni Mask',13]],
+legendary:[['crown','Emperor Crown',6],['mask','Phantom Mask',15],['ring','Signet Ring',4],['heart','Trapped Heart',13],['sword','Excalibur',14],['cup','Holy Grail',6],['star','Supernova',14],['skull','Golden Skull',6],['orb','Time Orb',15],['gem','Dragon Heart',13],['crown','Dragon Crown',7],['sword','Void Blade',15],['cat','Golden Sphinx',6],['star','Solar Star',7],['potion','Elixir of Life',2],['shield','Aegis',6],['cup','Cup of Eternity',14],['flower','Eternal Rose',13],['key','Master Key',14],['ghost','Reaper',15],
+['crown','Sun Crown',16],['gem','Star of Africa',19],['potion','Elixir of Gods',18],['bolt','Zeus Bolt',6],['ring','Ring of Fire',7],['heart','Heart of Dragon',7],['mask','Golden Mask',6]],
+mythic:[['gem','TON Crystal',4],['crown','Void Crown',15],['cat','Galaxy Cat',14],['rocket','Quantum Rocket',14],['gem','Infinity Diamond',19],['star','Big Bang',14],['heart','Heart of Cosmos',14],['orb','Singularity',15],['ring','Ring of Gods',6],
+['cat','Cosmic Sphinx',18],['crown','Crown of Eternity',19],['skull','Death Star Skull',14]]
 };
 const VALS={common:i=>5+i,rare:i=>40+i*3,epic:i=>160+i*12,legendary:i=>600+i*90,mythic:i=>3000+i*900};
 const RAR=['common','rare','epic','legendary','mythic'];
 const ITEMS={},BYR={};
 RAR.forEach(r=>{BYR[r]=[];RAW[r].forEach((x,i)=>{const id=r[0]+i;ITEMS[id]={id,kind:x[0],name:x[1].toUpperCase(),pal:x[2],rarity:r,val:VALS[r](i)};BYR[r].push(id)})});
+/* 4 ексклюзивні NFT: випадають лише в дорогих кейсах з дуже малим шансом (sw = вага шансу) */
+[['x20','crown','Genesis Crown',19,20000,.12],['x30','sword','Omega Blade',14,30000,.07],['x50','ring','Ring of Eternity',18,50000,.035],['x67','gem','Overlord Diamond',19,67000,.015]]
+.forEach(([id,kind,n,pal,val,sw])=>{ITEMS[id]={id,kind,name:n.toUpperCase(),pal,rarity:'mythic',val,sw}});
 
 let UID=0;
 function art(it){
   const u='g'+(UID++),[a,b,c]=PAL[it.pal],ri=RAR.indexOf(it.rarity);
   const d=`<defs><linearGradient id="${u}a" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset=".55" stop-color="${b}"/><stop offset="1" stop-color="${c}"/></linearGradient><radialGradient id="${u}r" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".35" stop-color="${a}"/><stop offset=".75" stop-color="${b}"/><stop offset="1" stop-color="${c}"/></radialGradient></defs>`;
   let sp='';
-  if(ri>=2){const n=ri*2;for(let i=0;i<n;i++){const x=10+((i*37)%80),y=8+((i*53)%80);sp+=`<path class="tw" style="animation-delay:${i*.3}s" d="M${x},${y-4}L${x+1.2},${y-1.2}L${x+4},${y}L${x+1.2},${y+1.2}L${x},${y+4}L${x-1.2},${y+1.2}L${x-4},${y}L${x-1.2},${y-1.2}Z" fill="#fff"/>`}}
-  const glow=[2,4,6,9,13][ri];
+  if(ri>=2){const n=ri*2+(it.sw?4:0);for(let i=0;i<n;i++){const x=10+((i*37)%80),y=8+((i*53)%80);sp+=`<path class="tw" style="animation-delay:${i*.3}s" d="M${x},${y-4}L${x+1.2},${y-1.2}L${x+4},${y}L${x+1.2},${y+1.2}L${x},${y+4}L${x-1.2},${y+1.2}L${x-4},${y}L${x-1.2},${y-1.2}Z" fill="#fff"/>`}}
+  const glow=[2,4,6,9,13][ri]+(it.sw?6:0);
   return `<svg viewBox="0 0 100 100" class="w-full h-full" style="filter:drop-shadow(0 0 ${glow}px ${b})">${d}${K[it.kind](`url(#${u}a)`,`url(#${u}r)`,a,b,c)}${sp}</svg>`;
 }
 
-/* ============ RARITY STYLE & ODDS (higher chances) ============ */
-const RW={common:50,rare:28,epic:13,legendary:6,mythic:3};
+/* ============ RARITY STYLE & ODDS (знижені шанси) ============ */
+const RW={common:68,rare:22,epic:8,legendary:1.8,mythic:.2};
 const RC={
 common:{b:'border-slate-500',bg:'from-slate-700/40 to-slate-900/80',t:'text-slate-300',bd:'bg-slate-600'},
 rare:{b:'border-blue-500',bg:'from-blue-600/30 to-slate-900/80',t:'text-blue-400',bd:'bg-blue-600'},
@@ -123,20 +130,20 @@ const CASES=[
 {id:'cyber',name:'CYBER CRYPTO',cat:'STARS',price:250,badge:'HOT 🔥',off:16,n:[2,4,4,2,1]},
 {id:'royal',name:'ROYAL TREASURE',cat:'STARS',price:600,badge:'ROYAL 👑',off:5,n:[1,3,5,3,1]},
 {id:'vip',name:'TELEGRAM VIP',cat:'STARS',price:500,badge:'VIP ⭐',off:9,n:[1,3,5,3,2]},
-{id:'cosmic',name:'COSMIC ARSENAL',cat:'STARS',price:800,badge:'COSMIC 🚀',off:1,n:[0,3,5,4,2]},
-{id:'ton',name:'TON MASTERS',cat:'STARS',price:1000,badge:'ULTRA 💎',off:2,n:[0,2,5,5,3]},
+{id:'cosmic',name:'COSMIC ARSENAL',cat:'STARS',price:800,badge:'COSMIC 🚀',off:1,n:[0,3,5,4,2],sp:['x20']},
+{id:'ton',name:'TON MASTERS',cat:'STARS',price:1000,badge:'ULTRA 💎',off:2,n:[0,2,5,5,3],sp:['x20','x30']},
 {id:'dragon',name:"DRAGON'S LAIR",cat:'STARS',price:200,badge:'DRAGON 🐉',off:25,n:[3,4,3,1,0]},
 {id:'ocean',name:"OCEAN DEPTHS",cat:'STARS',price:300,badge:'OCEAN 🌊',off:30,n:[2,4,4,2,1]},
 {id:'neon',name:"NEON CITY",cat:'STARS',price:450,badge:'NEON 🌆',off:35,n:[2,4,4,2,1]},
 {id:'frozen',name:"FROZEN KINGDOM",cat:'STARS',price:400,badge:'ICE ❄️',off:12,n:[1,4,5,2,1]},
 {id:'pirate',name:"PIRATE BOUNTY",cat:'LIMITED',price:700,badge:'LIMITED 🏴‍☠️',off:20,n:[1,3,5,3,1]},
-{id:'space',name:"SPACE ODYSSEY",cat:'STARS',price:900,badge:'SPACE 🪐',off:8,n:[0,3,5,4,2]},
-{id:'gold',name:"GOLDEN RUSH",cat:'STARS',price:1200,badge:'GOLD 💰',off:14,n:[0,2,5,5,3]},
-{id:'shadow',name:"SHADOW REALM",cat:'STARS',price:1500,badge:'DARK 🌑',off:18,n:[0,2,4,5,4]},
+{id:'space',name:"SPACE ODYSSEY",cat:'STARS',price:900,badge:'SPACE 🪐',off:8,n:[0,3,5,4,2],sp:['x20']},
+{id:'gold',name:"GOLDEN RUSH",cat:'STARS',price:1200,badge:'GOLD 💰',off:14,n:[0,2,5,5,3],sp:['x20','x30']},
+{id:'shadow',name:"SHADOW REALM",cat:'STARS',price:1500,badge:'DARK 🌑',off:18,n:[0,2,4,5,4],sp:['x20','x30','x50']},
 {id:'candy',name:"CANDY LAND",cat:'STARS',price:120,badge:'SWEET 🍭',off:4,n:[5,4,2,1,0]},
 {id:'thunder',name:"THUNDER GODS",cat:'STARS',price:650,badge:'STORM ⚡',off:22,n:[1,3,5,3,1]},
 {id:'forest',name:"MYSTIC FOREST",cat:'STARS',price:280,badge:'MAGIC 🌲',off:28,n:[3,4,3,2,0]},
-{id:'diamond',name:"DIAMOND VAULT",cat:'STARS',price:2000,badge:'VAULT 💎',off:31,n:[0,1,4,6,5]},
+{id:'diamond',name:"DIAMOND VAULT",cat:'STARS',price:2000,badge:'VAULT 💎',off:31,n:[0,1,4,6,5],sp:['x20','x30','x50','x67']},
 /* кейс, з якого випадають інші кейси */
 {id:'inception',name:"CASE INFINITY",cat:'STARS',price:350,badge:'КЕЙС У КЕЙСІ 📦',off:3,n:[2,3,3,1,0],nb:1,cases:['meme','autumn','dragon','love','neon','royal','ton','diamond']}
 ];
@@ -149,13 +156,14 @@ CASES.forEach(c=>{
   c.items=[];
   RAR.forEach((r,ri)=>{const list=BYR[r];for(let k=0;k<c.n[ri];k++)c.items.push(list[(c.off+k*2)%list.length])});
   if(c.cases)c.cases.forEach(k=>c.items.push('k_'+k));
+  if(c.sp)c.sp.forEach(k=>c.items.push(k));
   c.fi=c.items[c.items.length-1];
 });
 const cs=id=>CASES.find(c=>c.id===id);
 
 function odds(c){
-  const cnt={};c.items.forEach(i=>{const r=ITEMS[i].rarity;cnt[r]=(cnt[r]||0)+1});
-  const w=c.items.map(i=>RW[ITEMS[i].rarity]/cnt[ITEMS[i].rarity]),t=w.reduce((a,b)=>a+b,0);
+  const cnt={};c.items.forEach(i=>{const it=ITEMS[i];if(it.sw)return;cnt[it.rarity]=(cnt[it.rarity]||0)+1});
+  const w=c.items.map(i=>{const it=ITEMS[i];return it.sw||RW[it.rarity]/cnt[it.rarity]}),t=w.reduce((a,b)=>a+b,0);
   return c.items.map((i,k)=>({...ITEMS[i],w:w[k],chance:(w[k]/t*100)}));
 }
 function roll(c){
@@ -163,14 +171,16 @@ function roll(c){
   for(const i of o){if(r<i.w)return i;r-=i.w}return o[0];
 }
 
+/* ============ ПРОМОКОДИ (кожен — один раз на акаунт) ============ */
+const PROMO={SN1000:1000,GOLD1250:1250,START1500:1500,AUTUMN2000:2000,NIGHT2500:2500,TON3000:3000,LUCKY3500:3500,VIP4000:4000,DRAGON4500:4500,COSMIC5000:5000};
+
 /* ============ STORAGE / ACCOUNTS ============ */
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const LSget=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}};
 const LSset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 const users=()=>LSget('sn_users',{});
-const trades=()=>LSget('sn_trades',[]);
-const DEF=()=>({stars:1000,coins:12500,inv:[],opened:0,cd:{},wheel:0,bonus:{}});
+const DEF=()=>({stars:1000,coins:12500,inv:[],opened:0,cd:{},wheel:0,bonus:{},promo:{}});
 let ME=null;
 let S={...DEF(),mult:1,tok:null,cur:null,tab:'home',spin:false};
 const nid=d=>d.inv.reduce((m,x)=>Math.max(m,x.uid),0)+1;
@@ -178,16 +188,15 @@ const iv=l=>l.reduce((s,x)=>{const i=ITEMS[x.id||x];return s+(i?i.val:0)},0);
 
 function loadMe(){const u=users()[ME];if(!u)return;const d=Object.assign(DEF(),u.d);d.inv=(d.inv||[]).filter(x=>ITEMS[x.id]);Object.assign(S,d)}
 function save(){
-  if(ME){try{const U=users();if(U[ME]){U[ME].d={stars:S.stars,coins:S.coins,inv:S.inv,opened:S.opened,cd:S.cd,wheel:S.wheel,bonus:S.bonus};LSset('sn_users',U)}}catch(e){}}
-  hdr();
+  if(ME){try{const U=users();if(U[ME]){U[ME].d={stars:S.stars,coins:S.coins,inv:S.inv,opened:S.opened,cd:S.cd,wheel:S.wheel,bonus:S.bonus,promo:S.promo};LSset('sn_users',U)}}catch(e){}}
+  hdr();push();
 }
 function hdr(){
   $('b-coins').textContent=S.coins.toLocaleString();$('b-stars').textContent=S.stars.toLocaleString();
-  const n=ME?trades().filter(t=>t.to===ME&&t.st==='pending').length:0,b=$('tbadge');
+  const n=ON.ready?ON.trades.filter(t=>t.to===ON.uid&&t.st==='pending').length:0,b=$('tbadge');
   if(b){b.textContent=n;b.style.display=n?'flex':'none'}
 }
 function toast(m){const t=document.createElement('div');t.className='fixed left-1/2 -translate-x-1/2 z-[90] bg-cyan-500 text-black font-extrabold px-4 py-2 rounded-full shadow-lg text-xs';t.style.top='calc(4rem + env(safe-area-inset-top,0px))';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2200)}
-function bonusStars(){S.stars+=500;save();toast('⭐ +500 Stars!')}
 
 /* ============ AUTH ============ */
 const NRE=/^[A-Za-z0-9_А-Яа-яІіЇїЄєҐґ]{3,16}$/;
@@ -208,7 +217,7 @@ function showAuth(mode){
   ${reg?`<input id="a-pw2" type="password" class="inp" placeholder="Повторіть пароль" autocomplete="new-password" onkeydown="if(event.key==='Enter')doAuth()">`:''}
   <div id="a-err" class="text-xs font-bold text-red-400 min-h-[16px]"></div>
   <button id="a-btn" onclick="doAuth()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-black text-sm uppercase active:scale-95 transition">${reg?'СТВОРИТИ АКАУНТ':'УВІЙТИ'}</button>
-  <p class="text-[10px] text-slate-500 text-center leading-snug">Акаунти зберігаються лише в цьому браузері (без сервера). Імʼя: 3–16 символів, пароль: від 4.</p></div></div>`;
+  <p class="text-[10px] text-slate-500 text-center leading-snug">Вхід зберігається в цьому браузері, а прогрес, топ і трейди синхронізуються онлайн між реальними гравцями. Імʼя: 3–16 символів, пароль: від 4.</p></div></div>`;
 }
 async function doAuth(){
   const n=$('a-name').value.trim(),p=$('a-pw').value,k=n.toLowerCase(),er=$('a-err'),fail=m=>{er.textContent=m};
@@ -222,7 +231,7 @@ async function doAuth(){
     if(U[k])return fail('Таке імʼя вже зайняте');
     let d=DEF();
     const old=LSget('STARSCASE_V2',null);
-    if(old&&!Object.values(U).some(u=>!u.bot)){ // перенос старого прогресу в перший акаунт
+    if(old&&!Object.values(U).some(u=>!u.bot)){
       d=Object.assign(d,{stars:old.stars,coins:old.coins,inv:old.inv||[],opened:old.opened||0,cd:old.cd||{},wheel:old.wheel||0,bonus:old.bonus||{}});
       try{localStorage.removeItem('STARSCASE_V2')}catch(e){}
     }
@@ -237,114 +246,93 @@ async function doAuth(){
   }
 }
 function enter(k){
-  ME=k;LSset('sn_sess',k);loadMe();S.tok=null;S.mult=1;TT='in';D={to:'',give:[],gs:0,ask:[],as:0};
-  $('auth').style.display='none';$('auth').innerHTML='';hdr();go('home');processBots();spawnBotOffer(true);hdr();
+  ME=k;LSset('sn_sess',k);ON.ready=false;ON.trades=[];loadMe();S.tok=null;S.mult=1;TT='in';D={to:'',give:[],gs:0,ask:[],as:0};
+  $('auth').style.display='none';$('auth').innerHTML='';hdr();go('home');
+  onlineBoot().then(()=>{hdr();if(S.tab==='trade'||S.tab==='top')go(S.tab,null,true)});
 }
 function logout(){
-  if(S.spin)return;save();ME=null;LSset('sn_sess',null);Object.assign(S,DEF(),{tok:null,mult:1});hdr();showAuth('login');
+  if(S.spin)return;save();ME=null;LSset('sn_sess',null);ON.ready=false;Object.assign(S,DEF(),{tok:null,mult:1});hdr();showAuth('login');
 }
 
-/* ============ BOTS (локальні гравці для трейдів і топу) ============ */
-function seedBots(){
-  const U=users();let ch=false;
-  [['Alex_Ton',1],['CryptoKing',2],['StarHunter',3],['TG_Whale',4],['VipUser99',5]].forEach(([n,t])=>{
-    const k=n.toLowerCase();if(U[k])return;ch=true;
-    const pool=['meme','cyber','royal','ton','vip'].map(cs),inv=[];let uid=1;
-    for(let i=0;i<6+t*3;i++)inv.push({id:roll(pool[(i+t)%5]).id,uid:uid++});
-    U[k]={n,bot:1,d:{stars:2000+t*1500,coins:0,inv,opened:300+t*210,cd:{},wheel:0,bonus:{}}};
-  });
-  if(ch)LSset('sn_users',U);
-}
+/* ============ ОНЛАЙН: гравці, лідерборд, трейди (спільна база db) ============ */
+const ON={db:null,uid:null,ready:false,sub:0,players:{},trades:[],q:Promise.resolve(),tm:0,claiming:{}};
+let TT='in',D={to:'',give:[],gs:0,ask:[],as:0};
 
-/* ============ TRADES ============ */
-let TT='in',D={to:'',give:[],gs:0,ask:[],as:0},lastSpawn=0;
-const nm=(U,k)=>U[k]?U[k].n:k;
-function commit(fn){
-  save();const U=users(),T=trades(),r=fn(U,T);
-  while(T.length>300){const i=T.findIndex(t=>t.st!=='pending');if(i<0)break;T.splice(i,1)}
-  LSset('sn_users',U);LSset('sn_trades',T);loadMe();hdr();return r;
-}
-function resolveInto(U,t,mode){
-  const A=U[t.from],B=U[t.to];
-  const back=()=>{if(A){let n=nid(A.d);t.give.forEach(g=>A.d.inv.push({id:g,uid:n++}));A.d.stars+=t.gs}};
-  if(mode==='accept'&&A&&B){
-    const bi=B.d.inv,ok=t.ask.every(a=>bi.some(x=>x.uid===a.uid&&x.id===a.id))&&B.d.stars+t.gs>=t.stars;
-    if(ok){
-      B.d.inv=bi.filter(x=>!t.ask.some(a=>a.uid===x.uid));
-      B.d.stars+=t.gs-t.stars;A.d.stars+=t.stars;
-      let n=nid(B.d);t.give.forEach(g=>B.d.inv.push({id:g,uid:n++}));
-      n=nid(A.d);t.ask.forEach(a=>A.d.inv.push({id:a.id,uid:n++}));
-      t.st='accepted';return 'ok';
+async function onlineBoot(){
+  try{
+    if(!window.claude||!claude.use)return false;
+    const [db,user]=await Promise.all([claude.use('db'),claude.use('user')]);
+    if(!db||!user||!user.id)return false;
+    const id=await user.id();if(!id)return false;
+    ON.db=db;ON.uid=id;
+    const snap=await db.doc('players/'+id).get();
+    if(snap.exists){const d=snap.data();S.stars=d.stars|0;S.inv=(d.inv||[]).filter(x=>ITEMS[x.id]);S.opened=d.opened|0;S.promo=Object.assign({},S.promo,d.promo||{})}
+    ON.ready=true;
+    if(!ON.sub){ON.sub=1;
+      db.collection('players').onSnapshot(s=>{const P={};s.docs.forEach(d=>P[d.id]=d.data());ON.players=P;changed()},()=>{});
+      db.collection('trades').where('involved','array-contains',id).onSnapshot(s=>{ON.trades=s.docs.map(d=>({id:d.id,...d.data()}));settle();changed()},()=>{});
     }
-    back();t.st='declined';return 'fail';
-  }
-  back();t.st=mode==='cancel'?'cancelled':'declined';return mode==='accept'?'fail':'ok';
+    save();return true;
+  }catch(e){return false}
 }
-function processBots(){
-  if(!ME)return false;const U=users(),now=Date.now();
-  const need=trades().some(t=>t.st==='pending'&&((U[t.to]&&U[t.to].bot&&now-t.ts>2000)||(U[t.from]&&U[t.from].bot&&now-t.ts>900000)));
-  if(!need)return false;
-  commit((U,T)=>{T.forEach(t=>{
-    if(t.st!=='pending')return;
-    if(U[t.to]&&U[t.to].bot&&now-t.ts>2000){
-      const gain=iv(t.give)+t.gs,cost=iv(t.ask)+t.stars;
-      resolveInto(U,t,(gain>0&&gain>=cost*1.05)?'accept':'decline');
-    }else if(U[t.from]&&U[t.from].bot&&now-t.ts>900000)resolveInto(U,t,'cancel');
-  })});
-  return true;
+function push(){
+  if(!ON.ready||!ME)return;clearTimeout(ON.tm);
+  const p={name:(users()[ME]||{}).n||'Player',stars:S.stars,inv:S.inv,opened:S.opened,promo:S.promo,val:iv(S.inv),ts:Date.now()};
+  ON.tm=setTimeout(()=>{ON.q=ON.q.then(()=>ON.db.doc('players/'+ON.uid).set(p)).catch(()=>{})},700);
 }
-function spawnBotOffer(force){
-  if(!ME)return false;const now=Date.now();
-  if(!force&&now-lastSpawn<45000)return false;
-  const U0=users();
-  if(trades().filter(t=>t.to===ME&&t.st==='pending'&&U0[t.from]&&U0[t.from].bot).length>=(force?1:3))return false;
-  lastSpawn=now;let made=false;
-  commit((U,T)=>{
-    const bots=Object.keys(U).filter(k=>U[k].bot&&U[k].d.inv.length);if(!bots.length)return;
-    const B=U[bots[Math.floor(Math.random()*bots.length)]],bk=Object.keys(U).find(k=>U[k]===B);
-    const e=B.d.inv.splice(Math.floor(Math.random()*B.d.inv.length),1)[0],v=ITEMS[e.id].val;
-    T.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),from:bk,to:ME,give:[e.id],gs:0,ask:[],stars:Math.max(1,Math.round(v*(.8+Math.random()*.6))),st:'pending',ts:Date.now()});made=true;
+/* відправник забирає результат свого офера: обмін -> те, що просив; відмова/скасування -> свої предмети назад */
+function settle(){
+  ON.trades.forEach(t=>{
+    if(t.from!==ON.uid||t.st==='pending'||t.claimed||ON.claiming[t.id])return;
+    ON.claiming[t.id]=1;let n=nid(S);
+    if(t.st==='accepted'){t.ask.forEach(a=>S.inv.push({id:a.id,uid:n++}));S.stars+=t.stars|0}
+    else{t.give.forEach(g=>S.inv.push({id:g,uid:n++}));S.stars+=t.gs|0}
+    save();
+    ON.db.doc('trades/'+t.id).update({claimed:true}).catch(()=>{delete ON.claiming[t.id]});
   });
-  return made;
 }
-function afterChange(){if(S.spin||S.tab==='case'||S.tab==='games'||(S.tab==='trade'&&TT==='new'))return;go(S.tab,S.cur,true)}
-function tick(){
-  if(!ME)return;let ch=processBots();
-  if(Math.random()<.08&&spawnBotOffer())ch=true;
-  hdr();if(ch)afterChange();
-}
-setInterval(tick,3000);
-window.addEventListener('storage',e=>{if(!ME)return;if(e.key==='sn_users'||e.key==='sn_trades'){loadMe();hdr();afterChange()}});
+function changed(){hdr();if(S.spin)return;if(S.tab==='top'||(S.tab==='trade'&&TT!=='new'))go(S.tab,null,true)}
 
+async function tAct(id,mode){
+  const ref=ON.db.doc('trades/'+id);let msg='';
+  try{
+    const l=await ref.acquire({holder:ON.uid,ttlMs:15000});
+    if(!l.acquired)return toast('⏳ Спробуй ще раз за мить');
+    const t=(await ref.get()).data();
+    if(!t||t.st!=='pending')msg='Офер уже недоступний';
+    else if(mode==='cancel'){if(t.from!==ON.uid)return;await ref.update({st:'cancelled'});msg='Скасовано'}
+    else if(t.to!==ON.uid)return;
+    else if(mode==='decline'){await ref.update({st:'declined'});msg='Відхилено'}
+    else{
+      const ok=t.ask.every(a=>S.inv.some(x=>x.uid===a.uid&&x.id===a.id))&&S.stars+(t.gs|0)>=(t.stars|0);
+      if(!ok){await ref.update({st:'declined'});msg='❌ Бракує предметів або Stars — офер відхилено'}
+      else{
+        S.inv=S.inv.filter(x=>!t.ask.some(a=>a.uid===x.uid));
+        let n=nid(S);t.give.forEach(g=>S.inv.push({id:g,uid:n++}));
+        S.stars+=(t.gs|0)-(t.stars|0);save();
+        await ref.update({st:'accepted'});msg='✅ Обмін виконано'
+      }
+    }
+  }catch(e){msg='❌ Помилка мережі'}
+  toast(msg);renderTrade($('main'));
+}
+async function sendTrade(){
+  const to=D.to,P=ON.players;
+  if(!to||!P[to]||to===ON.uid)return toast('❌ Обери гравця');
+  const give=S.inv.filter(e=>D.give.includes(e.uid)),ask=(P[to].inv||[]).filter(e=>D.ask.includes(e.uid)).map(e=>({uid:e.uid,id:e.id})),gs=D.gs|0,as=D.as|0;
+  if(!give.length&&!gs)return toast('❌ Запропонуй щось у обмін');
+  if(gs>S.stars)return toast('❌ Недостатньо Stars');
+  if(ON.trades.filter(t=>t.from===ON.uid&&t.st==='pending').length>=10)return toast('❌ Не більше 10 активних оферів');
+  const bk={inv:S.inv,stars:S.stars};
+  S.inv=S.inv.filter(e=>!D.give.includes(e.uid));S.stars-=gs;save();
+  try{await ON.db.collection('trades').add({from:ON.uid,to,involved:[ON.uid,to],give:give.map(e=>e.id),gs,ask,stars:as,st:'pending',claimed:false,ts:Date.now()})}
+  catch(e){S.inv=bk.inv;S.stars=bk.stars;save();return toast('❌ Не вдалося надіслати')}
+  D={to:'',give:[],gs:0,ask:[],as:0};TT='out';toast('📤 Офер надіслано');renderTrade($('main'));
+}
 function setTT(k){TT=k;renderTrade($('main'))}
 function pickTo(v){D.to=v;D.ask=[];renderTrade($('main'))}
 function tg(t,u){const a=D[t],i=a.indexOf(u);i<0?a.push(u):a.splice(i,1);renderTrade($('main'))}
-function tAct(id,mode){
-  let r='';
-  commit((U,T)=>{
-    const t=T.find(x=>x.id===id);
-    if(!t||t.st!=='pending'||(mode==='cancel'?t.from!==ME:t.to!==ME)){r='gone';return}
-    r=resolveInto(U,t,mode);
-  });
-  toast(r==='gone'?'Офер уже недоступний':r==='fail'?'❌ Обмін неможливий: бракує предметів або Stars':mode==='accept'?'✅ Обмін виконано':mode==='decline'?'Відхилено':'Скасовано');
-  renderTrade($('main'));
-}
-function sendTrade(){
-  const U=users(),to=D.to;
-  if(!to||!U[to]||to===ME)return toast('❌ Обери гравця');
-  const give=S.inv.filter(e=>D.give.includes(e.uid)),ask=(U[to].d.inv||[]).filter(e=>D.ask.includes(e.uid)).map(e=>({uid:e.uid,id:e.id}));
-  const gs=D.gs|0,as=D.as|0;
-  if(!give.length&&!gs)return toast('❌ Запропонуй щось у обмін');
-  if(gs>S.stars)return toast('❌ Недостатньо Stars');
-  if(trades().filter(t=>t.from===ME&&t.st==='pending').length>=10)return toast('❌ Не більше 10 активних оферів');
-  S.inv=S.inv.filter(e=>!D.give.includes(e.uid));S.stars-=gs;
-  const T=trades();
-  T.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),from:ME,to,give:give.map(e=>e.id),gs,ask,stars:as,st:'pending',ts:Date.now()});
-  LSset('sn_trades',T);save();
-  D={to:'',give:[],gs:0,ask:[],as:0};TT='out';toast('📤 Офер надіслано');
-  if(U[to].bot)setTimeout(()=>{if(processBots())afterChange()},2500+Math.random()*2500);
-  renderTrade($('main'));
-}
+const nm=(U,k)=>U[k]?U[k].n:'Гравець';
 const tcard=(it,sel,fn)=>{const r=RC[it.rarity];return `<div onclick="${fn}" class="rc cursor-pointer rounded-xl p-1.5 border ${sel?'border-cyan-300 ring-2 ring-cyan-400':r.b} bg-gradient-to-b ${r.bg} flex flex-col items-center"><div class="w-11 h-11">${art(it)}</div><div class="text-[8px] font-black truncate w-full text-center">${esc(it.name)}</div><div class="text-[8px] text-amber-300 font-bold">⭐ ${it.val}</div></div>`};
 const pieces=(ids,stars)=>(ids.map(id=>{const i=ITEMS[id];return i?`<div class="w-10 h-10" title="${esc(i.name)}">${art(i)}</div>`:''}).join('')+(stars?`<span class="text-[11px] font-black text-amber-300 self-center">⭐ ${stars}</span>`:''))||'<span class="text-[10px] text-slate-500 self-center">нічого</span>';
 const STL={accepted:'✅ ПРИЙНЯТО',declined:'❌ ВІДХИЛЕНО',cancelled:'🚫 СКАСОВАНО',pending:'⏳ ОЧІКУЄ'};
@@ -356,32 +344,43 @@ function trow(t,U,mode){
   <div class="text-[9px] font-black text-slate-400">${esc(nm(U,t.from))} ПРОСИТЬ:</div><div class="flex flex-wrap gap-1.5">${pieces(t.ask.map(a=>a.id),t.stars)}</div>${btn}</div>`;
 }
 function renderTrade(m){
-  const T=trades(),U=users(),inc=T.filter(t=>t.to===ME&&t.st==='pending'),out=T.filter(t=>t.from===ME&&t.st==='pending'),
-  his=T.filter(t=>(t.from===ME||t.to===ME)&&t.st!=='pending').sort((a,b)=>b.ts-a.ts).slice(0,15);
+  if(!ON.ready){m.innerHTML=`<div class="glass p-8 rounded-3xl text-center text-slate-400 text-xs space-y-2"><div class="text-3xl">🌐</div><div class="font-black text-sm text-cyan-300">ТРЕЙДИ ТІЛЬКИ МІЖ РЕАЛЬНИМИ ГРАВЦЯМИ</div><div>Онлайн-зʼєднання ще не готове або недоступне. Відкрий опубліковану сторінку, увійшовши в акаунт Claude, і трейди зʼявляться.</div></div>`;return}
+  const P=ON.players,me=ON.uid,T=ON.trades,U={};Object.keys(P).forEach(k=>U[k]={n:P[k].name||'Гравець'});
+  const inc=T.filter(t=>t.to===me&&t.st==='pending'),out=T.filter(t=>t.from===me&&t.st==='pending'),his=T.filter(t=>t.st!=='pending').sort((a,b)=>b.ts-a.ts).slice(0,15);
   const tabs=[['in','📥 ВХІДНІ ('+inc.length+')'],['out','📤 ВИХІДНІ ('+out.length+')'],['new','➕ СТВОРИТИ'],['his','🕘 ІСТОРІЯ']];
   const empty=t=>`<div class="glass p-8 rounded-3xl text-center text-slate-500 text-xs">${t}</div>`;
   let body='';
-  if(TT==='in')body=inc.length?inc.map(t=>trow(t,U,'in')).join(''):empty('Вхідних оферів немає. Боти іноді пропонують обміни самі 🤖');
+  if(TT==='in')body=inc.length?inc.map(t=>trow(t,U,'in')).join(''):empty('Вхідних оферів немає');
   else if(TT==='out')body=out.length?out.map(t=>trow(t,U,'out')).join(''):empty('Активних вихідних оферів немає');
   else if(TT==='his')body=his.length?his.map(t=>trow(t,U,'his')).join(''):empty('Історія порожня');
   else{
-    const others=Object.keys(U).filter(k=>k!==ME),rcp=D.to&&U[D.to]?D.to:'';
-    const my=[...S.inv].sort((a,b)=>ITEMS[b.id].val-ITEMS[a.id].val),their=rcp?[...(U[rcp].d.inv||[])].filter(e=>ITEMS[e.id]).sort((a,b)=>ITEMS[b.id].val-ITEMS[a.id].val):[];
+    const others=Object.keys(P).filter(k=>k!==me),rcp=D.to&&P[D.to]&&D.to!==me?D.to:'';
+    const my=[...S.inv].sort((a,b)=>ITEMS[b.id].val-ITEMS[a.id].val),their=rcp?(P[rcp].inv||[]).filter(e=>ITEMS[e.id]).sort((a,b)=>ITEMS[b.id].val-ITEMS[a.id].val):[];
     const gv=iv(my.filter(e=>D.give.includes(e.uid)))+D.gs,av=iv(their.filter(e=>D.ask.includes(e.uid)))+D.as;
     body=`<div class="glass rounded-3xl p-4 space-y-3">
-    <div class="text-[10px] font-black text-slate-400">КОМУ</div>
-    <select class="inp" onchange="pickTo(this.value)"><option value="">— обери гравця —</option>${others.map(k=>`<option value="${esc(k)}" ${k===rcp?'selected':''}>${U[k].bot?'🤖':'👤'} ${esc(U[k].n)}</option>`).join('')}</select>
-    <div class="text-[10px] font-black text-slate-400">ТИ ВІДДАЄШ (твій інвентар)</div>
+    <div class="text-[10px] font-black text-slate-400">КОМУ (реальні гравці: ${others.length})</div>
+    <select class="inp" onchange="pickTo(this.value)"><option value="">— обери гравця —</option>${others.map(k=>`<option value="${esc(k)}" ${k===rcp?'selected':''}>👤 ${esc(U[k].n)} · ⭐ ${P[k].val|0}</option>`).join('')}</select>
+    <div class="text-[10px] font-black text-slate-400">ТИ ВІДДАЄШ</div>
     ${my.length?`<div class="grid grid-cols-3 gap-2 max-h-52 overflow-y-auto nos">${my.map(e=>tcard(ITEMS[e.id],D.give.includes(e.uid),`tg('give',${e.uid})`)).join('')}</div>`:'<div class="text-[10px] text-slate-500">Інвентар порожній</div>'}
     <div class="flex items-center gap-2"><span class="text-[10px] font-black text-slate-400 shrink-0">+ ⭐ ДОДАТИ</span><input type="number" min="0" class="inp" value="${D.gs||''}" placeholder="0" oninput="D.gs=Math.max(0,parseInt(this.value)||0)"></div>
-    <div class="text-[10px] font-black text-slate-400">ТИ ПРОСИШ (інвентар гравця)</div>
+    <div class="text-[10px] font-black text-slate-400">ТИ ПРОСИШ</div>
     ${rcp?(their.length?`<div class="grid grid-cols-3 gap-2 max-h-52 overflow-y-auto nos">${their.map(e=>tcard(ITEMS[e.id],D.ask.includes(e.uid),`tg('ask',${e.uid})`)).join('')}</div>`:'<div class="text-[10px] text-slate-500">В гравця немає предметів</div>'):'<div class="text-[10px] text-slate-500">Спочатку обери гравця</div>'}
     <div class="flex items-center gap-2"><span class="text-[10px] font-black text-slate-400 shrink-0">+ ⭐ ПРОСИШ</span><input type="number" min="0" class="inp" value="${D.as||''}" placeholder="0" oninput="D.as=Math.max(0,parseInt(this.value)||0)"></div>
     <div class="flex justify-between text-[11px] font-black"><span class="text-amber-300">Віддаєш: ⭐ ${gv}</span><span class="text-cyan-300">Просиш: ⭐ ${av}</span></div>
     <button onclick="sendTrade()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-black font-black text-xs uppercase active:scale-95 transition">НАДІСЛАТИ ОФЕР</button>
-    <p class="text-[9px] text-slate-500 leading-snug">Твої предмети й Stars із офера блокуються до відповіді. Бот приймає, якщо ти даєш хоча б на 5% більше за цінністю.</p></div>`;
+    <p class="text-[9px] text-slate-500 leading-snug">Твої предмети й Stars із офера блокуються до відповіді. Гравець бачить офер одразу й може прийняти або відхилити.</p></div>`;
   }
-  m.innerHTML=`<div class="space-y-3"><h2 class="text-sm font-black tracking-widest text-center text-cyan-400">ТРЕЙДИ</h2><div class="grid grid-cols-2 gap-2">${tabs.map(([k,t])=>`<button onclick="setTT('${k}')" class="py-2 rounded-xl text-[10px] font-black ${TT===k?'bg-cyan-500 text-black':'bg-slate-800 text-slate-300'}">${t}</button>`).join('')}</div>${body}</div>`;
+  m.innerHTML=`<div class="space-y-3"><h2 class="text-sm font-black tracking-widest text-center text-cyan-400">ТРЕЙДИ 🌐 ОНЛАЙН</h2><div class="grid grid-cols-2 gap-2">${tabs.map(([k,t])=>`<button onclick="setTT('${k}')" class="py-2 rounded-xl text-[10px] font-black ${TT===k?'bg-cyan-500 text-black':'bg-slate-800 text-slate-300'}">${t}</button>`).join('')}</div>${body}</div>`;
+}
+function renderTop(m){
+  let all,sub='реальні гравці · за цінністю інвентаря',ttl='ТАБЛИЦЯ ЛІДЕРІВ 🌐',mine=ME;
+  if(ON.ready){all=Object.entries(ON.players).map(([k,p])=>({k,n:p.name||'Гравець',o:p.opened|0,v:p.val|0}));mine=ON.uid}
+  else{const U=users();all=Object.keys(U).filter(k=>!U[k].bot).map(k=>({k,n:U[k].n,o:U[k].d.opened||0,v:(U[k].d.inv||[]).reduce((s,e)=>s+(ITEMS[e.id]?ITEMS[e.id].val:0),0)}));sub='зареєстровані в цьому браузері · онлайн-топ зʼявиться після підключення';ttl='ТАБЛИЦЯ ЛІДЕРІВ'}
+  all.sort((a,b)=>b.v-a.v);
+  const row=(l,i)=>`<div class="glass p-3 rounded-2xl flex justify-between items-center ${l.k===mine?'border border-cyan-500/40':''}"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-xl ${['bg-amber-400 text-black','bg-slate-300 text-black','bg-amber-700'][i]||'bg-slate-800 text-slate-400'} font-black text-xs flex items-center justify-center">#${i+1}</div><div><div class="text-xs font-black ${l.k===mine?'text-cyan-300':''}">${esc(l.n)}${l.k===mine?' (ТИ)':''}</div><div class="text-[10px] text-slate-400">Кейсів: ${l.o}</div></div></div><div class="text-xs font-black text-amber-300">${l.v.toLocaleString()} ⭐</div></div>`;
+  const meIx=all.findIndex(x=>x.k===mine);
+  m.innerHTML=`<div class="space-y-3"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-amber-400">${ttl}</h2><p class="text-[10px] text-slate-500">${sub}</p></div>`+
+  (all.length?all.slice(0,20).map(row).join('')+(meIx>=20?row(all[meIx],meIx):''):'<div class="glass p-8 rounded-3xl text-center text-slate-500 text-xs">Поки немає гравців</div>')+'</div>';
 }
 
 /* ============ AUDIO ============ */
@@ -428,11 +427,11 @@ function renderCase(m,id){
     ${[1,2,3,4,5].map(x=>`<button onclick="setMult(${x})" class="px-3 py-1 rounded-xl text-xs font-black ${S.mult===x?'bg-cyan-500 text-black':'bg-slate-800 text-slate-300'}">X${x}</button>`).join('')}</div>`}
     <button id="openBtn" onclick="spinCase()" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-black text-sm uppercase active:scale-95 transition">${tk?'ВІДКРИТИ З ІНВЕНТАРЯ 🎁':'ВІДКРИТИ '+(c.price?`ЗА ${c.price*S.mult} ⭐`:'БЕЗКОШТОВНО')}</button></div>
   <h3 class="text-xs font-black tracking-wider text-slate-400">📦 МОЖЛИВИЙ ДРОП (${o.length})</h3>
-  <div class="grid grid-cols-2 gap-2.5">${o.map(i=>{const r=RC[i.rarity];return `<div class="bg-gradient-to-b ${r.bg} border ${r.b} rounded-2xl p-2.5 flex items-center gap-2.5"><div class="w-12 h-12 shrink-0">${art(i)}</div><div class="overflow-hidden"><div class="text-[11px] font-black truncate">${i.name}</div><div class="text-[10px] font-bold text-amber-300">⭐ ${i.val}</div><div class="text-[9px] font-extrabold ${r.t} uppercase">${i.rarity} · ${i.chance<1?i.chance.toFixed(2):i.chance.toFixed(1)}%</div></div></div>`}).join('')}</div></div>`;
+  <div class="grid grid-cols-2 gap-2.5">${o.map(i=>{const r=RC[i.rarity];return `<div class="bg-gradient-to-b ${r.bg} border ${r.b} rounded-2xl p-2.5 flex items-center gap-2.5"><div class="w-12 h-12 shrink-0">${art(i)}</div><div class="overflow-hidden"><div class="text-[11px] font-black truncate">${i.name}</div><div class="text-[10px] font-bold text-amber-300">⭐ ${i.val.toLocaleString()}</div><div class="text-[9px] font-extrabold ${r.t} uppercase">${i.rarity} · ${i.chance<1?i.chance.toFixed(3):i.chance.toFixed(1)}%</div></div></div>`}).join('')}</div></div>`;
   buildStrip(c);
 }
 function setMult(x){if(S.spin)return;S.mult=x;go('case',S.cur)}
-const cardHTML=i=>{const r=RC[i.rarity];return `<div class="rcard shrink-0 w-24 h-28 bg-gradient-to-b ${r.bg} border ${r.b} rounded-2xl p-2 flex flex-col items-center justify-between"><div class="w-14 h-14">${art(i)}</div><div class="text-[9px] font-black truncate w-full text-center">${i.name}</div><span class="text-[8px] font-black text-amber-300">⭐ ${i.val}</span></div>`};
+const cardHTML=i=>{const r=RC[i.rarity];return `<div class="rcard shrink-0 w-24 h-28 bg-gradient-to-b ${r.bg} border ${r.b} rounded-2xl p-2 flex flex-col items-center justify-between"><div class="w-14 h-14">${art(i)}</div><div class="text-[9px] font-black truncate w-full text-center">${i.name}</div><span class="text-[8px] font-black text-amber-300">⭐ ${i.val.toLocaleString()}</span></div>`};
 function buildStrip(c){const s=$('strip');if(!s)return;let h='';for(let i=0;i<60;i++)h+=cardHTML(roll(c));s.innerHTML=h;s.style.transition='none';s.style.transform='translateX(0)'}
 
 function openInvCase(uid){
@@ -470,13 +469,13 @@ function spinCase(){
 function winModal(got){
   const tot=got.reduce((s,e)=>s+ITEMS[e.id].val,0),uids=got.map(e=>e.uid);
   mc.innerHTML=`<div class="text-xs font-black text-amber-400 tracking-widest">ВИТАЄМО! ВИ ВИБИЛИ:</div><div class="space-y-3 my-4 max-h-64 overflow-y-auto nos">`+
-  got.map(e=>{const i=ITEMS[e.id],r=RC[i.rarity];return `<div class="bg-gradient-to-b ${r.bg} border ${r.b} rounded-2xl p-3 flex items-center gap-3"><div class="w-16 h-16 shrink-0">${art(i)}</div><div class="text-left overflow-hidden"><div class="text-sm font-black truncate">${i.name}</div><div class="text-xs font-bold text-amber-300">Цінність: ⭐ ${i.val}</div><span class="inline-block mt-1 text-[9px] font-black uppercase px-2 py-0.5 rounded ${r.bd}">${i.rarity}</span>${i.isCase?`<button onclick="closeModal();setTimeout(()=>openInvCase(${e.uid}),220)" class="block mt-1.5 px-2.5 py-1 rounded-lg bg-cyan-500 text-black text-[10px] font-extrabold">🎁 ВІДКРИТИ ЗАРАЗ</button>`:''}</div></div>`}).join('')+
-  `</div><div class="flex gap-2"><button onclick='sellUids(${JSON.stringify(uids)})' class="flex-1 py-2.5 rounded-xl bg-amber-500 text-black font-extrabold text-xs">ПРОДАТИ ЗА ⭐ ${tot}</button><button onclick="closeModal()" class="flex-1 py-2.5 rounded-xl bg-slate-800 border border-slate-700 font-extrabold text-xs">В ІНВЕНТАР</button></div>`;
+  got.map(e=>{const i=ITEMS[e.id],r=RC[i.rarity];return `<div class="bg-gradient-to-b ${r.bg} border ${r.b} rounded-2xl p-3 flex items-center gap-3"><div class="w-16 h-16 shrink-0">${art(i)}</div><div class="text-left overflow-hidden"><div class="text-sm font-black truncate">${i.name}</div><div class="text-xs font-bold text-amber-300">Цінність: ⭐ ${i.val.toLocaleString()}</div><span class="inline-block mt-1 text-[9px] font-black uppercase px-2 py-0.5 rounded ${r.bd}">${i.rarity}</span>${i.isCase?`<button onclick="closeModal();setTimeout(()=>openInvCase(${e.uid}),220)" class="block mt-1.5 px-2.5 py-1 rounded-lg bg-cyan-500 text-black text-[10px] font-extrabold">🎁 ВІДКРИТИ ЗАРАЗ</button>`:''}</div></div>`}).join('')+
+  `</div><div class="flex gap-2"><button onclick='sellUids(${JSON.stringify(uids)})' class="flex-1 py-2.5 rounded-xl bg-amber-500 text-black font-extrabold text-xs">ПРОДАТИ ЗА ⭐ ${tot.toLocaleString()}</button><button onclick="closeModal()" class="flex-1 py-2.5 rounded-xl bg-slate-800 border border-slate-700 font-extrabold text-xs">В ІНВЕНТАР</button></div>`;
   ov.style.display='flex';setTimeout(()=>mc.classList.remove('scale-95','opacity-0'),10);
 }
 const ov=$('ov'),mc=$('mc');
 function closeModal(){mc.classList.add('scale-95','opacity-0');setTimeout(()=>ov.style.display='none',200)}
-function sellUids(u){let t=0;S.inv=S.inv.filter(e=>{if(u.includes(e.uid)){t+=ITEMS[e.id].val;return false}return true});S.stars+=t;save();closeModal();toast('Продано за ⭐ +'+t);if(S.tab==='profile')go('profile',null,true)}
+function sellUids(u){let t=0;S.inv=S.inv.filter(e=>{if(u.includes(e.uid)){t+=ITEMS[e.id].val;return false}return true});S.stars+=t;save();closeModal();toast('Продано за ⭐ +'+t.toLocaleString());if(S.tab==='profile')go('profile',null,true)}
 
 /* ============ WHEEL ============ */
 let rot=0;
@@ -501,18 +500,19 @@ function spinWheel(){
   setTimeout(()=>{S.spin=false;S.stars+=segs[k];save();AU.win('rare');toast('🎉 Ви виграли ⭐ +'+segs[k])},4100);
 }
 
-function renderTop(m){
-  const U=users(),val=d=>(d.inv||[]).reduce((s,e)=>s+(ITEMS[e.id]?ITEMS[e.id].val:0),0);
-  const all=Object.keys(U).map(k=>({k,n:U[k].n,bot:!!U[k].bot,o:U[k].d.opened||0,v:val(U[k].d)})).sort((a,b)=>b.v-a.v);
-  const top=all.slice(0,10),meIx=all.findIndex(x=>x.k===ME);
-  const row=(l,i)=>`<div class="glass p-3 rounded-2xl flex justify-between items-center ${l.k===ME?'border border-cyan-500/40':''}"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-xl ${['bg-amber-400 text-black','bg-slate-300 text-black','bg-amber-700'][i]||'bg-slate-800 text-slate-400'} font-black text-xs flex items-center justify-center">#${i+1}</div><div><div class="text-xs font-black ${l.k===ME?'text-cyan-300':''}">${l.bot?'🤖 ':''}${esc(l.n)}${l.k===ME?' (ТИ)':''}</div><div class="text-[10px] text-slate-400">Кейсів: ${l.o}</div></div></div><div class="text-xs font-black text-amber-300">${l.v.toLocaleString()} ⭐</div></div>`;
-  m.innerHTML=`<div class="space-y-3"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-amber-400">ТАБЛИЦЯ ЛІДЕРІВ</h2><p class="text-[10px] text-slate-500">за цінністю інвентаря</p></div>`+top.map(row).join('')+(meIx>=10?row(all[meIx],meIx):'')+'</div>';
-}
-
+/* ============ БОНУСИ + ПРОМОКОДИ ============ */
 function renderBonuses(m){
   const now=Date.now();
-  m.innerHTML=`<div class="space-y-4"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-green-400">ЩОДЕННІ БОНУСИ</h2><p class="text-xs text-slate-400">Кожен бонус можна забрати раз на 24 години</p></div><div class="grid grid-cols-2 gap-2.5">`+
+  m.innerHTML=`<div class="space-y-4"><div class="glass p-4 rounded-3xl space-y-2"><div class="text-xs font-black text-cyan-300 text-center tracking-widest">🎟️ ПРОМОКОД</div><div class="flex gap-2"><input id="pc" class="inp uppercase" placeholder="Введи промокод" maxlength="20" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key==='Enter')redeem()"><button onclick="redeem()" class="px-4 rounded-xl bg-cyan-500 text-black font-black text-xs">OK</button></div><p class="text-[10px] text-slate-500 text-center">Кожен промокод діє один раз на акаунт · від ⭐ 1000 до ⭐ 5000</p></div>
+  <div class="text-center"><h2 class="text-sm font-black tracking-widest text-green-400">ЩОДЕННІ БОНУСИ</h2><p class="text-xs text-slate-400">Кожен бонус можна забрати раз на 24 години</p></div><div class="grid grid-cols-2 gap-2.5">`+
   [1,2,3,4,5,6].map(d=>{const left=(S.bonus[d]||0)-now,ok=left<=0;return `<div class="glass p-3 rounded-2xl text-center space-y-1"><div class="text-[10px] font-extrabold text-slate-400">ДЕНЬ ${d}</div><div class="text-sm font-black text-amber-300">⭐ +${d*100}</div><button ${ok?'':'disabled'} onclick="claim(${d})" class="w-full mt-1 py-1 rounded-lg border text-[10px] font-bold ${ok?'bg-cyan-500/20 border-cyan-400/40 text-cyan-200':'bg-slate-800 border-slate-700 text-slate-500'}">${ok?'ОТРИМАТИ':'⏳ '+Math.ceil(left/3600000)+' год'}</button></div>`}).join('')+'</div></div>';
+}
+function redeem(){
+  const code=($('pc').value||'').trim().toUpperCase();
+  if(!code)return toast('Введи промокод');
+  if(!PROMO.hasOwnProperty(code))return toast('❌ Невірний промокод');
+  if(S.promo[code])return toast('⚠️ Цей промокод уже використано');
+  S.promo[code]=1;S.stars+=PROMO[code];save();toast('🎉 Промокод активовано: ⭐ +'+PROMO[code].toLocaleString());go('bonuses');
 }
 function claim(d){const now=Date.now();if((S.bonus[d]||0)>now)return;S.bonus[d]=now+864e5;S.stars+=d*100;save();toast('⭐ +'+d*100+' бонус отримано!');go('bonuses')}
 
@@ -522,130 +522,14 @@ function renderProfile(m){
   m.innerHTML=`<div class="space-y-4"><div class="glass p-4 rounded-3xl flex items-center justify-between gap-2"><div class="overflow-hidden"><div class="text-xs font-black truncate">👤 ${esc(me)}</div><div class="text-[10px] text-slate-400">Відкрито кейсів: <b class="text-cyan-400">${S.opened}</b></div></div>
   <div class="flex gap-1.5 shrink-0"><button onclick="logout()" class="px-2.5 py-1 bg-slate-800 border border-slate-600 text-slate-200 text-[10px] font-bold rounded-xl">⎋ ВИЙТИ</button><button onclick="resetData()" class="px-2.5 py-1 bg-red-500/20 border border-red-500/40 text-red-300 text-[10px] font-bold rounded-xl">↺ СКИДАННЯ</button></div></div>
   <div class="flex items-center justify-between"><div><h3 class="text-xs font-black text-slate-300">ІНВЕНТАР (${S.inv.length})</h3><div class="text-[10px] font-bold text-amber-300">Загальна цінність: ⭐ ${tv.toLocaleString()}</div></div>${S.inv.length?'<button onclick="sellAll()" class="px-3 py-1.5 bg-amber-500 text-black text-xs font-black rounded-xl">ПРОДАТИ ВСЕ</button>':''}</div>`+
-  (S.inv.length?`<div class="grid grid-cols-2 gap-2.5">`+sorted.map(e=>{const i=ITEMS[e.id],r=RC[i.rarity];return `<div class="bg-gradient-to-b ${r.bg} border ${r.b} rounded-2xl p-2.5 flex flex-col items-center"><div class="w-16 h-16 my-1">${art(i)}</div><div class="text-xs font-black truncate w-full text-center">${i.name}</div><div class="text-[9px] font-extrabold ${r.t} uppercase">${i.rarity}</div>${i.isCase?`<button onclick="openInvCase(${e.uid})" class="w-full mt-2 py-1 bg-cyan-500 text-black text-[10px] font-extrabold rounded-lg">🎁 ВІДКРИТИ</button>`:''}<button onclick="sellUids([${e.uid}])" class="w-full mt-1.5 py-1 bg-slate-800/80 border border-slate-700 text-[9px] font-extrabold rounded-lg">ПРОДАТИ ЗА ⭐ ${i.val}</button></div>`}).join('')+'</div>':
+  (S.inv.length?`<div class="grid grid-cols-2 gap-2.5">`+sorted.map(e=>{const i=ITEMS[e.id],r=RC[i.rarity];return `<div class="bg-gradient-to-b ${r.bg} border ${r.b} rounded-2xl p-2.5 flex flex-col items-center"><div class="w-16 h-16 my-1">${art(i)}</div><div class="text-xs font-black truncate w-full text-center">${i.name}</div><div class="text-[9px] font-extrabold ${r.t} uppercase">${i.rarity}</div>${i.isCase?`<button onclick="openInvCase(${e.uid})" class="w-full mt-2 py-1 bg-cyan-500 text-black text-[10px] font-extrabold rounded-lg">🎁 ВІДКРИТИ</button>`:''}<button onclick="sellUids([${e.uid}])" class="w-full mt-1.5 py-1 bg-slate-800/80 border border-slate-700 text-[9px] font-extrabold rounded-lg">ПРОДАТИ ЗА ⭐ ${i.val.toLocaleString()}</button></div>`}).join('')+'</div>':
   '<div class="glass p-8 rounded-3xl text-center text-slate-500 text-xs">📦<div>Інвентар порожній. Відкривайте кейси!</div></div>')+'</div>';
 }
-function sellAll(){const t=S.inv.reduce((s,e)=>s+ITEMS[e.id].val,0);S.stars+=t;S.inv=[];save();go('profile');toast('Продано все за ⭐ +'+t)}
-function resetData(){if(!confirm('Скинути весь прогрес цього акаунта?'))return;Object.assign(S,DEF());save();go('profile');toast('Дані скинуто!')}
-
-/* ============ ONLINE TRADES (спільна база db) ============ */
-const ON={db:null,uid:null,ready:false,sub:0,players:{},trades:[],q:Promise.resolve(),tm:0,claiming:{}};
-
-async function onlineBoot(){
-  try{
-    const [db,user]=await Promise.all([claude.use('db'),claude.use('user')]);
-    if(!db||!user)return false;
-    const id=await user.id();if(!id)return false;
-    ON.db=db;ON.uid=id;
-    const snap=await db.doc('players/'+id).get();
-    if(snap.exists){const d=snap.data();S.stars=d.stars|0;S.inv=(d.inv||[]).filter(x=>ITEMS[x.id]);S.opened=d.opened|0}
-    ON.ready=true;
-    if(!ON.sub){ON.sub=1;
-      db.collection('players').onSnapshot(s=>{const P={};s.docs.forEach(d=>P[d.id]=d.data());ON.players=P;changed()},()=>{});
-      db.collection('trades').where('involved','array-contains',id).onSnapshot(s=>{ON.trades=s.docs.map(d=>({id:d.id,...d.data()}));settle();changed()},()=>{});
-    }
-    save();return true;
-  }catch(e){return false}
-}
-function push(){
-  if(!ON.ready)return;clearTimeout(ON.tm);
-  ON.tm=setTimeout(()=>{ON.q=ON.q.then(()=>ON.db.doc('players/'+ON.uid).set({name:(users()[ME]||{}).n||'Player',stars:S.stars,inv:S.inv,opened:S.opened,val:iv(S.inv)})).catch(()=>{})},700);
-}
-/* відправник забирає результат свого офера: обмін -> те, що просив; відмова/скасування -> свої предмети назад */
-function settle(){
-  ON.trades.forEach(t=>{
-    if(t.from!==ON.uid||t.st==='pending'||t.claimed||ON.claiming[t.id])return;
-    ON.claiming[t.id]=1;let n=nid(S);
-    if(t.st==='accepted'){t.ask.forEach(a=>S.inv.push({id:a.id,uid:n++}));S.stars+=t.stars|0}
-    else{t.give.forEach(g=>S.inv.push({id:g,uid:n++}));S.stars+=t.gs|0}
-    save();
-    ON.db.doc('trades/'+t.id).update({claimed:true}).catch(()=>{delete ON.claiming[t.id]});
-  });
-}
-function changed(){hdr();if(S.spin)return;if(S.tab==='top'||(S.tab==='trade'&&TT!=='new'))go(S.tab,null,true)}
-
-async function oAct(id,mode){
-  const ref=ON.db.doc('trades/'+id);let msg='';
-  try{
-    const l=await ref.acquire({holder:ON.uid,ttlMs:15000});
-    if(!l.acquired)return toast('⏳ Спробуй ще раз за мить');
-    const t=(await ref.get()).data();
-    if(!t||t.st!=='pending')msg='Офер уже недоступний';
-    else if(mode==='cancel'){if(t.from!==ON.uid)return;await ref.update({st:'cancelled'});msg='Скасовано'}
-    else if(t.to!==ON.uid)return;
-    else if(mode==='decline'){await ref.update({st:'declined'});msg='Відхилено'}
-    else{
-      const ok=t.ask.every(a=>S.inv.some(x=>x.uid===a.uid&&x.id===a.id))&&S.stars+(t.gs|0)>=(t.stars|0);
-      if(!ok){await ref.update({st:'declined'});msg='❌ Бракує предметів або Stars — офер відхилено'}
-      else{
-        S.inv=S.inv.filter(x=>!t.ask.some(a=>a.uid===x.uid));
-        let n=nid(S);t.give.forEach(g=>S.inv.push({id:g,uid:n++}));
-        S.stars+=(t.gs|0)-(t.stars|0);save();
-        await ref.update({st:'accepted'});msg='✅ Обмін виконано'
-      }
-    }
-  }catch(e){msg='❌ Помилка мережі'}
-  toast(msg);renderTrade($('main'));
-}
-async function oSend(){
-  const to=D.to,P=ON.players;
-  if(!to||!P[to]||to===ON.uid)return toast('❌ Обери гравця');
-  const give=S.inv.filter(e=>D.give.includes(e.uid)),ask=(P[to].inv||[]).filter(e=>D.ask.includes(e.uid)).map(e=>({uid:e.uid,id:e.id})),gs=D.gs|0,as=D.as|0;
-  if(!give.length&&!gs)return toast('❌ Запропонуй щось у обмін');
-  if(gs>S.stars)return toast('❌ Недостатньо Stars');
-  if(ON.trades.filter(t=>t.from===ON.uid&&t.st==='pending').length>=10)return toast('❌ Не більше 10 активних оферів');
-  const bk={inv:S.inv,stars:S.stars};
-  S.inv=S.inv.filter(e=>!D.give.includes(e.uid));S.stars-=gs;save(); // ескроу: предмети лежать в оферi
-  try{await ON.db.collection('trades').add({from:ON.uid,to,involved:[ON.uid,to],give:give.map(e=>e.id),gs,ask,stars:as,st:'pending',claimed:false,ts:Date.now()})}
-  catch(e){S.inv=bk.inv;S.stars=bk.stars;save();return toast('❌ Не вдалося надіслати')}
-  D={to:'',give:[],gs:0,ask:[],as:0};TT='out';toast('📤 Офер надіслано');renderTrade($('main'));
-}
-function renderOnline(m){
-  const P=ON.players,me=ON.uid,T=ON.trades,U={};Object.keys(P).forEach(k=>U[k]={n:P[k].name||'Гравець'});
-  const inc=T.filter(t=>t.to===me&&t.st==='pending'),out=T.filter(t=>t.from===me&&t.st==='pending'),his=T.filter(t=>t.st!=='pending').sort((a,b)=>b.ts-a.ts).slice(0,15);
-  const tabs=[['in','📥 ВХІДНІ ('+inc.length+')'],['out','📤 ВИХІДНІ ('+out.length+')'],['new','➕ СТВОРИТИ'],['his','🕘 ІСТОРІЯ']];
-  const empty=t=>`<div class="glass p-8 rounded-3xl text-center text-slate-500 text-xs">${t}</div>`;
-  let body='';
-  if(TT==='in')body=inc.length?inc.map(t=>trow(t,U,'in')).join(''):empty('Вхідних оферів немає');
-  else if(TT==='out')body=out.length?out.map(t=>trow(t,U,'out')).join(''):empty('Активних вихідних оферів немає');
-  else if(TT==='his')body=his.length?his.map(t=>trow(t,U,'his')).join(''):empty('Історія порожня');
-  else{
-    const others=Object.keys(P).filter(k=>k!==me),rcp=D.to&&P[D.to]&&D.to!==me?D.to:'';
-    const my=[...S.inv].sort((a,b)=>ITEMS[b.id].val-ITEMS[a.id].val),their=rcp?(P[rcp].inv||[]).filter(e=>ITEMS[e.id]).sort((a,b)=>ITEMS[b.id].val-ITEMS[a.id].val):[];
-    const gv=iv(my.filter(e=>D.give.includes(e.uid)))+D.gs,av=iv(their.filter(e=>D.ask.includes(e.uid)))+D.as;
-    body=`<div class="glass rounded-3xl p-4 space-y-3">
-    <div class="text-[10px] font-black text-slate-400">КОМУ (реальні гравці: ${others.length})</div>
-    <select class="inp" onchange="pickTo(this.value)"><option value="">— обери гравця —</option>${others.map(k=>`<option value="${esc(k)}" ${k===rcp?'selected':''}>👤 ${esc(U[k].n)} · ⭐ ${P[k].val|0}</option>`).join('')}</select>
-    <div class="text-[10px] font-black text-slate-400">ТИ ВІДДАЄШ</div>
-    ${my.length?`<div class="grid grid-cols-3 gap-2 max-h-52 overflow-y-auto nos">${my.map(e=>tcard(ITEMS[e.id],D.give.includes(e.uid),`tg('give',${e.uid})`)).join('')}</div>`:'<div class="text-[10px] text-slate-500">Інвентар порожній</div>'}
-    <div class="flex items-center gap-2"><span class="text-[10px] font-black text-slate-400 shrink-0">+ ⭐ ДОДАТИ</span><input type="number" min="0" class="inp" value="${D.gs||''}" placeholder="0" oninput="D.gs=Math.max(0,parseInt(this.value)||0)"></div>
-    <div class="text-[10px] font-black text-slate-400">ТИ ПРОСИШ</div>
-    ${rcp?(their.length?`<div class="grid grid-cols-3 gap-2 max-h-52 overflow-y-auto nos">${their.map(e=>tcard(ITEMS[e.id],D.ask.includes(e.uid),`tg('ask',${e.uid})`)).join('')}</div>`:'<div class="text-[10px] text-slate-500">В гравця немає предметів</div>'):'<div class="text-[10px] text-slate-500">Спочатку обери гравця</div>'}
-    <div class="flex items-center gap-2"><span class="text-[10px] font-black text-slate-400 shrink-0">+ ⭐ ПРОСИШ</span><input type="number" min="0" class="inp" value="${D.as||''}" placeholder="0" oninput="D.as=Math.max(0,parseInt(this.value)||0)"></div>
-    <div class="flex justify-between text-[11px] font-black"><span class="text-amber-300">Віддаєш: ⭐ ${gv}</span><span class="text-cyan-300">Просиш: ⭐ ${av}</span></div>
-    <button onclick="sendTrade()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-black font-black text-xs uppercase active:scale-95 transition">НАДІСЛАТИ ОФЕР</button>
-    <p class="text-[9px] text-slate-500 leading-snug">Твої предмети й Stars із офера блокуються до відповіді. Гравець бачить офер одразу й може прийняти або відхилити.</p></div>`;
-  }
-  m.innerHTML=`<div class="space-y-3"><h2 class="text-sm font-black tracking-widest text-center text-cyan-400">ТРЕЙДИ 🌐 ОНЛАЙН</h2><div class="grid grid-cols-2 gap-2">${tabs.map(([k,t])=>`<button onclick="setTT('${k}')" class="py-2 rounded-xl text-[10px] font-black ${TT===k?'bg-cyan-500 text-black':'bg-slate-800 text-slate-300'}">${t}</button>`).join('')}</div>${body}</div>`;
-}
-function renderTopOnline(m){
-  const all=Object.entries(ON.players).map(([k,p])=>({k,n:p.name||'Гравець',o:p.opened|0,v:p.val|0})).sort((a,b)=>b.v-a.v).slice(0,20);
-  m.innerHTML=`<div class="space-y-3"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-amber-400">ТАБЛИЦЯ ЛІДЕРІВ 🌐</h2><p class="text-[10px] text-slate-500">реальні гравці · за цінністю інвентаря</p></div>`+
-  all.map((l,i)=>`<div class="glass p-3 rounded-2xl flex justify-between items-center ${l.k===ON.uid?'border border-cyan-500/40':''}"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-xl ${['bg-amber-400 text-black','bg-slate-300 text-black','bg-amber-700'][i]||'bg-slate-800 text-slate-400'} font-black text-xs flex items-center justify-center">#${i+1}</div><div><div class="text-xs font-black">${esc(l.n)}${l.k===ON.uid?' (ТИ)':''}</div><div class="text-[10px] text-slate-400">Кейсів: ${l.o}</div></div></div><div class="text-xs font-black text-amber-300">${l.v.toLocaleString()} ⭐</div></div>`).join('')+'</div>';
-}
-
-/* ---- підміна старих функцій: онлайн, якщо db доступна; інакше лишається локальна версія ---- */
-const _save=save;save=function(){_save();push()};
-const _hdr=hdr;hdr=function(){_hdr();if(ON.ready){const b=$('tbadge'),n=ON.trades.filter(t=>t.to===ON.uid&&t.st==='pending').length;if(b){b.textContent=n;b.style.display=n?'flex':'none'}}};
-const _rt=renderTrade;renderTrade=m=>ON.ready?renderOnline(m):_rt(m);
-const _top=renderTop;renderTop=m=>ON.ready?renderTopOnline(m):_top(m);
-const _ta=tAct;tAct=(id,mode)=>ON.ready?oAct(id,mode):_ta(id,mode);
-const _st=sendTrade;sendTrade=()=>ON.ready?oSend():_st();
-const _enter=enter;enter=function(k){ON.ready=false;_enter(k);onlineBoot().then(()=>{hdr();if(S.tab==='trade'||S.tab==='top')go(S.tab,null,true)})};
-
+function sellAll(){const t=S.inv.reduce((s,e)=>s+ITEMS[e.id].val,0);S.stars+=t;S.inv=[];save();go('profile');toast('Продано все за ⭐ +'+t.toLocaleString())}
+function resetData(){if(!confirm('Скинути весь прогрес цього акаунта? (використані промокоди залишаться використаними)'))return;const pr=S.promo;Object.assign(S,DEF(),{promo:pr});save();go('profile');toast('Дані скинуто!')}
 
 /* ============ INIT ============ */
-seedBots();hdr();
+hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
 </script>
 </body>
