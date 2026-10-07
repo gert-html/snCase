@@ -19,6 +19,14 @@ input,select,textarea{user-select:text;-webkit-user-select:text}
 .rc{transition:transform .2s}.rc:active{transform:scale(.97)}
 .inp{width:100%;background:#0d131f;border:1px solid #232e42;border-radius:12px;padding:10px 12px;font-size:14px;color:#fff;outline:none}
 .inp:focus{border-color:#22d3ee}
+@keyframes cf{0%{transform:translate(0,0) rotate(0);opacity:1}100%{transform:translate(var(--dx),110vh) rotate(720deg);opacity:.9}}
+.cf{position:fixed;top:-12px;width:8px;height:14px;z-index:95;pointer-events:none;animation:cf 2.4s ease-in forwards}
+@keyframes shk{0%,100%{transform:translate(0)}20%{transform:translate(-6px,3px)}40%{transform:translate(6px,-3px)}60%{transform:translate(-4px,-2px)}80%{transform:translate(4px,2px)}}
+.shk{animation:shk .5s}
+@keyframes tk{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.tkr{display:flex;width:max-content;animation:tk 40s linear infinite}
+@keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+.pop{animation:pop .35s}
 </style>
 </head>
 <body class="max-w-md mx-auto min-h-screen flex flex-col">
@@ -492,7 +500,7 @@ function renderGames(m){
 function spinWheel(){
   if(S.spin)return;const now=Date.now();
   if(S.wheel>now){const mn=Math.ceil((S.wheel-now)/60000);return toast('⏳ Наступний спін через '+mn+' хв')}
-  const segs=S.segs,w=[30,25,15,6,20,14,8,2],tot=w.reduce((a,b)=>a+b);let r=Math.random()*tot,k=0;while(r>=w[k]){r-=w[k];k++}
+  const segs=S.segs,w=[30,25,15,6,20,14,8,2],tot=w.reduce((a,b)=>a+b),r0=Math.random()*tot;let r=r0,k=0;while(r>=w[k]){r-=w[k];k++}
   S.spin=true;S.wheel=now+12000000;
   const center=k*45+22.5,a=360*6+(360-center)+(Math.random()*30-15);
   rot=rot-(rot%360)+a;const d=$('wheel');
@@ -527,6 +535,135 @@ function renderProfile(m){
 }
 function sellAll(){const t=S.inv.reduce((s,e)=>s+ITEMS[e.id].val,0);S.stars+=t;S.inv=[];save();go('profile');toast('Продано все за ⭐ +'+t.toLocaleString())}
 function resetData(){if(!confirm('Скинути весь прогрес цього акаунта? (використані промокоди залишаться використаними)'))return;const pr=S.promo;Object.assign(S,DEF(),{promo:pr});save();go('profile');toast('Дані скинуто!')}
+
+/* ====================================================================
+   BOOST: рівні/XP, серія входів, live-стрічка, конфеті, апгрейд
+   ==================================================================== */
+const RXP={common:5,rare:15,epic:50,legendary:200,mythic:800};
+const lvlOf=xp=>Math.floor(Math.sqrt((xp||0)/60))+1;
+const lvlStart=l=>(l-1)*(l-1)*60;
+
+/* зберігати XP і серію в акаунті */
+const _save=save;
+save=function(){
+  if(ME){try{const U=users();if(U[ME]){U[ME].d.xp=S.xp||0;U[ME].d.streak=S.streak||0;U[ME].d.lastDay=S.lastDay||'';LSset('sn_users',U)}}catch(e){}}
+  _save();
+};
+
+/* конфеті + тряска */
+function confetti(n){
+  const cols=['#ffd36b','#22d3ee','#ff4fd8','#7dffb0','#ff6b6b','#9be7ff'];
+  for(let i=0;i<n;i++){
+    const d=document.createElement('div');d.className='cf';
+    d.style.left=Math.random()*100+'vw';d.style.background=cols[i%cols.length];
+    d.style.setProperty('--dx',(Math.random()*200-100)+'px');
+    d.style.animationDelay=Math.random()*.5+'s';
+    document.body.appendChild(d);setTimeout(()=>d.remove(),3200);
+  }
+}
+function shake(){document.body.classList.add('shk');setTimeout(()=>document.body.classList.remove('shk'),520);if(navigator.vibrate)navigator.vibrate([60,40,120])}
+
+/* XP / рівні */
+function addXP(n){
+  const before=lvlOf(S.xp);S.xp=(S.xp||0)+n;const after=lvlOf(S.xp);
+  if(after>before){
+    let bonus=0;for(let l=before+1;l<=after;l++)bonus+=l*100;
+    S.stars+=bonus;save();
+    setTimeout(()=>{toast('🆙 РІВЕНЬ '+after+'! ⭐ +'+bonus.toLocaleString());confetti(40)},900);
+  }else save();
+}
+function xpBar(){
+  const l=lvlOf(S.xp),a=lvlStart(l),b=lvlStart(l+1),p=Math.min(100,((S.xp||0)-a)/(b-a)*100);
+  return `<div class="glass rounded-2xl p-3 space-y-1.5"><div class="flex justify-between text-[10px] font-black"><span class="text-cyan-300">РІВЕНЬ ${l}${S.streak?' · 🔥'+S.streak+' дн.':''}</span><span class="text-slate-400">${(S.xp||0)-a} / ${b-a} XP · нагорода ⭐ ${(l+1)*100}</span></div><div class="h-2 bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-cyan-400 to-amber-400" style="width:${p}%"></div></div></div>`;
+}
+/* серія входів */
+function dailyStreak(){
+  const today=new Date().toDateString(),last=S.lastDay;
+  if(last===today)return;
+  const y=new Date(Date.now()-864e5).toDateString();
+  S.streak=(last===y)?(S.streak||0)+1:1;S.lastDay=today;
+  const g=Math.min(S.streak,7)*150;S.stars+=g;save();
+  setTimeout(()=>{toast('🔥 Серія '+S.streak+' дн. · ⭐ +'+g);confetti(30)},700);
+}
+
+/* LIVE-стрічка (імітація) */
+const BOTN=['Max_TON','kriptoUA','DarkWolf','Sasha777','NFT_King','luckyGirl','Bogdan_X','Vlad2k','Mila_Star','CryptoCat','Oleg_Pro','NightFox','Dima_Win','SnowQueen','Taras1337'];
+function fakeDrop(){
+  const r=Math.random(),rar=r<.5?'rare':r<.82?'epic':r<.96?'legendary':'mythic',L=BYR[rar],id=L[Math.random()*L.length|0],it=ITEMS[id];
+  return {n:BOTN[Math.random()*BOTN.length|0],it};
+}
+const dropHTML=d=>`<span class="shrink-0 mx-3 text-[10px] font-bold whitespace-nowrap"><span class="text-slate-400">${esc(d.n)}</span> <span class="${RC[d.it.rarity].t} font-black">${esc(d.it.name)}</span> <span class="text-amber-300">⭐${d.it.val.toLocaleString()}</span></span>`;
+function ticker(){
+  const a=Array.from({length:14},fakeDrop).map(dropHTML).join('');
+  return `<div class="glass rounded-2xl overflow-hidden py-2 flex items-center"><span class="px-2 text-[9px] font-black text-red-400 shrink-0">● LIVE</span><div class="overflow-hidden flex-1"><div class="tkr">${a}${a}</div></div></div>`;
+}
+
+/* головна: стрічка + рівень */
+const _rh=renderHome;
+renderHome=function(m){
+  _rh(m);
+  const w=m.firstElementChild;
+  if(w)w.insertAdjacentHTML('afterbegin',`<div class="space-y-2">${ticker()}${xpBar()}</div>`);
+};
+
+/* виграш: XP + ефекти */
+const _wm=winModal;
+winModal=function(got){
+  _wm(got);
+  const best=got.reduce((a,e)=>RAR.indexOf(ITEMS[e.id].rarity)>RAR.indexOf(a)?ITEMS[e.id].rarity:a,'common');
+  const bi=RAR.indexOf(best);
+  if(bi>=2)confetti(20+bi*15);
+  if(bi>=3)shake();
+  if(bi>=4){mc.style.boxShadow='0 0 60px #ef4444';setTimeout(()=>mc.style.boxShadow='',2500)}
+  addXP(got.reduce((s,e)=>s+RXP[ITEMS[e.id].rarity],0));
+};
+
+/* АПГРЕЙД (х2 / х3 / х5 / х10) */
+const UP={sel:null,mult:2,busy:false};
+function upTarget(base,mult){
+  const lim=base*mult;let best=null;
+  Object.values(ITEMS).forEach(i=>{if(i.isCase||i.sw)return;if(i.val<=lim&&(!best||i.val>best.val))best=i});
+  return best;
+}
+function upHTML(){
+  const inv=S.inv.filter(e=>ITEMS[e.id]&&!ITEMS[e.id].isCase).sort((a,b)=>ITEMS[a.id].val-ITEMS[b.id].val);
+  if(UP.sel&&!S.inv.find(e=>e.uid===UP.sel))UP.sel=null;
+  const it=UP.sel?S.inv.find(e=>e.uid===UP.sel):null,base=it?ITEMS[it.id]:null;
+  const tgt=base?upTarget(base.val,UP.mult):null,ch=Math.round(95/UP.mult*10)/10;
+  return `<div id="up" class="glass p-4 rounded-3xl space-y-3 mt-4"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-fuchsia-400">⚡ АПГРЕЙД</h2><p class="text-[10px] text-slate-400">Став предмет на ризик: виграєш — отримаєш дорожчий, програєш — згорить</p></div>
+  <div class="flex justify-center gap-2">${[2,3,5,10].map(x=>`<button onclick="UP.mult=${x};upRender()" class="px-3 py-1 rounded-xl text-xs font-black ${UP.mult===x?'bg-fuchsia-500 text-black':'bg-slate-800 text-slate-300'}">X${x}</button>`).join('')}</div>
+  ${base&&tgt?`<div class="flex items-center justify-around"><div class="w-16 h-16 pop">${art(base)}</div><div class="text-xl">➜</div><div class="w-16 h-16 pop">${art(tgt)}</div></div>
+  <div class="text-center text-[11px] font-black"><span class="text-slate-300">${esc(base.name)} ⭐${base.val}</span> → <span class="text-amber-300">${esc(tgt.name)} ⭐${tgt.val.toLocaleString()}</span><div class="text-fuchsia-300 mt-1">ШАНС: ${ch}%</div></div>
+  <button onclick="upGo()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-fuchsia-500 to-purple-600 text-black font-black text-xs uppercase active:scale-95 transition">РИЗИКНУТИ 🎲</button>`
+  :'<div class="text-center text-[10px] text-slate-500">Обери предмет нижче</div>'}
+  ${inv.length?`<div class="grid grid-cols-4 gap-1.5 max-h-44 overflow-y-auto nos">${inv.map(e=>tcard(ITEMS[e.id],e.uid===UP.sel,`UP.sel=${e.uid};upRender()`)).join('')}</div>`:'<div class="text-center text-[10px] text-slate-500">Відкрий кейс — і повертайся сюди</div>'}</div>`;
+}
+function upRender(){const e=$('up');if(e)e.outerHTML=upHTML()}
+function upGo(){
+  if(UP.busy||S.spin)return;
+  const idx=S.inv.findIndex(e=>e.uid===UP.sel);if(idx<0)return;
+  const base=ITEMS[S.inv[idx].id],tgt=upTarget(base.val,UP.mult);if(!tgt)return;
+  const win=Math.random()*100<95/UP.mult;
+  UP.busy=S.spin=true;S.inv.splice(idx,1);UP.sel=null;save();
+  $('up').innerHTML=`<div class="text-center py-10 space-y-3"><div class="w-24 h-24 mx-auto fl">${art(tgt)}</div><div class="text-sm font-black text-fuchsia-300 animate-pulse">ДОЛЯ РІШАЄТЬСЯ…</div></div>`;
+  AU.tone(220,0,1.4,'sawtooth',.08);
+  setTimeout(()=>{
+    UP.busy=S.spin=false;
+    if(win){S.inv.push({id:tgt.id,uid:nid(S)});save();AU.win(tgt.rarity);confetti(60);if(RAR.indexOf(tgt.rarity)>=3)shake();toast('🔥 УСПІХ! '+tgt.name);addXP(40)}
+    else{AU.tone(110,0,.6,'square',.1);shake();toast('💥 Не пощастило — предмет згорів');addXP(10)}
+    upRender();
+  },1700);
+}
+const _rg=renderGames;
+renderGames=function(m){_rg(m);m.insertAdjacentHTML('beforeend',upHTML())};
+
+/* інвентар: рівень у профілі */
+const _rp=renderProfile;
+renderProfile=function(m){_rp(m);const w=m.firstElementChild;if(w)w.insertAdjacentHTML('afterbegin',xpBar())};
+
+/* серія входів після входу */
+const _en=enter;
+enter=function(k){_en(k);setTimeout(dailyStreak,400)};
 
 /* ============ INIT ============ */
 hdr();
