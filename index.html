@@ -664,7 +664,112 @@ renderProfile=function(m){_rp(m);const w=m.firstElementChild;if(w)w.insertAdjace
 /* серія входів після входу */
 const _en=enter;
 enter=function(k){_en(k);setTimeout(dailyStreak,400)};
+/* ================= PATCH v2: колесо апгрейду + центр відеокарт ================= */
+document.head.insertAdjacentHTML('beforeend','<style>@keyframes sp{to{transform:rotate(360deg)}}.spn{animation:sp 1.2s linear infinite;transform-origin:center;transform-box:fill-box}</style>');
+$('n-trade').innerHTML='🖥️<span>ВІДЮХИ</span>';
 
+/* ---------- АПГРЕЙД: шанс x2 + колесо ---------- */
+const upCh=m=>Math.min(95,Math.round(190/m*10)/10);
+UP.rot=0;
+upHTML=function(){
+  const inv=S.inv.filter(e=>ITEMS[e.id]&&!ITEMS[e.id].isCase).sort((a,b)=>ITEMS[a.id].val-ITEMS[b.id].val);
+  if(!UP.busy&&UP.sel&&!S.inv.find(e=>e.uid===UP.sel))UP.sel=null;
+  const it=UP.sel?S.inv.find(e=>e.uid===UP.sel):null,base=it?ITEMS[it.id]:null,tgt=base?upTarget(base.val,UP.mult):null,ch=upCh(UP.mult);
+  const col=ch>=60?'#a3e635':ch>=30?'#fbbf24':'#f87171',lbl=ch>=60?'ВИСОКИЙ ШАНС':ch>=30?'СЕРЕДНІЙ ШАНС':'НИЗЬКИЙ ШАНС';
+  const C=2*Math.PI*82,len=C*ch/100;
+  const gauge=`<div class="relative mx-auto" style="width:240px;height:240px"><svg viewBox="0 0 200 200" class="absolute inset-0 w-full h-full"><defs><linearGradient id="ugl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#facc15"/><stop offset="1" stop-color="#ef4444"/></linearGradient><linearGradient id="ugw" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bef264"/><stop offset="1" stop-color="#22c55e"/></linearGradient></defs>
+  <circle cx="100" cy="100" r="96" fill="none" stroke="#1f2937" stroke-width="2"/>
+  <circle cx="100" cy="100" r="82" fill="none" stroke="url(#ugl)" stroke-width="14" opacity=".5"/>
+  <circle cx="100" cy="100" r="82" fill="none" stroke="url(#ugw)" stroke-width="14" stroke-dasharray="${len} ${C}" transform="rotate(-90 100 100)" style="filter:drop-shadow(0 0 5px #84cc16)"/>
+  <circle cx="100" cy="100" r="66" fill="#10151f"/></svg>
+  <div id="uptr" class="absolute inset-0" style="transform:rotate(${UP.rot}deg)"><div style="position:absolute;top:2px;left:50%;transform:translateX(-50%);color:#facc15;font-size:22px;line-height:1;filter:drop-shadow(0 0 4px #facc15)">▼</div></div>
+  <div class="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+   ${base&&tgt?`<div class="flex items-center gap-1"><div class="w-9 h-9">${art(base)}</div><span class="text-xs">➜</span><div class="w-9 h-9">${art(tgt)}</div></div>`:'<div class="text-[10px] font-black text-slate-500">ОБЕРИ ПРЕДМЕТ</div>'}
+   <div class="text-2xl font-black" style="color:${col}">${ch}%</div><div class="text-[9px] font-bold" style="color:${col}">${lbl}</div></div></div>`;
+  return `<div id="up" class="glass p-4 rounded-3xl space-y-3 mt-4"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-fuchsia-400">⚡ АПГРЕЙД</h2><p class="text-[10px] text-slate-400">Виграєш — отримаєш дорожчий предмет, програєш — згорить</p></div>
+  <div class="flex justify-center gap-2">${[2,3,5,10].map(x=>`<button onclick="UP.mult=${x};upRender()" class="px-3 py-1 rounded-xl text-xs font-black ${UP.mult===x?'bg-fuchsia-500 text-black':'bg-slate-800 text-slate-300'}">X${x}</button>`).join('')}</div>
+  ${gauge}
+  ${base&&tgt?`<div class="text-center text-[11px] font-black"><span class="text-slate-300">${esc(base.name)} ⭐${base.val}</span> → <span class="text-amber-300">${esc(tgt.name)} ⭐${tgt.val.toLocaleString()}</span></div>
+  <button id="upbtn" onclick="upGo()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-fuchsia-500 to-purple-600 text-black font-black text-xs uppercase active:scale-95 transition">РИЗИКНУТИ 🎲</button>`:''}
+  ${inv.length?`<div class="grid grid-cols-4 gap-1.5 max-h-44 overflow-y-auto nos">${inv.map(e=>tcard(ITEMS[e.id],e.uid===UP.sel,`UP.sel=${e.uid};upRender()`)).join('')}</div>`:'<div class="text-center text-[10px] text-slate-500">Відкрий кейс — і повертайся сюди</div>'}</div>`;
+};
+upRender=function(){if(UP.busy)return;const e=$('up');if(e)e.outerHTML=upHTML()};
+upGo=function(){
+  if(UP.busy||S.spin)return;
+  const idx=S.inv.findIndex(e=>e.uid===UP.sel);if(idx<0)return;
+  const base=ITEMS[S.inv[idx].id],tgt=upTarget(base.val,UP.mult);if(!tgt)return;
+  const ch=upCh(UP.mult),win=Math.random()*100<ch,za=ch*3.6,ang=win?4+Math.random()*(za-8):za+4+Math.random()*(352-za);
+  UP.busy=S.spin=true;S.inv.splice(idx,1);save();
+  const b=$('upbtn');if(b){b.disabled=true;b.classList.add('opacity-50')}
+  const p=$('uptr');UP.rot=UP.rot-UP.rot%360+1800+ang;
+  p.style.transition='transform 4.5s cubic-bezier(.12,.8,.15,1)';p.style.transform=`rotate(${UP.rot}deg)`;
+  AU.tone(220,0,1.2,'sawtooth',.05);
+  for(let i=1;i<=32;i++)setTimeout(()=>AU.tick(),4500*Math.pow(i/32,.55));
+  setTimeout(()=>{
+    UP.busy=S.spin=false;UP.sel=null;
+    if(win){S.inv.push({id:tgt.id,uid:nid(S)});save();AU.win(tgt.rarity);confetti(60);if(RAR.indexOf(tgt.rarity)>=3)shake();toast('🔥 УСПІХ! '+tgt.name);addXP(40)}
+    else{AU.tone(110,0,.6,'square',.1);shake();toast('💥 Не пощастило — предмет згорів');addXP(10)}
+    upRender();
+  },4700);
+};
+
+/* ---------- ЦЕНТР ВІДЕОКАРТ ---------- */
+const GPUS=[['g1','Відюха-гівняшка',10,'#8b5a2b'],['g2','GT 710',30,'#64748b'],['g3','GTX 1060',70,'#22c55e'],['g4','RTX 2070',150,'#3b82f6'],['g5','RTX 3080',300,'#a855f7'],['g6','RTX 4090',500,'#f59e0b'],['g7','RTX 5090 ULTRA',777,'#ef4444']];
+const gInc=p=>p*20; /* ⭐ за годину */
+const gRate=()=>GPUS.reduce((s,g)=>s+((S.gpu&&S.gpu[g[0]])||0)*gInc(g[2]),0);
+function gpuArt(c){
+  const fan=x=>`<circle cx="${x}" cy="28" r="14" fill="#0b0e14" stroke="${c}" stroke-width="2"/><g class="spn"><circle cx="${x}" cy="28" r="11" fill="none"/><path d="M${x},28V17M${x},28l9.5,5.5M${x},28l-9.5,5.5" stroke="${c}" stroke-width="3.5" stroke-linecap="round" fill="none"/></g><circle cx="${x}" cy="28" r="3" fill="${c}"/>`;
+  return `<svg viewBox="0 0 100 60" class="w-full h-full"><rect x="4" y="8" width="92" height="40" rx="5" fill="#1b2230" stroke="${c}" stroke-width="2.5"/>${fan(30)}${fan(70)}<rect x="10" y="48" width="80" height="5" fill="#d4a017"/><rect x="2" y="12" width="4" height="32" fill="#64748b"/></svg>`;
+}
+function renderGpu(m){
+  const r=gRate(),own=S.gpu||{};
+  m.innerHTML=`<div class="space-y-4"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-lime-400">🖥️ ЦЕНТР ВІДЕОКАРТ</h2><p class="text-[10px] text-slate-400">Відюхи фармлять ⭐ навіть коли тебе нема (до 24 год)</p></div>
+  <div class="glass p-4 rounded-3xl space-y-3"><div class="flex justify-between items-center text-xs font-black"><span class="text-lime-300">💾 VD: ${(S.vd||0).toLocaleString()}</span><span class="text-amber-300">⚙️ ${r.toLocaleString()} ⭐/год</span></div>
+  <div class="text-[10px] font-black text-slate-400 text-center">КОНВЕРТЕР · 1 VD = 1 000 ⭐</div>
+  <div class="flex gap-2"><input id="cv" type="number" min="1" class="inp" placeholder="Кількість VD" oninput="cvp()"><div id="cvp" class="shrink-0 self-center text-[11px] font-black text-amber-300">⭐ 0</div></div>
+  <div class="grid grid-cols-4 gap-1.5">${[1,10,100].map(n=>`<button onclick="cvSet(${n})" class="py-1 rounded-lg bg-slate-800 text-[10px] font-black">${n}</button>`).join('')}<button onclick="cvSet(Math.floor(S.stars/1000))" class="py-1 rounded-lg bg-slate-800 text-[10px] font-black">MAX</button></div>
+  <div class="grid grid-cols-2 gap-2"><button onclick="conv('buy')" class="py-2.5 rounded-xl bg-lime-400 text-black font-black text-xs">⭐ → VD</button><button onclick="conv('sell')" class="py-2.5 rounded-xl bg-amber-400 text-black font-black text-xs">VD → ⭐</button></div></div>
+  <div class="grid grid-cols-2 gap-2.5">${GPUS.map(([id,n,p,c])=>{const ok=(S.vd||0)>=p;return `<div class="glass rounded-2xl p-2.5 flex flex-col items-center text-center" style="border-color:${c}66"><div class="w-24 h-14">${gpuArt(c)}</div><div class="text-[11px] font-black mt-1">${n}</div><div class="text-[9px] text-lime-300 font-bold">+${gInc(p).toLocaleString()} ⭐/год</div><div class="text-[9px] text-slate-400">Є: ${own[id]||0}</div><button onclick="buyGpu('${id}')" class="w-full mt-1.5 py-1.5 rounded-lg text-[10px] font-extrabold ${ok?'bg-lime-400 text-black':'bg-slate-800 text-slate-500'}">💾 ${p} VD</button></div>`}).join('')}</div></div>`;
+}
+renderTrade=function(m){renderGpu(m)};
+function cvVal(){return Math.max(0,parseInt(($('cv')||{}).value)||0)}
+function cvp(){$('cvp').textContent='⭐ '+(cvVal()*1000).toLocaleString()}
+function cvSet(n){$('cv').value=Math.max(0,n);cvp()}
+function conv(d){
+  const n=cvVal();if(!n)return toast('Введи кількість VD');
+  if(d==='buy'){if(S.stars<n*1000)return toast('❌ Недостатньо Stars');S.stars-=n*1000;S.vd=(S.vd||0)+n;toast('💾 +'+n+' VD')}
+  else{if((S.vd||0)<n)return toast('❌ Недостатньо VD');S.vd-=n;S.stars+=n*1000;toast('⭐ +'+(n*1000).toLocaleString())}
+  save();renderGpu($('main'));
+}
+function buyGpu(id){
+  const g=GPUS.find(x=>x[0]===id);if(!g)return;
+  if((S.vd||0)<g[2])return toast('❌ Недостатньо VD');
+  farm();S.vd-=g[2];S.gpu=S.gpu||{};S.gpu[id]=(S.gpu[id]||0)+1;S.lastFarm=Date.now();
+  save();toast('🖥️ Куплено: '+g[1]);renderGpu($('main'));
+}
+
+/* ---------- ФАРМ (в тому числі офлайн, до 24 год) ---------- */
+let ENT=Date.now();
+function farm(){
+  if(!ME)return;
+  if(!ON.ready&&Date.now()-ENT<8000)return; /* чекаємо, поки підтягнеться онлайн-баланс */
+  const now=Date.now(),r=gRate();
+  if(!S.lastFarm||!r){S.lastFarm=now;return}
+  const dt=Math.min(now-S.lastFarm,864e5),g=Math.floor(r*dt/36e5);
+  if(g<1)return;
+  S.lastFarm=now;S.stars+=g;save();
+  if(dt>300000)toast('🖥️ Відюхи нафармили ⭐ +'+g.toLocaleString());
+}
+setInterval(farm,5000);
+
+/* ---------- збереження нових полів (+ виправлено збереження XP/серії) ---------- */
+const _save2=save;
+save=function(){
+  _save2();
+  if(ME){try{const U=users();if(U[ME]){Object.assign(U[ME].d,{xp:S.xp||0,streak:S.streak||0,lastDay:S.lastDay||'',gpu:S.gpu||{},vd:S.vd||0,lastFarm:S.lastFarm||0});LSset('sn_users',U)}}catch(e){}}
+};
+const _en2=enter;
+enter=function(k){S.gpu={};S.vd=0;S.lastFarm=0;S.xp=0;S.streak=0;S.lastDay='';ENT=Date.now();_en2(k)};
 /* ============ INIT ============ */
 hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
