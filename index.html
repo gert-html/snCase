@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>snCase — NFT Case Simulator</title>
+<title>snCase -- NFT Case Simulator</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
 <style>
@@ -179,8 +179,8 @@ function roll(c){
   for(const i of o){if(r<i.w)return i;r-=i.w}return o[0];
 }
 
-/* ============ ПРОМОКОДИ (кожен — один раз на акаунт) ============ */
-const PROMO={SN1000:1000,GOLD1250:1250,START1500:1500,AUTUMN2000:2000,NIGHT2500:2500,TON3000:3000,LUCKY3500:3500,VIP4000:4000,DRAGON4500:4500,COSMIC5000:5000};
+/* ============ ПРОМОКОДИ (кожен -- один раз на акаунт) ============ */
+const PROMO={SN1M:1000000,SN1000:1000,GOLD1250:1250,START1500:1500,AUTUMN2000:2000,NIGHT2500:2500,TON3000:3000,LUCKY3500:3500,VIP4000:4000,DRAGON4500:4500,COSMIC5000:5000};
 
 /* ============ STORAGE / ACCOUNTS ============ */
 const $=id=>document.getElementById(id);
@@ -248,7 +248,7 @@ async function doAuth(){
     const u=users()[k];
     if(!u||u.bot||!u.h)return fail('Невірне імʼя або пароль');
     const h=await hashPw(u.s,p,u.m);
-    if(h===null)return fail('Цей акаунт створено в захищеному режимі — відкрийте гру через https');
+    if(h===null)return fail('Цей акаунт створено в захищеному режимі -- відкрийте гру через https');
     if(h!==u.h)return fail('Невірне імʼя або пароль');
     enter(k);
   }
@@ -313,7 +313,7 @@ async function tAct(id,mode){
     else if(mode==='decline'){await ref.update({st:'declined'});msg='Відхилено'}
     else{
       const ok=t.ask.every(a=>S.inv.some(x=>x.uid===a.uid&&x.id===a.id))&&S.stars+(t.gs|0)>=(t.stars|0);
-      if(!ok){await ref.update({st:'declined'});msg='❌ Бракує предметів або Stars — офер відхилено'}
+      if(!ok){await ref.update({st:'declined'});msg='❌ Бракує предметів або Stars -- офер відхилено'}
       else{
         S.inv=S.inv.filter(x=>!t.ask.some(a=>a.uid===x.uid));
         let n=nid(S);t.give.forEach(g=>S.inv.push({id:g,uid:n++}));
@@ -367,7 +367,7 @@ function renderTrade(m){
     const gv=iv(my.filter(e=>D.give.includes(e.uid)))+D.gs,av=iv(their.filter(e=>D.ask.includes(e.uid)))+D.as;
     body=`<div class="glass rounded-3xl p-4 space-y-3">
     <div class="text-[10px] font-black text-slate-400">КОМУ (реальні гравці: ${others.length})</div>
-    <select class="inp" onchange="pickTo(this.value)"><option value="">— обери гравця —</option>${others.map(k=>`<option value="${esc(k)}" ${k===rcp?'selected':''}>👤 ${esc(U[k].n)} · ⭐ ${P[k].val|0}</option>`).join('')}</select>
+    <select class="inp" onchange="pickTo(this.value)"><option value="">-- обери гравця --</option>${others.map(k=>`<option value="${esc(k)}" ${k===rcp?'selected':''}>👤 ${esc(U[k].n)} · ⭐ ${P[k].val|0}</option>`).join('')}</select>
     <div class="text-[10px] font-black text-slate-400">ТИ ВІДДАЄШ</div>
     ${my.length?`<div class="grid grid-cols-3 gap-2 max-h-52 overflow-y-auto nos">${my.map(e=>tcard(ITEMS[e.id],D.give.includes(e.uid),`tg('give',${e.uid})`)).join('')}</div>`:'<div class="text-[10px] text-slate-500">Інвентар порожній</div>'}
     <div class="flex items-center gap-2"><span class="text-[10px] font-black text-slate-400 shrink-0">+ ⭐ ДОДАТИ</span><input type="number" min="0" class="inp" value="${D.gs||''}" placeholder="0" oninput="D.gs=Math.max(0,parseInt(this.value)||0)"></div>
@@ -630,13 +630,13 @@ function upHTML(){
   if(UP.sel&&!S.inv.find(e=>e.uid===UP.sel))UP.sel=null;
   const it=UP.sel?S.inv.find(e=>e.uid===UP.sel):null,base=it?ITEMS[it.id]:null;
   const tgt=base?upTarget(base.val,UP.mult):null,ch=Math.round(95/UP.mult*10)/10;
-  return `<div id="up" class="glass p-4 rounded-3xl space-y-3 mt-4"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-fuchsia-400">⚡ АПГРЕЙД</h2><p class="text-[10px] text-slate-400">Став предмет на ризик: виграєш — отримаєш дорожчий, програєш — згорить</p></div>
+  return `<div id="up" class="glass p-4 rounded-3xl space-y-3 mt-4"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-fuchsia-400">⚡ АПГРЕЙД</h2><p class="text-[10px] text-slate-400">Став предмет на ризик: виграєш -- отримаєш дорожчий, програєш -- згорить</p></div>
   <div class="flex justify-center gap-2">${[2,3,5,10].map(x=>`<button onclick="UP.mult=${x};upRender()" class="px-3 py-1 rounded-xl text-xs font-black ${UP.mult===x?'bg-fuchsia-500 text-black':'bg-slate-800 text-slate-300'}">X${x}</button>`).join('')}</div>
   ${base&&tgt?`<div class="flex items-center justify-around"><div class="w-16 h-16 pop">${art(base)}</div><div class="text-xl">➜</div><div class="w-16 h-16 pop">${art(tgt)}</div></div>
   <div class="text-center text-[11px] font-black"><span class="text-slate-300">${esc(base.name)} ⭐${base.val}</span> → <span class="text-amber-300">${esc(tgt.name)} ⭐${tgt.val.toLocaleString()}</span><div class="text-fuchsia-300 mt-1">ШАНС: ${ch}%</div></div>
   <button onclick="upGo()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-fuchsia-500 to-purple-600 text-black font-black text-xs uppercase active:scale-95 transition">РИЗИКНУТИ 🎲</button>`
   :'<div class="text-center text-[10px] text-slate-500">Обери предмет нижче</div>'}
-  ${inv.length?`<div class="grid grid-cols-4 gap-1.5 max-h-44 overflow-y-auto nos">${inv.map(e=>tcard(ITEMS[e.id],e.uid===UP.sel,`UP.sel=${e.uid};upRender()`)).join('')}</div>`:'<div class="text-center text-[10px] text-slate-500">Відкрий кейс — і повертайся сюди</div>'}</div>`;
+  ${inv.length?`<div class="grid grid-cols-4 gap-1.5 max-h-44 overflow-y-auto nos">${inv.map(e=>tcard(ITEMS[e.id],e.uid===UP.sel,`UP.sel=${e.uid};upRender()`)).join('')}</div>`:'<div class="text-center text-[10px] text-slate-500">Відкрий кейс -- і повертайся сюди</div>'}</div>`;
 }
 function upRender(){const e=$('up');if(e)e.outerHTML=upHTML()}
 function upGo(){
@@ -650,7 +650,7 @@ function upGo(){
   setTimeout(()=>{
     UP.busy=S.spin=false;
     if(win){S.inv.push({id:tgt.id,uid:nid(S)});save();AU.win(tgt.rarity);confetti(60);if(RAR.indexOf(tgt.rarity)>=3)shake();toast('🔥 УСПІХ! '+tgt.name);addXP(40)}
-    else{AU.tone(110,0,.6,'square',.1);shake();toast('💥 Не пощастило — предмет згорів');addXP(10)}
+    else{AU.tone(110,0,.6,'square',.1);shake();toast('💥 Не пощастило -- предмет згорів');addXP(10)}
     upRender();
   },1700);
 }
@@ -669,7 +669,7 @@ document.head.insertAdjacentHTML('beforeend','<style>@keyframes sp{to{transform:
 $('n-trade').innerHTML='🖥️<span>ВІДЮХИ</span>';
 
 /* ---------- АПГРЕЙД: шанс x2 + колесо ---------- */
-const upCh=m=>Math.min(95,Math.round(190/m*10)/10);
+const upCh=m=>Math.min(95,Math.round(150/m*10)/10);
 UP.rot=0;
 upHTML=function(){
   const inv=S.inv.filter(e=>ITEMS[e.id]&&!ITEMS[e.id].isCase).sort((a,b)=>ITEMS[a.id].val-ITEMS[b.id].val);
@@ -686,12 +686,12 @@ upHTML=function(){
   <div class="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
    ${base&&tgt?`<div class="flex items-center gap-1"><div class="w-9 h-9">${art(base)}</div><span class="text-xs">➜</span><div class="w-9 h-9">${art(tgt)}</div></div>`:'<div class="text-[10px] font-black text-slate-500">ОБЕРИ ПРЕДМЕТ</div>'}
    <div class="text-2xl font-black" style="color:${col}">${ch}%</div><div class="text-[9px] font-bold" style="color:${col}">${lbl}</div></div></div>`;
-  return `<div id="up" class="glass p-4 rounded-3xl space-y-3 mt-4"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-fuchsia-400">⚡ АПГРЕЙД</h2><p class="text-[10px] text-slate-400">Виграєш — отримаєш дорожчий предмет, програєш — згорить</p></div>
+  return `<div id="up" class="glass p-4 rounded-3xl space-y-3 mt-4"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-fuchsia-400">⚡ АПГРЕЙД</h2><p class="text-[10px] text-slate-400">Виграєш -- отримаєш дорожчий предмет, програєш -- згорить</p></div>
   <div class="flex justify-center gap-2">${[2,3,5,10].map(x=>`<button onclick="UP.mult=${x};upRender()" class="px-3 py-1 rounded-xl text-xs font-black ${UP.mult===x?'bg-fuchsia-500 text-black':'bg-slate-800 text-slate-300'}">X${x}</button>`).join('')}</div>
   ${gauge}
   ${base&&tgt?`<div class="text-center text-[11px] font-black"><span class="text-slate-300">${esc(base.name)} ⭐${base.val}</span> → <span class="text-amber-300">${esc(tgt.name)} ⭐${tgt.val.toLocaleString()}</span></div>
   <button id="upbtn" onclick="upGo()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-fuchsia-500 to-purple-600 text-black font-black text-xs uppercase active:scale-95 transition">РИЗИКНУТИ 🎲</button>`:''}
-  ${inv.length?`<div class="grid grid-cols-4 gap-1.5 max-h-44 overflow-y-auto nos">${inv.map(e=>tcard(ITEMS[e.id],e.uid===UP.sel,`UP.sel=${e.uid};upRender()`)).join('')}</div>`:'<div class="text-center text-[10px] text-slate-500">Відкрий кейс — і повертайся сюди</div>'}</div>`;
+  ${inv.length?`<div class="grid grid-cols-4 gap-1.5 max-h-44 overflow-y-auto nos">${inv.map(e=>tcard(ITEMS[e.id],e.uid===UP.sel,`UP.sel=${e.uid};upRender()`)).join('')}</div>`:'<div class="text-center text-[10px] text-slate-500">Відкрий кейс -- і повертайся сюди</div>'}</div>`;
 };
 upRender=function(){if(UP.busy)return;const e=$('up');if(e)e.outerHTML=upHTML()};
 upGo=function(){
@@ -708,7 +708,7 @@ upGo=function(){
   setTimeout(()=>{
     UP.busy=S.spin=false;UP.sel=null;
     if(win){S.inv.push({id:tgt.id,uid:nid(S)});save();AU.win(tgt.rarity);confetti(60);if(RAR.indexOf(tgt.rarity)>=3)shake();toast('🔥 УСПІХ! '+tgt.name);addXP(40)}
-    else{AU.tone(110,0,.6,'square',.1);shake();toast('💥 Не пощастило — предмет згорів');addXP(10)}
+    else{AU.tone(110,0,.6,'square',.1);shake();toast('💥 Не пощастило -- предмет згорів');addXP(10)}
     upRender();
   },4700);
 };
@@ -775,4 +775,4 @@ hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
 </script>
 </body>
-</html>
+  </html>
