@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>snCase -- NFT Case Simulator</title>
@@ -770,9 +773,125 @@ save=function(){
 };
 const _en2=enter;
 enter=function(k){S.gpu={};S.vd=0;S.lastFarm=0;S.xp=0;S.streak=0;S.lastDay='';ENT=Date.now();_en2(k)};
+/* ================= PATCH v3 ================= */
+/* ---- Контракт ---- */
+const CT={sel:[]};
+function ctTg(u){
+  const i=CT.sel.indexOf(u);
+  if(i>=0)CT.sel.splice(i,1);
+  else{
+    const e=S.inv.find(x=>x.uid===u);
+    if(CT.sel.length>=5)return toast('Максимум 5 предметів');
+    if(CT.sel.length&&ITEMS[S.inv.find(x=>x.uid===CT.sel[0]).id].rarity!==ITEMS[e.id].rarity)return toast('Потрібна однакова рідкість');
+    CT.sel.push(u);
+  }
+  ctRender();
+}
+function ctHTML(){
+  CT.sel=CT.sel.filter(u=>S.inv.some(e=>e.uid===u));
+  const inv=S.inv.filter(e=>{const i=ITEMS[e.id];return i&&!i.isCase&&!i.sw&&i.rarity!=='mythic'}).sort((a,b)=>ITEMS[a.id].val-ITEMS[b.id].val);
+  const r=CT.sel.length?ITEMS[S.inv.find(x=>x.uid===CT.sel[0]).id].rarity:null;
+  const nx=r?RAR[RAR.indexOf(r)+1]:null;
+  return `<div id="ct" class="glass p-4 rounded-3xl space-y-3 mt-4"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-orange-400">🔨 КОНТРАКТ</h2><p class="text-[10px] text-slate-400">5 предметів однієї рідкості → 1 предмет рідкості вище</p></div>
+  <div class="text-center text-[11px] font-black ${nx?RC[nx].t:'text-slate-500'}">${nx?`Обрано ${CT.sel.length}/5 → ${nx.toUpperCase()}`:'Обери 5 предметів'}</div>
+  <button onclick="ctGo()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-orange-400 to-red-500 text-black font-black text-xs uppercase ${CT.sel.length===5?'':'opacity-40'}">УКЛАСТИ КОНТРАКТ</button>
+  ${inv.length?`<div class="grid grid-cols-4 gap-1.5 max-h-44 overflow-y-auto nos">${inv.map(e=>tcard(ITEMS[e.id],CT.sel.includes(e.uid),`ctTg(${e.uid})`)).join('')}</div>`:'<div class="text-center text-[10px] text-slate-500">Немає предметів</div>'}</div>`;
+}
+function ctRender(){const e=$('ct');if(e)e.outerHTML=ctHTML()}
+function ctGo(){
+  if(S.spin||CT.sel.length!==5)return toast('Потрібно рівно 5 предметів');
+  const r=ITEMS[S.inv.find(x=>x.uid===CT.sel[0]).id].rarity,nx=RAR[RAR.indexOf(r)+1];
+  if(!nx)return;
+  S.inv=S.inv.filter(e=>!CT.sel.includes(e.uid));CT.sel=[];
+  const L=BYR[nx],id=L[Math.random()*L.length|0];
+  S.inv.push({id,uid:nid(S)});S.opened++;save();
+  AU.win(nx);confetti(40);if(RAR.indexOf(nx)>=3)shake();
+  toast('🔨 Контракт: '+ITEMS[id].name);addXP(25);ctRender();
+}
+
+/* ---- Монетка ---- */
+const CF={bet:100};
+function cfHTML(){
+  return `<div id="cf" class="glass p-4 rounded-3xl space-y-3 mt-4 text-center"><h2 class="text-sm font-black tracking-widest text-yellow-300">🪙 МОНЕТКА</h2><p class="text-[10px] text-slate-400">Шанс 48% · виграш x2</p>
+  <div id="cfc" class="text-5xl">🪙</div>
+  <div class="flex gap-2"><input type="number" min="1" class="inp" value="${CF.bet}" oninput="CF.bet=Math.max(1,parseInt(this.value)||1)"><button onclick="cfGo()" class="px-5 rounded-xl bg-yellow-400 text-black font-black text-xs">КИНУТИ</button></div></div>`;
+}
+function cfGo(){
+  if(S.spin)return;const b=CF.bet|0;
+  if(b<1||b>S.stars)return toast('❌ Недостатньо Stars');
+  S.spin=true;S.stars-=b;save();
+  const c=$('cfc');c.classList.add('shk');
+  setTimeout(()=>{
+    S.spin=false;c.classList.remove('shk');
+    if(Math.random()<.48){S.stars+=b*2;c.textContent='🟡';AU.win('rare');confetti(20);toast('🎉 +⭐ '+b)}
+    else{c.textContent='⚫';AU.tone(110,0,.5,'square',.1);toast('💥 −⭐ '+b)}
+    save();
+  },700);
+}
+const _rg3=renderGames;
+renderGames=function(m){_rg3(m);m.insertAdjacentHTML('beforeend',ctHTML()+cfHTML())};
+
+/* ---- Досягнення ---- */
+const ACH=[
+['a1','🎁 Перший кейс',()=>S.opened>=1,500],
+['a2','📦 10 кейсів',()=>S.opened>=10,2000],
+['a3','🏭 100 кейсів',()=>S.opened>=100,2000],
+['a4','🟡 Легендарка в інвентарі',()=>S.inv.some(e=>RAR.indexOf(ITEMS[e.id].rarity)>=3),3000],
+['a5','🔴 Міфік в інвентарі',()=>S.inv.some(e=>ITEMS[e.id].rarity==='mythic'),4000],
+['a6','🆙 Рівень 5',()=>lvlOf(S.xp)>=5,2500],
+['a7','💰 Інвентар на 10 000 ⭐',()=>iv(S.inv)>=10000,3000],
+['a8','🔥 Серія 7 днів',()=>(S.streak||0)>=7,3000]];
+function achHTML(){
+  S.ach=S.ach||{};
+  return `<div class="glass p-4 rounded-3xl space-y-2 mt-4"><h2 class="text-sm font-black tracking-widest text-center text-amber-300">🏅 ДОСЯГНЕННЯ</h2>`+
+  ACH.map(([id,n,f,r])=>{const done=S.ach[id],ok=!done&&f();
+    return `<div class="flex items-center justify-between gap-2 bg-slate-800/50 rounded-xl px-3 py-2"><span class="text-[11px] font-black">${n}</span>
+    <button ${ok?'':'disabled'} onclick="claimAch('${id}')" class="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-extrabold ${done?'bg-slate-800 text-green-400':ok?'bg-amber-400 text-black':'bg-slate-800 text-slate-500'}">${done?'✅':'⭐ '+r.toLocaleString()}</button></div>`}).join('')+'</div>';
+}
+function claimAch(id){
+  const a=ACH.find(x=>x[0]===id);S.ach=S.ach||{};
+  if(!a||S.ach[id]||!a[2]())return;
+  S.ach[id]=1;S.stars+=a[3];save();confetti(30);toast('🏅 +⭐ '+a[3].toLocaleString());go('bonuses',null,true);
+}
+const _rb3=renderBonuses;
+renderBonuses=function(m){_rb3(m);m.firstElementChild.insertAdjacentHTML('beforeend',achHTML())};
+
+/* збереження + скидання між акаунтами */
+const _save3=save;
+save=function(){
+  _save3();
+  if(ME){try{const U=users();if(U[ME]){U[ME].d.ach=S.ach||{};LSset('sn_users',U)}}catch(e){}}
+};
+const _en3=enter;
+enter=function(k){S.ach={};CT.sel=[];_en3(k)};
+/* ===== FIREBASE ===== */
+firebase.initializeApp({
+  apiKey:"ВСТАВТЕ_ВАШ_apiKey",
+  authDomain:"sncase-ac88a.firebaseapp.com",
+  projectId:"sncase-ac88a",
+  storageBucket:"sncase-ac88a.firebasestorage.app",
+  messagingSenderId:"98701662498",
+  appId:"1:98701662498:web:1c4936b159b5b130986d7b"
+});
+onlineBoot=async function(){
+  try{
+    const c=await firebase.auth().signInAnonymously(),id=c.user.uid,fs=firebase.firestore();
+    const db={doc:p=>{const r=fs.doc(p);r.acquire=async()=>({acquired:true});return r},collection:n=>fs.collection(n)};
+    ON.db=db;ON.uid=id;
+    const snap=await db.doc('players/'+id).get();
+    if(snap.exists){const d=snap.data();S.stars=d.stars|0;S.inv=(d.inv||[]).filter(x=>ITEMS[x.id]);S.opened=d.opened|0;S.promo=Object.assign({},S.promo,d.promo||{})}
+    ON.ready=true;
+    if(!ON.sub){ON.sub=1;
+      db.collection('players').onSnapshot(s=>{const P={};s.docs.forEach(d=>P[d.id]=d.data());ON.players=P;changed()},()=>{});
+      db.collection('trades').where('involved','array-contains',id).onSnapshot(s=>{ON.trades=s.docs.map(d=>({id:d.id,...d.data()}));settle();changed()},()=>{});
+    }
+    save();return true;
+  }catch(e){console.error(e);return false}
+};
 /* ============ INIT ============ */
 hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
 </script>
+
 </body>
 </html>
