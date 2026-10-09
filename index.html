@@ -892,6 +892,28 @@ onlineBoot=async function(){
 hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
 </script>
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyBZ-Kel5oEqYg-2wmC_RK-z7OPHYmZwox4",
+    authDomain: "sncase-ac88a.firebaseapp.com",
+    projectId: "sncase-ac88a",
+    storageBucket: "sncase-ac88a.firebasestorage.app",
+    messagingSenderId: "98701662498",
+    appId: "1:98701662498:web:1c4936b159b5b130986d7b",
+    measurementId: "G-70K3PQJQ3D"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
 </body>
 </html>
