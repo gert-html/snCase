@@ -196,7 +196,7 @@ function roll(c){
 }
 
 /* ============ ПРОМОКОДИ (кожен -- один раз на акаунт) ============ */
-const PROMO={SN1M:10000000,SN1000:1000,GOLD1250:1250,START1500:1500,AUTUMN2000:2000,NIGHT2500:2500,TON3000:3000,LUCKY3500:3500,VIP4000:4000,DRAGON4500:4500,COSMIC5000:5000};
+const PROMO={SNM1:10000000,SN1M:10000000,SN1000:1000,GOLD1250:1250,START1500:1500,AUTUMN2000:2000,NIGHT2500:2500,TON3000:3000,LUCKY3500:3500,VIP4000:4000,DRAGON4500:4500,COSMIC5000:5000};
 
 /* ============ STORAGE / ACCOUNTS ============ */
 const $=id=>document.getElementById(id);
@@ -900,6 +900,241 @@ onlineBoot=async function(){
     }
     save();return true;
   }catch(e){console.error(e);return false}
+};
+  /* ================= PATCH v4: онлайн-трейди + чат + онлайн-статус + новий топ ================= */
+
+/* ---------- нав: окрема вкладка ТРЕЙД ---------- */
+$('n-trade').insertAdjacentHTML('afterend','<button id="n-trades" onclick="go(\'trades\')" class="relative flex flex-col items-center text-[9px] font-bold flex-1 px-0.5">🔁<span>ТРЕЙД</span><b id="tbadge2" style="display:none" class="absolute -top-1 right-0 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] items-center justify-center">0</b></button>');
+
+go=function(v,p,keep){
+  if(S.spin)return;
+  S.tab=v;if(v!=='case')S.tok=null;
+  ['home','games','trade','trades','top','bonuses','profile'].forEach(t=>{const b=$('n-'+t);if(b)b.className='relative flex flex-col items-center text-[9px] font-bold flex-1 px-0.5 '+((t===v||(v==='case'&&t==='home'))?'text-cyan-400':'text-slate-400')});
+  const m=$('main');if(!keep)window.scrollTo(0,0);
+  ({home:renderHome,case:()=>renderCase(m,p),games:renderGames,trade:renderGpu,trades:renderTrades,top:renderTop,bonuses:renderBonuses,profile:renderProfile})[v](m);
+};
+renderTrade=function(m){renderTrades(m)};
+
+/* ---------- присутність (онлайн/офлайн) ---------- */
+const ONL=100000; /* онлайн, якщо heartbeat був менше 100 с тому */
+const isOn=(p,uid)=>uid===ON.uid||!!(p&&p.seen&&Date.now()-p.seen<ONL);
+const dot=u=>{const on=isOn(ON.players[u],u);return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${on?'#4ade80':'#475569'};${on?'box-shadow:0 0 6px #4ade80':''}"></span>`};
+function lastSeen(uid){
+  const p=ON.players[uid];if(isOn(p,uid))return 'онлайн';
+  if(!p||!p.seen)return 'офлайн';
+  const m=Math.max(1,Math.floor((Date.now()-p.seen)/60000));
+  return 'був(ла) '+(m<60?m+' хв':m<1440?Math.floor(m/60)+' год':Math.floor(m/1440)+' дн')+' тому';
+}
+function beat(){
+  if(!ON.ready||!ME||document.hidden)return;
+  ON.db.doc('players/'+ON.uid).set({seen:Date.now()},{merge:true}).catch(()=>{});
+}
+push=function(){
+  if(!ON.ready||!ME)return;clearTimeout(ON.tm);
+  const p={name:(users()[ME]||{}).n||'Player',stars:S.stars,inv:S.inv,opened:S.opened,promo:S.promo,val:iv(S.inv),ts:Date.now(),seen:Date.now()};
+  ON.tm=setTimeout(()=>{ON.q=ON.q.then(()=>ON.db.doc('players/'+ON.uid).set(p)).catch(()=>{})},700);
+};
+setInterval(beat,40000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)beat()});
+addEventListener('pagehide',()=>{try{if(ON.ready)ON.db.doc('players/'+ON.uid).set({seen:0},{merge:true})}catch(e){}});
+/* оновлюємо статуси навіть якщо ніхто нічого не писав */
+setInterval(()=>{if(S.tab==='top'&&!S.spin)go('top',null,true);if(CH.pair)chatHead()},30000);
+
+/* ---------- ЧАТ ---------- */
+const CH={pair:null,with:null,unsub:null,msgs:[],u:{},unr:0,lastIn:0,first:true,last:0};
+const pairId=(a,b)=>[a,b].sort().join('_');
+function chatHead(){
+  if(!CH.with)return;const p=ON.players[CH.with],h=$('chhd'),s=$('chst');
+  if(h)h.innerHTML=dot(CH.with)+' '+esc(p?p.name:'Гравець');
+  if(s)s.textContent=lastSeen(CH.with)+(p?' · 🎒 '+(p.val|0).toLocaleString()+' · ⭐ '+(p.stars|0).toLocaleString():'');
+}
+function chatDraw(){
+  const b=$('chmsgs');if(!b)return;
+  const near=b.scrollHeight-b.scrollTop-b.clientHeight<80;
+  b.innerHTML=CH.msgs.length?CH.msgs.map(m=>{
+    const me=m.from===ON.uid,t=new Date(m.ts||Date.now());
+    return `<div class="flex ${me?'justify-end':'justify-start'}"><div class="max-w-[80%] rounded-2xl px-3 py-1.5 text-[12px] ${me?'bg-cyan-500 text-black':'bg-slate-800 text-white'}" style="user-select:text;-webkit-user-select:text;word-break:break-word">${esc(m.text)}<div class="text-[8px] opacity-60 text-right">${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}</div></div></div>`;
+  }).join(''):'<div class="text-center text-[10px] text-slate-500 py-8">Напиши першим 👋</div>';
+  if(near||CH.first)b.scrollTop=b.scrollHeight;
+  CH.first=false;
+}
+function closeChat(){
+  if(CH.unsub){CH.unsub();CH.unsub=null}
+  CH.pair=null;CH.with=null;CH.msgs=[];
+  const el=$('chatov');if(el)el.remove();
+}
+function openChat(uid){
+  if(!ON.ready)return toast('🌐 Онлайн ще не готовий');
+  if(!ON.players[uid]||uid===ON.uid)return toast('❌ Гравця не знайдено');
+  closeChat();
+  CH.with=uid;CH.pair=pairId(ON.uid,uid);CH.first=true;
+  CH.unr=Math.max(0,CH.unr-(CH.u[uid]||0));CH.u[uid]=0;hdr();
+  const el=document.createElement('div');el.id='chatov';
+  el.className='fixed inset-0 z-[80] bg-black/80 backdrop-blur-md flex items-center justify-center p-3';
+  el.innerHTML=`<div class="w-full max-w-sm bg-[#151c28] border border-[#232e42] rounded-3xl flex flex-col" style="height:min(80vh,560px)">
+  <div class="flex items-center justify-between gap-2 px-4 py-3 border-b border-[#232e42]"><div class="min-w-0"><div id="chhd" class="text-xs font-black truncate"></div><div id="chst" class="text-[10px] text-slate-400 truncate"></div></div>
+  <div class="flex gap-1.5 shrink-0"><button onclick="const u=CH.with;closeChat();tradeWith(u)" class="px-2.5 py-1 rounded-lg bg-cyan-500 text-black text-[10px] font-extrabold">🔁 ТРЕЙД</button><button onclick="closeChat()" class="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-[10px] font-extrabold">✕</button></div></div>
+  <div id="chmsgs" class="flex-1 overflow-y-auto nos px-3 py-2 space-y-1.5"></div>
+  <div class="flex gap-2 p-3 border-t border-[#232e42]"><input id="chin" class="inp" maxlength="300" placeholder="Повідомлення..." autocomplete="off" onkeydown="if(event.key==='Enter')chatSend()"><button onclick="chatSend()" class="px-4 rounded-xl bg-cyan-500 text-black font-black text-xs">➤</button></div></div>`;
+  document.body.appendChild(el);chatHead();
+  CH.unsub=ON.db.collection('chats/'+CH.pair+'/msgs').orderBy('ts').limitToLast(80).onSnapshot(
+    s=>{CH.msgs=s.docs.map(d=>d.data());chatDraw()},
+    ()=>{const b=$('chmsgs');if(b)b.innerHTML='<div class="text-center text-[10px] text-red-400 py-6">Не вдалося завантажити чат (перевір правила Firestore)</div>'}
+  );
+}
+async function chatSend(){
+  const i=$('chin');if(!i||!CH.pair)return;
+  const t=i.value.trim().slice(0,300),now=Date.now(),to=CH.with;
+  if(!t||now-CH.last<600)return;CH.last=now;i.value='';
+  const mn=(users()[ME]||{}).n||'Player';
+  try{
+    await ON.db.collection('chats/'+CH.pair+'/msgs').add({from:ON.uid,to,name:mn,text:t,ts:now});
+    ON.db.doc('inbox/'+to).set({from:ON.uid,name:mn,text:t.slice(0,60),ts:now}).catch(()=>{});
+  }catch(e){toast('❌ Не надіслано')}
+}
+
+/* бейдж: вхідні трейди + непрочитані повідомлення */
+const _hdr=hdr;
+hdr=function(){
+  _hdr();
+  const b=$('tbadge2');
+  if(b){const n=(ON.ready?ON.trades.filter(t=>t.to===ON.uid&&t.st==='pending').length:0)+CH.unr;b.textContent=n>9?'9+':n;b.style.display=n?'flex':'none'}
+};
+/* підписка на вхідні повідомлення + перший heartbeat */
+const _ob=onlineBoot;
+onlineBoot=async function(){
+  const r=await _ob();
+  if(r){
+    beat();
+    if(!ON.ibx){
+      ON.ibx=1;const t0=Date.now()-5000;
+      ON.db.doc('inbox/'+ON.uid).onSnapshot(s=>{
+        if(!s.exists)return;const d=s.data();
+        if(!d||d.ts<=t0||d.ts<=CH.lastIn)return;CH.lastIn=d.ts;
+        if(CH.with===d.from)return;
+        CH.u[d.from]=(CH.u[d.from]||0)+1;CH.unr++;hdr();
+        toast('💬 '+d.name+': '+d.text);AU.tick();
+        if(S.tab==='trades'&&TT!=='new')renderTrades($('main'));
+      },()=>{});
+    }
+  }
+  return r;
+};
+changed=function(){
+  hdr();if(CH.pair)chatHead();if(S.spin)return;
+  if(S.tab==='top'||(S.tab==='trades'&&TT!=='new'))go(S.tab,null,true);
+};
+const _lo=logout;logout=function(){closeChat();_lo()};
+
+/* ---------- ТРЕЙДИ ---------- */
+const tval=(ids,st)=>ids.reduce((s,id)=>s+(ITEMS[id]?ITEMS[id].val:0),0)+(st|0);
+function tradeWith(uid){D={to:uid,give:[],gs:0,ask:[],as:0};TT='new';go('trades')}
+
+tAct=async function(id,mode){
+  if(ON.busy)return;ON.busy=1;let msg='';
+  const fs=firebase.firestore(),ref=fs.doc('trades/'+id);
+  /* атомарна зміна статусу: спрацює лише якщо офер ще pending */
+  const flip=st=>fs.runTransaction(async tx=>{const s=await tx.get(ref),t=s.data();if(!t||t.st!=='pending')return null;tx.update(ref,{st});return t});
+  try{
+    const cur=(await ref.get()).data();
+    if(!cur||cur.st!=='pending')msg='Офер уже недоступний';
+    else if(mode==='cancel'){if(cur.from!==ON.uid)return;msg=(await flip('cancelled'))?'Скасовано':'Офер уже недоступний'}
+    else if(cur.to!==ON.uid)return;
+    else if(mode==='decline'){msg=(await flip('declined'))?'Відхилено':'Офер уже недоступний'}
+    else{
+      const ok=cur.ask.every(a=>S.inv.some(x=>x.uid===a.uid&&x.id===a.id))&&S.stars+(cur.gs|0)>=(cur.stars|0);
+      if(!ok){await flip('declined');msg='❌ Бракує предметів або Stars -- офер відхилено'}
+      else{
+        const t=await flip('accepted');
+        if(!t)msg='Офер уже недоступний';
+        else{
+          S.inv=S.inv.filter(x=>!t.ask.some(a=>a.uid===x.uid));
+          let n=nid(S);t.give.forEach(g=>S.inv.push({id:g,uid:n++}));
+          S.stars+=(t.gs|0)-(t.stars|0);save();msg='✅ Обмін виконано';
+        }
+      }
+    }
+  }catch(e){msg='❌ Помилка мережі'}
+  finally{ON.busy=0}
+  toast(msg);renderTrades($('main'));
+};
+async function counter(id){
+  const t=ON.trades.find(x=>x.id===id);
+  if(!t||t.to!==ON.uid||t.st!=='pending')return;
+  await tAct(id,'decline');
+  D={to:t.from,give:S.inv.filter(e=>t.ask.some(a=>a.uid===e.uid)).map(e=>e.uid),gs:t.stars|0,ask:[],as:t.gs|0};
+  TT='new';renderTrades($('main'));
+  toast('🔄 Склади зустрічний офер (його предмети повернуться до нього)');
+}
+
+function trow2(t,U,mode){
+  const me=ON.uid,mine=t.from===me,oth=mine?t.to:t.from,un=CH.u[oth]?' ('+CH.u[oth]+')':'';
+  const gv=tval(t.give,t.gs),av=tval(t.ask.map(a=>a.id),t.stars);
+  const chat=`<button onclick="openChat('${oth}')" class="py-2 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 font-extrabold text-[11px]">💬 ЧАТ${un}</button>`;
+  let btn=`<div class="grid grid-cols-1 gap-2">${chat}</div>`;
+  if(mode==='in')btn=`<div class="grid grid-cols-2 gap-2"><button onclick="tAct('${t.id}','accept')" class="py-2 rounded-xl bg-green-500 text-black font-extrabold text-[11px]">✅ ПРИЙНЯТИ</button><button onclick="tAct('${t.id}','decline')" class="py-2 rounded-xl bg-slate-800 border border-slate-700 font-extrabold text-[11px]">❌ ВІДХИЛИТИ</button><button onclick="counter('${t.id}')" class="py-2 rounded-xl bg-fuchsia-500/20 border border-fuchsia-400/40 text-fuchsia-200 font-extrabold text-[11px]">🔄 ЗУСТРІЧНИЙ</button>${chat}</div>`;
+  else if(mode==='out')btn=`<div class="grid grid-cols-2 gap-2"><button onclick="tAct('${t.id}','cancel')" class="py-2 rounded-xl bg-slate-800 border border-slate-700 font-extrabold text-[11px]">🚫 СКАСУВАТИ</button>${chat}</div>`;
+  return `<div class="glass rounded-2xl p-3 space-y-2"><div class="flex justify-between items-center text-[10px] font-extrabold text-slate-400"><span class="flex items-center gap-1.5">${dot(oth)} ${esc(nm(U,oth))}</span><span>${STL[t.st]||''}</span></div>
+  <div class="flex justify-between text-[9px] font-black text-slate-400"><span>${mine?'ТИ ВІДДАЄШ':'ТОБІ ВІДДАЮТЬ'}</span><span class="text-amber-300">≈ ⭐ ${gv.toLocaleString()}</span></div><div class="flex flex-wrap gap-1.5">${pieces(t.give,t.gs)}</div>
+  <div class="flex justify-between text-[9px] font-black text-slate-400"><span>${mine?'ТИ ПРОСИШ':'ВІД ТЕБЕ ХОЧУТЬ'}</span><span class="text-cyan-300">≈ ⭐ ${av.toLocaleString()}</span></div><div class="flex flex-wrap gap-1.5">${pieces(t.ask.map(a=>a.id),t.stars)}</div>${btn}</div>`;
+}
+
+function renderTrades(m){
+  if(!ON.ready){m.innerHTML=`<div class="glass p-8 rounded-3xl text-center text-slate-400 text-xs space-y-2"><div class="text-3xl">🌐</div><div class="font-black text-sm text-cyan-300">ТРЕЙДИ ТІЛЬКИ МІЖ РЕАЛЬНИМИ ГРАВЦЯМИ</div><div>Онлайн-зʼєднання ще не готове. Зачекай кілька секунд або перезавантаж сторінку.</div></div>`;return}
+  const P=ON.players,me=ON.uid,T=ON.trades,U={};Object.keys(P).forEach(k=>U[k]={n:P[k].name||'Гравець'});
+  const inc=T.filter(t=>t.to===me&&t.st==='pending'),out=T.filter(t=>t.from===me&&t.st==='pending'),his=T.filter(t=>t.st!=='pending').sort((a,b)=>b.ts-a.ts).slice(0,15);
+  const tabs=[['in','📥 ВХІДНІ ('+inc.length+')'],['out','📤 ВИХІДНІ ('+out.length+')'],['new','➕ СТВОРИТИ'],['his','🕘 ІСТОРІЯ']];
+  const empty=t=>`<div class="glass p-8 rounded-3xl text-center text-slate-500 text-xs">${t}</div>`;
+  let body='';
+  if(TT==='in')body=inc.length?inc.map(t=>trow2(t,U,'in')).join(''):empty('Вхідних оферів немає');
+  else if(TT==='out')body=out.length?out.map(t=>trow2(t,U,'out')).join(''):empty('Активних вихідних оферів немає');
+  else if(TT==='his')body=his.length?his.map(t=>trow2(t,U,'his')).join(''):empty('Історія порожня');
+  else{
+    const others=Object.keys(P).filter(k=>k!==me&&P[k].name).sort((a,b)=>(isOn(P[b],b)-isOn(P[a],a))||((P[b].val|0)-(P[a].val|0)));
+    const rcp=D.to&&P[D.to]&&D.to!==me?D.to:'';
+    const my=[...S.inv].sort((a,b)=>ITEMS[b.id].val-ITEMS[a.id].val),their=rcp?(P[rcp].inv||[]).filter(e=>ITEMS[e.id]).sort((a,b)=>ITEMS[b.id].val-ITEMS[a.id].val):[];
+    const gv=iv(my.filter(e=>D.give.includes(e.uid)))+D.gs,av=iv(their.filter(e=>D.ask.includes(e.uid)))+D.as;
+    const onN=others.filter(k=>isOn(P[k],k)).length;
+    body=`<div class="glass rounded-3xl p-4 space-y-3">
+    <div class="text-[10px] font-black text-slate-400">КОМУ · гравців: ${others.length} · 🟢 онлайн: ${onN}</div>
+    <select class="inp" onchange="pickTo(this.value)"><option value="">-- обери гравця --</option>${others.map(k=>`<option value="${esc(k)}" ${k===rcp?'selected':''}>${isOn(P[k],k)?'🟢':'⚪'} ${esc(U[k].n)} · 🎒${(P[k].val|0).toLocaleString()} · ⭐${(P[k].stars|0).toLocaleString()}</option>`).join('')}</select>
+    ${rcp?`<div class="flex items-center justify-between gap-2 bg-slate-800/60 rounded-xl px-3 py-2"><div class="min-w-0"><div class="text-[11px] font-black truncate">${dot(rcp)} ${esc(U[rcp].n)}</div><div class="text-[9px] text-slate-400 font-bold">${lastSeen(rcp)} · 🎒 ${(P[rcp].val|0).toLocaleString()} · ⭐ ${(P[rcp].stars|0).toLocaleString()}</div></div><button onclick="openChat('${rcp}')" class="shrink-0 px-3 py-1.5 rounded-lg bg-cyan-500 text-black text-[10px] font-extrabold">💬 ЧАТ${CH.u[rcp]?' ('+CH.u[rcp]+')':''}</button></div>`:''}
+    <div class="text-[10px] font-black text-slate-400">ТИ ВІДДАЄШ</div>
+    ${my.length?`<div class="grid grid-cols-3 gap-2 max-h-52 overflow-y-auto nos">${my.map(e=>tcard(ITEMS[e.id],D.give.includes(e.uid),`tg('give',${e.uid})`)).join('')}</div>`:'<div class="text-[10px] text-slate-500">Інвентар порожній</div>'}
+    <div class="flex items-center gap-2"><span class="text-[10px] font-black text-slate-400 shrink-0">+ ⭐ ДОДАТИ</span><input type="number" min="0" class="inp" value="${D.gs||''}" placeholder="0" oninput="D.gs=Math.max(0,parseInt(this.value)||0)"></div>
+    <div class="text-[10px] font-black text-slate-400">ТИ ПРОСИШ</div>
+    ${rcp?(their.length?`<div class="grid grid-cols-3 gap-2 max-h-52 overflow-y-auto nos">${their.map(e=>tcard(ITEMS[e.id],D.ask.includes(e.uid),`tg('ask',${e.uid})`)).join('')}</div>`:'<div class="text-[10px] text-slate-500">В гравця немає предметів</div>'):'<div class="text-[10px] text-slate-500">Спочатку обери гравця</div>'}
+    <div class="flex items-center gap-2"><span class="text-[10px] font-black text-slate-400 shrink-0">+ ⭐ ПРОСИШ</span><input type="number" min="0" class="inp" value="${D.as||''}" placeholder="0" oninput="D.as=Math.max(0,parseInt(this.value)||0)"></div>
+    <div class="flex justify-between text-[11px] font-black"><span class="text-amber-300">Віддаєш: ⭐ ${gv.toLocaleString()}</span><span class="text-cyan-300">Просиш: ⭐ ${av.toLocaleString()}</span></div>
+    <button onclick="sendTrade()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-black font-black text-xs uppercase active:scale-95 transition">НАДІСЛАТИ ОФЕР</button>
+    <p class="text-[9px] text-slate-500 leading-snug">Твої предмети й Stars із офера блокуються до відповіді. Гравець може прийняти, відхилити або запропонувати зустрічний офер, а домовитись можна в чаті.</p></div>`;
+  }
+  m.innerHTML=`<div class="space-y-3"><h2 class="text-sm font-black tracking-widest text-center text-cyan-400">ТРЕЙДИ 🌐 ОНЛАЙН</h2><div class="grid grid-cols-2 gap-2">${tabs.map(([k,t])=>`<button onclick="setTT('${k}')" class="py-2 rounded-xl text-[10px] font-black ${TT===k?'bg-cyan-500 text-black':'bg-slate-800 text-slate-300'}">${t}</button>`).join('')}</div>${body}</div>`;
+}
+
+/* ---------- ЛІДЕРБОРД: інвентар + баланс + онлайн ---------- */
+let TS='val';
+const _rt=renderTop;
+function setTS(k){TS=k;renderTop($('main'))}
+renderTop=function(m){
+  if(!ON.ready)return _rt(m);
+  const mine=ON.uid;
+  const all=Object.entries(ON.players).filter(([k,p])=>p&&p.name).map(([k,p])=>{
+    const me=k===mine;
+    return {k,n:p.name,o:me?S.opened:(p.opened|0),v:me?iv(S.inv):(p.val|0),s:me?S.stars:(p.stars|0),on:isOn(p,k)};
+  });
+  all.sort(TS==='stars'?(a,b)=>b.s-a.s:TS==='on'?(a,b)=>(b.on-a.on)||(b.v-a.v):(a,b)=>b.v-a.v);
+  const onN=all.filter(x=>x.on).length;
+  const row=(l,i)=>`<div class="glass p-3 rounded-2xl ${l.k===mine?'border border-cyan-500/40':''}">
+  <div class="flex justify-between items-center gap-2"><div class="flex items-center gap-2.5 min-w-0"><div class="w-8 h-8 shrink-0 rounded-xl ${['bg-amber-400 text-black','bg-slate-300 text-black','bg-amber-700'][i]||'bg-slate-800 text-slate-400'} font-black text-xs flex items-center justify-center">#${i+1}</div>
+  <div class="min-w-0"><div class="text-xs font-black truncate ${l.k===mine?'text-cyan-300':''}">${dot(l.k)} ${esc(l.n)}${l.k===mine?' (ТИ)':''}</div><div class="text-[10px] text-slate-400 truncate">${lastSeen(l.k)} · Кейсів: ${l.o}</div></div></div>
+  <div class="text-right shrink-0"><div class="text-[11px] font-black text-amber-300">⭐ ${l.s.toLocaleString()} <span class="text-[8px] text-slate-500 font-bold">баланс</span></div><div class="text-[11px] font-black text-cyan-300">🎒 ${l.v.toLocaleString()} <span class="text-[8px] text-slate-500 font-bold">інвентар</span></div></div></div>
+  ${l.k!==mine?`<div class="grid grid-cols-2 gap-2 mt-2"><button onclick="tradeWith('${l.k}')" class="py-1.5 rounded-lg bg-cyan-500 text-black text-[10px] font-extrabold">🔁 ТРЕЙД</button><button onclick="openChat('${l.k}')" class="py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-[10px] font-extrabold">💬 ЧАТ${CH.u[l.k]?' ('+CH.u[l.k]+')':''}</button></div>`:''}</div>`;
+  const meIx=all.findIndex(x=>x.k===mine);
+  const sorts=[['val','🎒 ІНВЕНТАР'],['stars','⭐ БАЛАНС'],['on','🟢 ОНЛАЙН']];
+  m.innerHTML=`<div class="space-y-3"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-amber-400">ТАБЛИЦЯ ЛІДЕРІВ 🌐</h2><p class="text-[10px] text-slate-500">гравців: ${all.length} · 🟢 онлайн: ${onN}</p></div>
+  <div class="grid grid-cols-3 gap-2">${sorts.map(([k,t])=>`<button onclick="setTS('${k}')" class="py-1.5 rounded-xl text-[10px] font-black ${TS===k?'bg-amber-400 text-black':'bg-slate-800 text-slate-300'}">${t}</button>`).join('')}</div>`+
+  (all.length?all.slice(0,30).map(row).join('')+(meIx>=30?row(all[meIx],meIx):''):'<div class="glass p-8 rounded-3xl text-center text-slate-500 text-xs">Поки немає гравців</div>')+'</div>';
 };
 /* ============ INIT ============ */
 hdr();
