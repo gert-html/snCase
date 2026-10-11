@@ -4,6 +4,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>snCase -- NFT Case Simulator</title>
@@ -878,18 +879,79 @@ save=function(){
 const _en3=enter;
 enter=function(k){S.ach={};CT.sel=[];_en3(k)};
 /* ===== FIREBASE ===== */
+/* ===== FIREBASE (Realtime Database) ===== */
 firebase.initializeApp({
-    apiKey:"AIzaSyBZ-Kel5oEqYg-2wmC_RK-z7OPHYmZwox4",
+  apiKey:"AIzaSyBZ-Kel5oEqYg-2wmC_RK-z7OPHYmZwox4",
   authDomain:"sncase-ac88a.firebaseapp.com",
+  databaseURL:"https://sncase-ac88a-default-rtdb.europe-west1.firebasedatabase.app",
   projectId:"sncase-ac88a",
   storageBucket:"sncase-ac88a.firebasestorage.app",
   messagingSenderId:"98701662498",
   appId:"1:98701662498:web:1c4936b159b5b130986d7b"
 });
+
+/* RTDB не зберігає порожні масиви -- повертаємо їх назад */
+const ARR={trades:['give','ask','involved'],players:['inv','fav']};
+function rtNorm(path,v){
+  if(v==null||typeof v!=='object')return v;
+  (ARR[path.split('/')[0]]||[]).forEach(k=>{
+    const a=v[k];
+    if(a==null)v[k]=[];else if(!Array.isArray(a))v[k]=Object.values(a);
+  });
+  return v;
+}
+const rtClean=d=>JSON.parse(JSON.stringify(d));
+function rtTx(ref,path,fn){
+  let old=null;
+  return ref.transaction(cur=>{
+    if(cur===null)return cur;
+    const c=rtNorm(path,rtClean(cur)),r=fn(c);
+    if(r===undefined)return;
+    old=c;return r;
+  },undefined,false).then(res=>res.committed?old:null);
+}
+function rtDoc(path){
+  const ref=firebase.database().ref(path);
+  const snap=s=>({exists:s.exists(),id:s.key,data:()=>rtNorm(path,s.val())});
+  return {
+    get:async()=>snap(await ref.once('value')),
+    set:(d,o)=>o&&o.merge?ref.update(rtClean(d)):ref.set(rtClean(d)),
+    update:d=>ref.update(rtClean(d)),
+    onSnapshot:(cb,er)=>{const f=s=>cb(snap(s));ref.on('value',f,er||(()=>{}));return()=>ref.off('value',f)},
+    tx:fn=>rtTx(ref,path,fn)
+  };
+}
+function rtQuery(name,st){
+  const base=firebase.database().ref(name);
+  const cp=o=>rtQuery(name,Object.assign({},st,o));
+  const qs=s=>{const docs=[];s.forEach(c=>{docs.push({id:c.key,data:()=>rtNorm(name,c.val())})});return docs};
+  const merge=arr=>{const m=new Map();arr.forEach(a=>a.forEach(d=>m.set(d.id,d)));const docs=[...m.values()];return{docs,size:docs.length,empty:!docs.length}};
+  const srcs=()=>{
+    if(st.has)return [base.orderByChild('from').equalTo(st.has),base.orderByChild('to').equalTo(st.has)];
+    let q=base;
+    if(st.eq)q=q.orderByChild(st.eq[0]).equalTo(st.eq[1]);else if(st.ord)q=q.orderByChild(st.ord);
+    if(st.last)q=q.limitToLast(st.last);
+    if(st.first)q=q.limitToFirst(st.first);
+    return [q];
+  };
+  return {
+    where:(f,op,v)=>op==='array-contains'?cp({has:v}):cp({eq:[f,v]}),
+    orderBy:f=>cp({ord:f}),
+    limit:n=>cp({first:n}),
+    limitToLast:n=>cp({last:n}),
+    add:d=>base.push().set(rtClean(d)),
+    get:async()=>merge((await Promise.all(srcs().map(q=>q.once('value')))).map(s=>qs(s))),
+    onSnapshot:(cb,er)=>{
+      const Q=srcs(),R=new Array(Q.length).fill(null);
+      const F=Q.map((q,i)=>{const f=s=>{R[i]=qs(s);if(R.every(Boolean))cb(merge(R))};q.on('value',f,er||(()=>{}));return f});
+      return()=>Q.forEach((q,i)=>q.off('value',F[i]));
+    }
+  };
+}
 onlineBoot=async function(){
   try{
-    const c=await firebase.auth().signInAnonymously(),id=c.user.uid,fs=firebase.firestore();
-    const db={doc:p=>{const r=fs.doc(p);r.acquire=async()=>({acquired:true});return r},collection:n=>fs.collection(n)};
+    const c=await firebase.auth().signInAnonymously(),id=c.user.uid;
+    const db={doc:rtDoc,collection:n=>rtQuery(n,{})};
     ON.db=db;ON.uid=id;
     const snap=await db.doc('players/'+id).get();
     if(snap.exists){const d=snap.data();S.stars=d.stars|0;S.inv=(d.inv||[]).filter(x=>ITEMS[x.id]);S.opened=d.opened|0;S.promo=Object.assign({},S.promo,d.promo||{})}
@@ -1649,6 +1711,62 @@ onlineBoot=async function(){
 const _en5=enter;
 enter=function(k){Object.assign(S,XDEF());ON.xl=false;GC.msgs=[];_en5(k)};
 /* ================= END PATCH v5 ================= */
+/* ===== RTDB: транзакції трейдів і маркету ===== */
+tAct=async function(id,mode){
+  if(ON.busy)return;ON.busy=1;let msg='';
+  const ref=ON.db.doc('trades/'+id);
+  const flip=st=>ref.tx(t=>t.st==='pending'?{...t,st}:undefined);
+  try{
+    const cur=(await ref.get()).data();
+    if(!cur||cur.st!=='pending')msg='Офер уже недоступний';
+    else if(mode==='cancel'){if(cur.from!==ON.uid)return;msg=(await flip('cancelled'))?'Скасовано':'Офер уже недоступний'}
+    else if(cur.to!==ON.uid)return;
+    else if(mode==='decline'){msg=(await flip('declined'))?'Відхилено':'Офер уже недоступний'}
+    else{
+      const ok=cur.ask.every(a=>S.inv.some(x=>x.uid===a.uid&&x.id===a.id))&&S.stars+(cur.gs|0)>=(cur.stars|0);
+      if(!ok){await flip('declined');msg='❌ Бракує предметів або Stars -- офер відхилено'}
+      else{
+        const t=await flip('accepted');
+        if(!t)msg='Офер уже недоступний';
+        else{
+          S.inv=S.inv.filter(x=>!t.ask.some(a=>a.uid===x.uid));
+          let n=nid(S);t.give.forEach(g=>S.inv.push({id:g,uid:n++}));
+          S.stars+=(t.gs|0)-(t.stars|0);save();msg='✅ Обмін виконано';
+        }
+      }
+    }
+  }catch(e){console.error(e);msg='❌ '+(e.code||'Помилка мережі')}
+  finally{ON.busy=0}
+  toast(msg);renderTrades($('main'));
+};
+mkBuy=async function(id){
+  if(MK.busy)return;const l=ON.mk.find(x=>x.id===id);if(!l||l.seller===ON.uid)return;
+  if(S.stars<l.price)return toast('❌ Недостатньо Stars');
+  MK.busy=1;S.stars-=l.price;save();
+  let ok=false;
+  try{ok=!!(await ON.db.doc('market/'+id).tx(d=>d.st==='open'?{...d,st:'sold',buyer:ON.uid}:undefined))}
+  catch(e){console.error(e);toast('❌ '+(e.code||'помилка'))}
+  if(ok){S.inv.push({id:l.item.id,uid:nid(S)});save();confetti(25);toast('✅ Куплено: '+ITEMS[l.item.id].name)}
+  else{S.stars+=l.price;save();toast('❌ Лот недоступний')}
+  MK.busy=0;mRender();
+};
+mkCancel=async function(id){
+  try{
+    const o=await ON.db.doc('market/'+id).tx(d=>(d.st==='open'&&d.seller===ON.uid)?{...d,st:'cancelled'}:undefined);
+    toast(o?'↩️ Лот знято':'Лот уже недоступний');
+  }catch(e){console.error(e);toast('❌ '+(e.code||'помилка'))}
+};
+mkSettle=function(){
+  ON.mine.forEach(l=>{
+    if(l.claimed||l.st==='open'||ON.mkc[l.id])return;ON.mkc[l.id]=1;
+    ON.db.doc('market/'+l.id).tx(d=>(!d.claimed&&d.st!=='open')?{...d,claimed:true}:undefined)
+    .then(d=>{if(!d)return;
+      if(d.st==='sold'){const g=Math.floor(d.price*.95);S.stars+=g;toast('💰 Продано: +⭐ '+fmt(g))}
+      else{S.inv.push({id:d.item.id,uid:nid(S)});toast('↩️ Предмет повернуто')}
+      save()})
+    .catch(()=>{delete ON.mkc[l.id]});
+  });
+};
 /* ============ INIT ============ */
 hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
