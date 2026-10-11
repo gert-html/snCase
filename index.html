@@ -1184,7 +1184,7 @@ go=function(v,p,keep){
   ({home:renderHome,case:()=>renderCase(m,p),games:renderGames,trade:renderGpu,trades:renderTrades,top:renderTop,bonuses:renderBonuses,more:renderMore,profile:renderProfile})[v](m);
 };
 const MORE={t:'col'};
-const MT=[['col','📚','КОЛЕКЦІЯ'],['q','🎯','КВЕСТИ'],['bp','🎫','ПАС'],['mk','🏪','МАРКЕТ'],['bt','⚔️','БАТЛ'],['gm','🎮','ІГРИ'],['gc','🌍','ЧАТ'],['pf','🖼️','ПРОФІЛЬ'],['sh','💳','МАГАЗИН'],['rf','👥','РЕФ']];
+const MT=[['col','📚','КОЛЕКЦІЯ'],['q','🎯','КВЕСТИ'],['bp','🎫','ПАС'],['mk','🏪','МАРКЕТ'],['bt','⚔️','БАТЛ'],['gm','🎮','ІГРИ'],['gc','🌍','ЧАТ'],['pf','🖼️','ПРОФІЛЬ'],['rf','👥','РЕФ']];
 function renderMore(m){
   m.innerHTML=`<div class="space-y-3"><div class="grid grid-cols-5 gap-1.5">${MT.map(([k,e,t])=>`<button onclick="setMT('${k}')" class="py-1.5 rounded-xl text-[8px] font-black flex flex-col items-center ${MORE.t===k?'bg-cyan-500 text-black':'bg-slate-800 text-slate-300'}"><span class="text-base">${e}</span>${t}</button>`).join('')}</div><div id="mbody"></div></div>`;
   mRender();
@@ -1192,7 +1192,7 @@ function renderMore(m){
 function setMT(k){if(S.spin)return;MORE.t=k;renderMore($('main'))}
 function mRender(){
   const b=$('mbody');if(!b)return;
-  const F={col:colHTML,q:qHTML,bp:bpHTML,mk:mkHTML,bt:btHTML,gm:gmHTML,gc:gcHTML,pf:pfHTML,sh:shHTML,rf:rfHTML};
+  const F={col:colHTML,q:qHTML,bp:bpHTML,mk:mkHTML,bt:btHTML,gm:gmHTML,gc:gcHTML,pf:pfHTML,rf:rfHTML};
   b.innerHTML=F[MORE.t]();
   if(MORE.t==='gc'){gcSub();gcDraw()}
   if(MORE.t==='gm'){mnDraw();crDraw()}
