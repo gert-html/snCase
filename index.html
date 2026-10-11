@@ -2115,6 +2115,155 @@ go=function(v,p,keep){
 
 })();
 // ===================== END PATCH v6 =====================
+// ===================== PATCH v7: ОПТИМІЗАЦІЯ (тільки швидкодія) =====================
+// ВСТАВ ПЕРЕД БЛОКОМ  /* ============ INIT ============ */  (після PATCH v6)
+(function(){
+
+/* ---------------------------------------------------------------
+   1. CSS: прибираємо найважчі ефекти (blur, нескінченні анімації left/filter)
+---------------------------------------------------------------- */
+const css=`
+/* фон статичний (великий fixed-шар більше не перемальовується щокадру) */
+body::before,body::after{animation:none!important}
+
+/* blur тільки в шапці/навігації; картки без backdrop-filter і без mask-рамки */
+main .glass{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+ box-shadow:0 14px 30px -20px rgba(0,0,0,.9),inset 0 0 0 1px rgba(34,211,238,.12),inset 0 1px 0 rgba(255,255,255,.06)}
+main .glass::before{display:none!important}
+body header.glass,body nav.glass{-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+
+/* блиск: тільки transform (GPU), без анімації left; на старих картках вимкнено */
+@keyframes fsh2{0%,55%{transform:translateX(-250%) rotate(15deg)}100%{transform:translateX(450%) rotate(15deg)}}
+@keyframes shine2{0%{transform:translateX(-150%) skewX(-20deg)}55%,100%{transform:translateX(350%) skewX(-20deg)}}
+main [onclick^="go('case'"]:not(.fcard)::after{display:none!important;animation:none!important}
+.fcard::after{left:0!important;animation:fsh2 5s ease-in-out infinite!important;will-change:transform}
+button[class*="bg-gradient-to-r"]::after{left:0!important;animation:shine2 3.4s infinite!important}
+
+/* левітація та блискітки лише там, де їх мало (герой-картка, модалка, апгрейд) */
+main [onclick^="go('case'"]:not(.fcard) .fl,.fcard:not(.fhero) .fl{animation:none!important}
+.tw{animation:none!important;opacity:.75}
+#mc .tw,.fa-c .tw,#up .tw{animation:tw 1.6s infinite!important}
+
+/* drop-shadow фільтр залишаємо тільки для легендарних/міфічних у списках */
+main svg[style*="drop-shadow"]:not([style*="0 0 9px"]):not([style*="0 0 13px"]):not([style*="0 0 19px"]){filter:none!important}
+.fa-c svg[style*="drop-shadow"]{filter:drop-shadow(0 0 8px rgba(255,255,255,.35))!important}
+
+/* не рендеримо те, чого не видно */
+main [onclick^="go('case'"],.fcard{content-visibility:auto;contain-intrinsic-size:auto 200px}
+.fhero{contain-intrinsic-size:auto 260px}
+.rcard{contain:layout paint style}
+#strip,.tkr{will-change:transform}
+`;
+const st=document.createElement('style');st.id='opt7';st.textContent=css;document.head.appendChild(st);
+
+/* ---------------------------------------------------------------
+   2. КЕШ МАЛЮНКІВ: SVG кожного предмета будується один раз
+---------------------------------------------------------------- */
+const _art=art,AC={};
+art=function(it){
+  const k=it&&it.id;
+  if(!k)return _art(it);
+  let s=AC[k];
+  if(!s){
+    const u0=UID,raw=_art(it);
+    s=AC[k]=raw.split('g'+u0+'a').join('~a~').split('g'+u0+'r').join('~r~');
+  }
+  const n='g'+(UID++);
+  return s.split('~a~').join(n+'a').split('~r~').join(n+'r');
+};
+
+/* ---------------------------------------------------------------
+   3. КЕШ ШАНСІВ + швидкий roll (раніше odds рахувався 60 разів на смугу)
+---------------------------------------------------------------- */
+const OC={},RO={};
+odds=function(c){
+  let r=OC[c.id];
+  if(!r){
+    const cnt={};c.items.forEach(i=>{const it=ITEMS[i];if(it.sw)return;cnt[it.rarity]=(cnt[it.rarity]||0)+1});
+    const w=c.items.map(i=>{const it=ITEMS[i];return it.sw||RW[it.rarity]/cnt[it.rarity]}),t=w.reduce((a,b)=>a+b,0);
+    r=OC[c.id]=c.items.map((i,k)=>({...ITEMS[i],w:w[k],chance:(w[k]/t*100)}));
+  }
+  return r.slice();
+};
+roll=function(c){
+  let r=RO[c.id];
+  if(!r){const o=odds(c);let t=0;r=RO[c.id]={o,cum:o.map(i=>t+=i.w),t}}
+  const x=Math.random()*r.t;
+  for(let i=0;i<r.cum.length;i++)if(x<r.cum[i])return r.o[i];
+  return r.o[0];
+};
+
+/* ---------------------------------------------------------------
+   4. ВІДКРИТТЯ КЕЙСА: ширина читається один раз, translate3d (без layout щокадру)
+---------------------------------------------------------------- */
+spinCase=function(){
+  if(S.spin)return;const c=cs(S.cur);if(!c)return;
+  const now=Date.now(),tok=tokOK(),mm=tok?1:S.mult;
+  if(!tok&&c.price===0&&S.cd[c.id]>now){toast('⏳ Зачекайте '+Math.ceil((S.cd[c.id]-now)/60000)+' хв');return}
+  const cost=tok?0:c.price*mm;
+  if(S.stars<cost){toast('❌ Недостатньо Stars ⭐');return}
+  S.stars-=cost;if(!tok&&c.price===0)S.cd[c.id]=now+c.cd*1000;
+  if(tok){S.inv=S.inv.filter(e=>e.uid!==S.tok);S.tok=null}
+  save();
+  S.spin=true;const btn=$('openBtn');btn.disabled=true;btn.classList.add('opacity-50');
+  const wins=[];for(let i=0;i<mm;i++)wins.push(roll(c));
+  const strip=$('strip'),CW=104,T=45,W=strip.parentElement.clientWidth;
+  const cards=strip.querySelectorAll('.rcard');cards[T].outerHTML=cardHTML(wins[0]);
+  const target=T*CW+48-W/2+(Math.random()*40-20);
+  const Dd=4800;let t0=null,last=-1;
+  function f(ts){
+    if(!t0)t0=ts;const p=Math.min((ts-t0)/Dd,1),x=target*(1-Math.pow(1-p,4));
+    strip.style.transform='translate3d(-'+x+'px,0,0)';
+    const idx=Math.floor((x+W/2)/CW);if(idx!==last){last=idx;AU.tick()}
+    if(p<1)return requestAnimationFrame(f);
+    S.spin=false;const got=wins.map(w=>{const e={id:w.id,uid:nid(S)};S.inv.push(e);S.opened++;return e});
+    save();const best=wins.reduce((a,b)=>RAR.indexOf(b.rarity)>RAR.indexOf(a.rarity)?b:a);
+    if(tok)go('case',S.cur,true);else{btn.disabled=false;btn.classList.remove('opacity-50')}
+    AU.win(best.rarity);winModal(got);
+  }
+  requestAnimationFrame(f);
+};
+
+/* ---------------------------------------------------------------
+   5. save(): групуємо. Раніше КОЖЕН виклик 5 разів парсив і писав увесь sn_users
+---------------------------------------------------------------- */
+const _FL={v:0};
+/* push з керованою затримкою (1.2 с звичайно, 0 при виході зі сторінки) */
+push=function(){
+  if(!ON.ready||!ME||!ON.xl)return;clearTimeout(ON.tm);bpRoll();
+  const x={};XK.forEach(k=>{x[k]=S[k]});
+  const p={name:(users()[ME]||{}).n||'Player',stars:S.stars,inv:S.inv,opened:S.opened,promo:S.promo,val:iv(S.inv),ts:Date.now(),seen:Date.now(),
+    code:myCode(),ava:S.ava||'',frame:(typeof S.frame==='number'?S.frame:''),title:S.title||'',fav:S.fav||[],lvl:lvlOf(S.xp),x};
+  const sp={season:S.bp.season,uid:ON.uid,name:p.name,xp:S.bp.xp,ts:Date.now()};
+  ON.tm=setTimeout(()=>{
+    ON.q=ON.q.then(()=>ON.db.doc('players/'+ON.uid).set(p)).catch(()=>{});
+    ON.db.doc('sxp/'+sp.season+'_'+ON.uid).set(sp).catch(()=>{});
+  },_FL.v?0:1200);
+};
+const _sv=save;let pend=0,tmS=0;
+function flush(force){
+  if(tmS){clearTimeout(tmS);tmS=0}
+  if(pend){pend=0;_FL.v=1;try{_sv()}finally{_FL.v=0}}
+  if(force){_FL.v=1;try{push()}finally{_FL.v=0}}
+}
+save=function(){
+  try{xTrack()}catch(e){}
+  pend=1;hdr(); /* інтерфейс оновлюється одразу */
+  if(!tmS)tmS=setTimeout(()=>{tmS=0;if(pend){pend=0;_sv()}},document.hidden?3000:350);
+};
+addEventListener('pagehide',()=>flush(true));
+document.addEventListener('visibilitychange',()=>{if(document.hidden)flush(true)});
+const _en7=enter;enter=function(k){flush();_en7(k)};
+const _lo7=logout;logout=function(){flush();_lo7()};
+
+/* ---------------------------------------------------------------
+   6. Оновлення екрана від онлайн-змін не частіше ніж раз на 0.4 с
+---------------------------------------------------------------- */
+const _ch7=changed;let chT=0;
+changed=function(){hdr();clearTimeout(chT);chT=setTimeout(_ch7,400)};
+
+})();
+// ===================== END PATCH v7 =====================
 /* ============ INIT ============ */
 hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
