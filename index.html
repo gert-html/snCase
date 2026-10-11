@@ -1767,7 +1767,354 @@ mkSettle=function(){
     .catch(()=>{delete ON.mkc[l.id]});
   });
 };
+// ===================== PATCH v6: UI 2.0 + ФРУКТИ & ОВОЧІ =====================
+// ВСТАВ ЦЕЙ КОД В КІНЕЦЬ ГОЛОВНОГО <script>, ПРЯМО ПЕРЕД БЛОКОМ "INIT"
+// (перед рядком:  hdr(); (function(){const s=LSget('sn_sess' ... )
+(function(){
 
+/* ---------------------------------------------------------------
+   1. ШРИФТ + СТИЛІ
+---------------------------------------------------------------- */
+document.head.insertAdjacentHTML('beforeend','<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&display=swap" rel="stylesheet">');
+
+const css=`
+@property --ang{syntax:'<angle>';initial-value:0deg;inherits:false}
+@keyframes angs{to{--ang:360deg}}
+@keyframes aur{to{transform:translate3d(3%,2%,0) scale(1.1) rotate(2deg)}}
+@keyframes twk{0%,100%{opacity:.25}50%{opacity:.65}}
+@keyframes shine{0%{left:-60%}55%,100%{left:140%}}
+@keyframes fsh{0%,55%{left:-80%}100%{left:140%}}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes bump{50%{transform:scale(1.15)}}
+@keyframes toastIn{from{opacity:0;scale:.85;translate:0 -12px}}
+@keyframes pulseNew{0%,100%{box-shadow:0 0 0 0 rgba(244,114,182,.6)}50%{box-shadow:0 0 0 7px rgba(244,114,182,0)}}
+
+/* ---- фон: аврора + зорі ---- */
+html{background:#070a12}
+body{background:transparent!important}
+body::before{content:"";position:fixed;inset:-20%;z-index:-2;pointer-events:none;
+ background:
+  radial-gradient(40% 35% at 15% 10%,rgba(34,211,238,.20),transparent 70%),
+  radial-gradient(35% 30% at 90% 20%,rgba(217,70,239,.17),transparent 70%),
+  radial-gradient(45% 40% at 70% 95%,rgba(250,204,21,.11),transparent 70%),
+  radial-gradient(40% 40% at 5% 85%,rgba(59,130,246,.16),transparent 70%);
+ animation:aur 22s ease-in-out infinite alternate}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;
+ background-image:
+  radial-gradient(1.2px 1.2px at 12% 18%,#fff,transparent),radial-gradient(1px 1px at 78% 12%,#bae6fd,transparent),
+  radial-gradient(1.4px 1.4px at 44% 36%,#fff,transparent),radial-gradient(1px 1px at 88% 52%,#fbcfe8,transparent),
+  radial-gradient(1.2px 1.2px at 22% 70%,#fff,transparent),radial-gradient(1px 1px at 62% 82%,#bae6fd,transparent),
+  radial-gradient(1.2px 1.2px at 8% 92%,#fff,transparent),radial-gradient(1px 1px at 94% 90%,#fff,transparent);
+ animation:twk 5s ease-in-out infinite}
+::selection{background:rgba(34,211,238,.35)}
+*::-webkit-scrollbar{width:6px;height:6px}
+*::-webkit-scrollbar-thumb{background:linear-gradient(#22d3ee,#a78bfa);border-radius:9px}
+
+/* ---- скляні картки з градієнтною рамкою ---- */
+body .glass{background:linear-gradient(145deg,rgba(32,44,70,.68),rgba(12,18,32,.74));
+ -webkit-backdrop-filter:blur(18px) saturate(1.5);backdrop-filter:blur(18px) saturate(1.5);
+ box-shadow:0 18px 40px -22px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.07)}
+main .glass{position:relative}
+main .glass::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
+ background:linear-gradient(140deg,rgba(34,211,238,.5),rgba(255,255,255,0) 35%,rgba(255,255,255,0) 65%,rgba(217,70,239,.4));
+ -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+
+/* ---- шапка ---- */
+header.glass{border-radius:0 0 26px 26px;border-top:0;box-shadow:0 12px 40px -16px rgba(0,0,0,.95),0 1px 0 rgba(34,211,238,.18)}
+.logo{width:34px;height:34px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;
+ background:linear-gradient(135deg,#2563eb,#22d3ee);box-shadow:0 0 18px rgba(34,211,238,.55),inset 0 1px 0 rgba(255,255,255,.4)}
+.brand{font-family:'Unbounded',Inter,sans-serif;font-weight:800;font-size:15px;letter-spacing:.02em;
+ background:linear-gradient(90deg,#a5f3fc,#fff 50%,#fde68a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tag{font-size:7px;letter-spacing:.28em;color:#64748b;font-weight:800;margin-top:3px}
+.chip{display:flex;align-items:center;gap:4px;padding:5px 9px;border-radius:999px;font-weight:800;font-size:11px;
+ background:rgba(15,23,42,.7);border:1px solid rgba(255,255,255,.1);color:#cbd5e1;transition:transform .2s}
+.chip-star{background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.45);color:#fde68a;box-shadow:0 0 16px -6px rgba(251,191,36,.7)}
+.chip-lv{border-color:rgba(34,211,238,.4);color:#67e8f9}
+.chip.bump{animation:bump .4s}
+@media(max-width:380px){.chip-lv{display:none}}
+
+/* ---- нижня навігація: плаваюча капсула ---- */
+nav.glass{left:10px!important;right:10px!important;bottom:calc(8px + env(safe-area-inset-bottom,0px))!important;
+ border-radius:26px;padding-bottom:.5rem!important;
+ background:linear-gradient(180deg,rgba(24,34,56,.86),rgba(10,15,28,.92));
+ box-shadow:0 20px 50px -10px rgba(0,0,0,.95),0 0 0 1px rgba(34,211,238,.08),inset 0 1px 0 rgba(255,255,255,.1)}
+nav button{font-size:18px!important;line-height:1.1;padding:4px 0!important;border-radius:16px;min-width:0;transition:transform .25s,color .2s,background .25s}
+nav button span{font-size:7.5px;font-weight:800;letter-spacing:.03em;margin-top:2px;opacity:.9}
+nav button.text-cyan-400{color:#67e8f9!important;transform:translateY(-4px);
+ background:radial-gradient(circle at 50% 30%,rgba(34,211,238,.2),transparent 70%)}
+nav button.text-cyan-400::after{content:"";position:absolute;bottom:-2px;left:50%;width:18px;height:3px;border-radius:3px;transform:translateX(-50%);
+ background:linear-gradient(90deg,#22d3ee,#a78bfa);box-shadow:0 0 10px #22d3ee}
+
+/* ---- заголовки ---- */
+main h2{font-family:'Unbounded',Inter,system-ui,sans-serif;font-size:.8rem!important;font-weight:800;letter-spacing:.05em!important;text-shadow:0 0 22px rgba(255,255,255,.12)}
+main h2.mb-3{display:flex;align-items:center;gap:10px;color:#e2e8f0}
+main h2.mb-3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(34,211,238,.45),transparent)}
+
+/* ---- старі картки кейсів ---- */
+main [onclick^="go('case'"]:not(.fcard){position:relative;overflow:hidden;border-radius:22px!important;border:1px solid rgba(34,211,238,.22)!important;
+ background:linear-gradient(180deg,rgba(28,40,66,.9),rgba(8,12,22,.95))!important;
+ box-shadow:0 14px 30px -16px #000,inset 0 1px 0 rgba(255,255,255,.08);transition:transform .25s,box-shadow .25s,border-color .25s}
+main [onclick^="go('case'"]:not(.fcard):hover{border-color:rgba(34,211,238,.6)!important;box-shadow:0 18px 40px -14px rgba(34,211,238,.5)}
+main [onclick^="go('case'"]:not(.fcard)::after{content:"";position:absolute;top:-50%;left:-80%;width:45%;height:200%;pointer-events:none;
+ background:linear-gradient(100deg,transparent,rgba(255,255,255,.09),transparent);transform:rotate(15deg);animation:fsh 7s ease-in-out infinite}
+
+/* ---- кнопки: блиск + свічення ---- */
+button[class*="bg-gradient-to-r"]{position:relative;overflow:hidden}
+button[class*="bg-gradient-to-r"]::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;pointer-events:none;
+ background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-20deg);animation:shine 3.4s infinite}
+button.from-amber-400{box-shadow:0 10px 26px -10px rgba(251,191,36,.75)}
+button.from-cyan-500{box-shadow:0 10px 26px -10px rgba(34,211,238,.7)}
+button.from-fuchsia-500{box-shadow:0 10px 26px -10px rgba(217,70,239,.7)}
+button.from-red-500{box-shadow:0 10px 26px -10px rgba(239,68,68,.7)}
+button.from-orange-400{box-shadow:0 10px 26px -10px rgba(251,146,60,.7)}
+button{transition:transform .15s,filter .15s,background-color .2s}
+button:not(:disabled):active{transform:scale(.96)}
+button:disabled{cursor:not-allowed}
+
+/* ---- інпути, XP, тости, модалки ---- */
+.inp{background:rgba(8,13,24,.8)!important;border-color:rgba(148,163,184,.18)!important;transition:border-color .2s,box-shadow .2s}
+.inp:focus{border-color:#22d3ee!important;box-shadow:0 0 0 3px rgba(34,211,238,.18),0 0 24px -6px rgba(34,211,238,.6)}
+main .from-cyan-400.to-amber-400{box-shadow:0 0 12px rgba(34,211,238,.6)}
+main .rounded-2xl.bg-gradient-to-b{box-shadow:0 10px 22px -14px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.07)}
+body>div[class*="bg-cyan-500"][class*="rounded-full"]{background:linear-gradient(135deg,#22d3ee,#60a5fa)!important;color:#04121f!important;
+ box-shadow:0 12px 30px -8px rgba(34,211,238,.75);animation:toastIn .35s cubic-bezier(.2,1.4,.4,1)}
+#ov{background:radial-gradient(circle at 50% 40%,rgba(34,211,238,.14),rgba(0,0,0,.88) 70%)!important}
+#mc{position:relative;background:linear-gradient(160deg,#1a2438,#0d1320)!important;border-color:rgba(34,211,238,.28)!important;
+ box-shadow:0 30px 80px -20px #000}
+#mc::before{content:"";position:absolute;inset:-2px;border-radius:inherit;z-index:-1;filter:blur(16px);opacity:.55;
+ background:conic-gradient(from var(--ang),#22d3ee,#d946ef,#facc15,#22d3ee);animation:angs 6s linear infinite}
+#auth{background:radial-gradient(80% 50% at 50% 0%,rgba(34,211,238,.18),transparent),radial-gradient(60% 40% at 90% 90%,rgba(217,70,239,.16),transparent),#070a12!important}
+
+/* ---- смуга відкриття кейса ---- */
+.mask{position:relative}
+.mask::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;transform:translateX(-50%);z-index:5;pointer-events:none;
+ background:linear-gradient(transparent,#22d3ee,transparent);box-shadow:0 0 14px #22d3ee}
+.rcard{box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 6px 14px -8px #000}
+
+/* ---- поява екрана при переході ---- */
+#main.rise>div>*{animation:rise .5s cubic-bezier(.2,.8,.2,1) backwards}
+#main.rise>div>*:nth-child(2){animation-delay:.06s}
+#main.rise>div>*:nth-child(3){animation-delay:.12s}
+#main.rise>div>*:nth-child(4){animation-delay:.18s}
+#main.rise>div>*:nth-child(5){animation-delay:.24s}
+#main.rise>div>*:nth-child(n+6){animation-delay:.3s}
+
+/* ---- РОЗДІЛ ФРУКТИ & ОВОЧІ ---- */
+.fsec{position:relative;border-radius:28px;padding:14px;overflow:hidden;border:1px solid rgba(255,255,255,.09);
+ background:linear-gradient(160deg,rgba(236,72,153,.13),rgba(34,211,238,.06) 45%,rgba(250,204,21,.09));
+ box-shadow:0 24px 60px -30px rgba(236,72,153,.55)}
+.fsec::after{content:"🍓 🥕 🍍 🍅 🌽";position:absolute;right:-8px;top:4px;font-size:28px;letter-spacing:10px;opacity:.07;transform:rotate(-8deg);white-space:nowrap;pointer-events:none}
+.fhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.ft{font-family:'Unbounded',Inter,sans-serif;font-weight:800;font-size:13px;letter-spacing:.03em;
+ background:linear-gradient(90deg,#fde68a,#f9a8d4 50%,#67e8f9);-webkit-background-clip:text;background-clip:text;color:transparent}
+.fs{font-size:10px;color:#94a3b8;font-weight:700;margin-top:3px}
+.fnew{flex-shrink:0;font-size:10px;font-weight:900;padding:4px 10px;border-radius:999px;color:#2a0a14;
+ background:linear-gradient(135deg,#f472b6,#fb923c);animation:pulseNew 1.8s infinite}
+.fcard{position:relative;overflow:hidden;border-radius:22px;padding:12px 10px;cursor:pointer;text-align:center;
+ border:1px solid rgba(var(--rgb),.45);
+ background:radial-gradient(120% 80% at 50% 0%,rgba(var(--rgb),.30),transparent 65%),linear-gradient(180deg,#141d33,#070b15);
+ box-shadow:0 16px 34px -16px rgba(var(--rgb),.85),inset 0 1px 0 rgba(255,255,255,.12)}
+.fcard::after{content:"";position:absolute;top:-50%;left:-80%;width:50%;height:200%;pointer-events:none;
+ background:linear-gradient(100deg,transparent,rgba(255,255,255,.13),transparent);transform:rotate(15deg);animation:fsh 5s ease-in-out infinite}
+.fbadge{position:absolute;top:8px;left:8px;z-index:3;font-size:8.5px;font-weight:900;letter-spacing:.04em;padding:3px 8px;border-radius:999px;color:#fff;
+ background:rgba(var(--rgb),.25);border:1px solid rgba(var(--rgb),.6);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.fart{position:relative;display:flex;align-items:flex-end;justify-content:center;height:104px;margin-top:14px}
+.fart::before{content:"";position:absolute;left:50%;bottom:0;width:72%;height:34px;transform:translateX(-50%);
+ background:radial-gradient(closest-side,rgba(var(--rgb),.6),transparent);filter:blur(6px)}
+.fa{position:relative;z-index:1;width:54px;height:54px;flex-shrink:0}
+.fa-l{transform:rotate(-14deg);margin-right:-12px;opacity:.92}
+.fa-r{transform:rotate(14deg);margin-left:-12px;opacity:.92}
+.fa-c{width:86px;height:86px;z-index:2;margin-bottom:8px}
+.fhero .fart{height:134px}
+.fhero .fa{width:68px;height:68px}
+.fhero .fa-c{width:112px;height:112px}
+.fname{font-family:'Unbounded',Inter,sans-serif;font-weight:800;font-size:10.5px;letter-spacing:.02em;margin-top:8px;color:#fff;text-shadow:0 0 16px rgba(var(--rgb),.9)}
+.fhero .fname{font-size:14px}
+.fmeta{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:8px}
+.fprice{font-weight:900;font-size:11px;padding:4px 10px;border-radius:999px;color:#1a1200;background:linear-gradient(135deg,#fde68a,#f59e0b);box-shadow:0 6px 16px -6px rgba(245,158,11,.8)}
+.fmax{font-size:9px;font-weight:800;color:rgba(255,255,255,.7)}
+
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+`;
+const st=document.createElement('style');st.id='ui6';st.textContent=css;document.head.appendChild(st);
+
+/* ---------------------------------------------------------------
+   2. НОВА ШАПКА + ПЛАВНІ ЛІЧИЛЬНИКИ
+---------------------------------------------------------------- */
+const hd=document.querySelector('header');
+if(hd){
+  hd.innerHTML=`<div class="flex items-center gap-2.5 cursor-pointer" onclick="go('home')"><div class="logo">sn</div><div class="leading-none"><div class="brand">snCase</div><div class="tag">NFT CASES</div></div></div>
+  <div class="flex items-center gap-1.5"><div class="chip chip-lv">🆙 <span id="b-lvl">1</span></div><div class="chip">🪙 <span id="b-coins"></span></div><div class="chip chip-star">⭐ <span id="b-stars"></span></div></div>`;
+}
+const TW={};
+function tweenNum(id,to){
+  const el=document.getElementById(id);if(!el)return;
+  const from=TW[id]==null?to:TW[id];
+  cancelAnimationFrame(TW[id+'r']);
+  if(from===to){TW[id]=to;el.textContent=to.toLocaleString();return}
+  el.textContent=from.toLocaleString();
+  const chip=el.parentElement;
+  if(to>from&&chip){chip.classList.remove('bump');void chip.offsetWidth;chip.classList.add('bump')}
+  const t0=performance.now(),d=650;
+  const f=ts=>{
+    const p=Math.min(1,(ts-t0)/d),v=Math.round(from+(to-from)*(1-Math.pow(1-p,3)));
+    el.textContent=v.toLocaleString();TW[id]=v;
+    if(p<1)TW[id+'r']=requestAnimationFrame(f);
+  };
+  TW[id+'r']=requestAnimationFrame(f);
+}
+const _hdr6=hdr;
+hdr=function(){
+  _hdr6();
+  tweenNum('b-stars',S.stars);tweenNum('b-coins',S.coins);
+  const l=document.getElementById('b-lvl');if(l)l.textContent=lvlOf(S.xp);
+};
+
+/* ---------------------------------------------------------------
+   3. НОВІ МАЛЮНКИ: ФРУКТИ ТА ОВОЧІ (SVG)
+---------------------------------------------------------------- */
+const LEAF='fill="#4ade80" stroke="#166534" stroke-width="2" stroke-linejoin="round"';
+const PEAR='M50,10C58,10 60,22 60,32C60,40 66,46 74,56C82,66 82,78 72,86C62,94 38,94 28,86C18,78 18,66 26,56C34,46 40,40 40,32C40,22 42,10 50,10Z';
+const HL=(d,o)=>`<path d="${d}" stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none" opacity="${o||.7}"/>`;
+const fit=(s,r)=>`<g transform="translate(50 52) rotate(${r}) scale(.88) translate(-50 -50)">${s}</g>`;
+
+Object.assign(K,{
+apple:(A,R,a,b,c)=>`<path d="M50,30C38,18 12,24 12,54C12,76 28,94 42,94C47,94 48,91 50,91C52,91 53,94 58,94C72,94 88,76 88,54C88,24 62,18 50,30Z" fill="${R}" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/><path d="M50,30C50,22 52,14 58,8" stroke="#6b4423" stroke-width="4.5" stroke-linecap="round" fill="none"/><path d="M56,20C62,8 78,8 86,14C78,26 64,28 56,20Z" ${LEAF}/>`+HL('M22,50C24,40 30,33 38,30'),
+pear:(A,R,a,b,c)=>`<path d="${PEAR}" fill="${R}" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/><path d="M50,12C50,8 52,4 56,2" stroke="#6b4423" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M54,12C60,2 74,2 80,8C72,18 60,18 54,12Z" ${LEAF}/>`+HL('M30,64C30,58 34,52 40,48'),
+cherry:(A,R,a,b,c)=>`<path d="M28,52C34,34 46,20 62,10M72,56C70,40 66,24 62,10" stroke="#3f7a2a" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M62,10C72,4 86,8 90,18C78,22 66,20 62,10Z" ${LEAF}/><circle cx="28" cy="72" r="20" fill="${R}" stroke="${c}" stroke-width="2.5"/><circle cx="72" cy="76" r="20" fill="${R}" stroke="${c}" stroke-width="2.5"/><ellipse cx="21" cy="64" rx="5" ry="7" fill="#fff" opacity=".7" transform="rotate(30 21 64)"/><ellipse cx="65" cy="68" rx="5" ry="7" fill="#fff" opacity=".7" transform="rotate(30 65 68)"/>`,
+berry:(A,R,a,b,c)=>{let s='';[[32,46],[50,44],[68,46],[30,58],[44,60],[56,60],[70,58],[39,72],[50,74],[61,72],[50,85]].forEach(([x,y])=>s+=`<ellipse cx="${x}" cy="${y}" rx="1.8" ry="3" fill="#fde68a" stroke="${c}" stroke-width=".5"/>`);
+ return `<path d="M50,92C22,78 10,50 14,34C18,24 34,28 50,32C66,28 82,24 86,34C90,50 78,78 50,92Z" fill="${R}" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/>${s}<path d="M50,32L34,18 44,24 38,8 50,20 62,8 56,24 66,18Z" ${LEAF}/>`+HL('M22,42C24,36 28,33 34,32',.6)},
+banana:(A,R,a,b,c)=>`<path d="M16,26C14,60 40,88 82,80C90,78 92,70 84,68C52,68 34,50 34,22C34,14 18,16 16,26Z" fill="${A}" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/><path d="M21,26C21,54 42,74 80,75" stroke="#fff" stroke-opacity=".5" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="17" y="6" width="15" height="11" rx="3" fill="#5a3a18" transform="rotate(-6 25 11)"/>`,
+citrus:(A,R,a,b,c)=>{let d='';[[30,50],[44,38],[62,44],[70,62],[54,74],[36,72],[52,58]].forEach(([x,y])=>d+=`<circle cx="${x}" cy="${y}" r="1.6" fill="${c}" opacity=".35"/>`);
+ return `<circle cx="50" cy="58" r="36" fill="${R}" stroke="${c}" stroke-width="2.5"/>${d}<path d="M50,22C50,16 52,12 56,8" stroke="#6b4423" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M52,20C60,6 78,8 84,16C74,28 58,28 52,20Z" ${LEAF}/>`+HL('M26,48C28,40 34,34 42,32',.6)},
+lemon:(A,R,a,b,c)=>`<g transform="rotate(-25 50 50)"><path d="M4,50C6,46 10,44 14,44C20,30 34,22 50,22C66,22 80,30 86,44C90,44 94,46 96,50C94,54 90,56 86,56C80,70 66,78 50,78C34,78 20,70 14,56C10,56 6,54 4,50Z" fill="${R}" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/><ellipse cx="38" cy="38" rx="12" ry="5" fill="#fff" opacity=".6" transform="rotate(-15 38 38)"/><path d="M62,32l4,6M72,42l5,2M30,62l-5-3" stroke="${c}" stroke-width="2" stroke-linecap="round" opacity=".4"/></g>`,
+melon:(A,R,a,b,c)=>{let sd='';[[36,46],[50,54],[64,46],[43,60],[58,60]].forEach(([x,y])=>sd+=`<ellipse cx="${x}" cy="${y}" rx="2.6" ry="4" fill="#1f1308" transform="rotate(${x>50?-20:20} ${x} ${y})"/>`);
+ return `<path d="M6,32A44,44 0 0 0 94,32Z" fill="#15803d" stroke="#14532d" stroke-width="2.5" stroke-linejoin="round"/><path d="M11,32A39,39 0 0 0 89,32Z" fill="#ecfccb"/><path d="M15,32A35,35 0 0 0 85,32Z" fill="${R}"/>${sd}<path d="M20,38C26,50 34,57 44,62" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none" opacity=".45"/>`},
+pine:(A,R,a,b,c)=>{let x='';for(let r=0;r<4;r++)for(let k=0;k<4;k++){const px=34+k*11+(r%2?5:0),py=46+r*12;x+=`<path d="M${px-3},${py-3}L${px+3},${py+3}M${px+3},${py-3}L${px-3},${py+3}" stroke="${c}" stroke-width="1.6" stroke-opacity=".55" stroke-linecap="round"/>`}
+ return `<path d="M50,4L40,28 30,14 38,34 20,26 38,40 62,40 80,26 62,34 70,14 60,28Z" fill="#22c55e" stroke="#166534" stroke-width="2" stroke-linejoin="round"/><ellipse cx="50" cy="66" rx="26" ry="32" fill="${R}" stroke="${c}" stroke-width="2.5"/>${x}`+HL('M32,56C32,50 35,45 40,42',.5)},
+grape:(A,R,a,b,c)=>{let g='';[[24,34],[44,34],[64,34],[84,34],[34,52],[54,52],[74,52],[44,70],[64,70],[54,86]].forEach(([x,y])=>g+=`<circle cx="${x}" cy="${y}" r="12" fill="${R}" stroke="${c}" stroke-width="2"/><circle cx="${x-4}" cy="${y-4}" r="2.6" fill="#fff" opacity=".6"/>`);
+ return `<path d="M54,22C54,14 58,8 64,6" stroke="#6b4423" stroke-width="4" stroke-linecap="round" fill="none"/>${g}<path d="M58,16C62,2 80,2 88,8C80,20 64,22 58,16Z" ${LEAF}/>`},
+carrot:(A,R,a,b,c)=>fit(`<path d="M32,34C36,26 64,26 68,34L56,92C54,98 46,98 44,92Z" fill="${R}" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/><path d="M38,46H50M54,60H62M40,72H50M45,84H50" stroke="${c}" stroke-width="2" stroke-linecap="round" opacity=".5"/><path d="M50,28C40,22 34,10 36,2C44,6 50,14 50,28ZM50,28C50,16 54,6 60,0C64,10 58,22 50,28ZM50,28C60,22 70,14 74,6C76,16 68,26 50,28Z" ${LEAF}/>`,22),
+tomato:(A,R,a,b,c)=>{let l='';[-70,-35,0,35,70].forEach(r=>l+=`<ellipse cx="50" cy="25" rx="6" ry="13" fill="#22c55e" stroke="#166534" stroke-width="1.6" transform="rotate(${r} 50 36)"/>`);
+ return `<ellipse cx="50" cy="60" rx="40" ry="34" fill="${R}" stroke="${c}" stroke-width="2.5"/>${l}<circle cx="50" cy="36" r="5" fill="#166534"/>`+HL('M20,56C22,46 28,40 36,37')},
+eggplant:(A,R,a,b,c)=>fit(`<path d="M52,28C72,30 78,50 72,70C66,90 52,98 42,94C30,90 24,76 28,58C32,40 40,28 52,28Z" fill="${R}" stroke="${c}" stroke-width="2.5"/><path d="M34,32C40,24 62,22 70,30C62,38 44,40 34,32Z" fill="#22c55e" stroke="#166534" stroke-width="2"/><path d="M52,26C52,18 54,10 60,4" stroke="#166534" stroke-width="5" stroke-linecap="round" fill="none"/>`+HL('M36,60C36,52 40,46 46,42',.6),28),
+broc:(A,R,a,b,c)=>`<path d="M38,96L42,58H58L62,96Z" fill="#bef264" stroke="#4d7c0f" stroke-width="2" stroke-linejoin="round"/><circle cx="24" cy="50" r="17" fill="${R}" stroke="${c}" stroke-width="2"/><circle cx="76" cy="50" r="17" fill="${R}" stroke="${c}" stroke-width="2"/><circle cx="50" cy="28" r="22" fill="${R}" stroke="${c}" stroke-width="2"/><circle cx="50" cy="52" r="19" fill="${R}" stroke="${c}" stroke-width="2"/><circle cx="42" cy="22" r="5" fill="#fff" opacity=".35"/><circle cx="20" cy="44" r="4" fill="#fff" opacity=".3"/><circle cx="72" cy="44" r="4" fill="#fff" opacity=".3"/><circle cx="46" cy="46" r="4" fill="#fff" opacity=".3"/>`,
+corn:(A,R,a,b,c)=>{let k='';for(let i=0;i<6;i++){const y=16+i*11,xs=i%2?[44,56]:[38,50,62];xs.forEach(x=>k+=`<circle cx="${x}" cy="${y}" r="3.4" fill="${c}" opacity=".28"/><circle cx="${x-1}" cy="${y-1}" r="1.2" fill="#fff" opacity=".7"/>`)}
+ return fit(`<path d="M50,6C68,6 72,28 72,54C72,74 62,84 50,84C38,84 28,74 28,54C28,28 32,6 50,6Z" fill="${R}" stroke="${c}" stroke-width="2.5"/>${k}<path d="M50,98C26,94 20,68 30,46C32,66 40,76 50,80Z" ${LEAF}/><path d="M50,98C74,94 80,68 70,46C68,66 60,76 50,80Z" ${LEAF}/>`,18)},
+pepper:(A,R,a,b,c)=>`<path d="M50,24C28,20 12,36 16,62C19,84 32,92 42,90C46,89 48,86 50,86C52,86 54,89 58,90C68,92 81,84 84,62C88,36 72,20 50,24Z" fill="${R}" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/><path d="M42,88C36,70 36,44 44,28M58,88C64,70 64,44 56,28" stroke="${c}" stroke-width="2" fill="none" opacity=".35"/><path d="M46,24C46,16 50,10 58,6" stroke="#15803d" stroke-width="6" stroke-linecap="round" fill="none"/>`+HL('M24,50C24,42 30,35 38,32'),
+avocado:(A,R,a,b,c)=>`<path d="${PEAR}" fill="${A}" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/><g transform="translate(50 56) scale(.8) translate(-50 -56)"><path d="${PEAR}" fill="#ecfccb"/></g><circle cx="50" cy="68" r="13" fill="#8b5a2b" stroke="#4a2c0f" stroke-width="2"/><ellipse cx="45" cy="63" rx="4" ry="3" fill="#fff" opacity=".5"/>`,
+shroom:(A,R,a,b,c)=>`<path d="M36,52H64L61,88C60,94 40,94 39,88Z" fill="#fff4e0" stroke="#b8a98a" stroke-width="2" stroke-linejoin="round"/><path d="M8,56C8,28 28,10 50,10S92,28 92,56C92,60 88,62 84,62H16C12,62 8,60 8,56Z" fill="${R}" stroke="${c}" stroke-width="2.5"/><circle cx="30" cy="40" r="6" fill="#fff" opacity=".9"/><circle cx="52" cy="26" r="5" fill="#fff" opacity=".9"/><circle cx="70" cy="42" r="7" fill="#fff" opacity=".9"/><circle cx="50" cy="48" r="4" fill="#fff" opacity=".9"/>`,
+pumpkin:(A,R,a,b,c)=>`<ellipse cx="25" cy="60" rx="22" ry="29" fill="${A}" stroke="${c}" stroke-width="2.5"/><ellipse cx="75" cy="60" rx="22" ry="29" fill="${A}" stroke="${c}" stroke-width="2.5"/><ellipse cx="38" cy="60" rx="20" ry="32" fill="${R}" stroke="${c}" stroke-width="2.5"/><ellipse cx="62" cy="60" rx="20" ry="32" fill="${R}" stroke="${c}" stroke-width="2.5"/><ellipse cx="50" cy="60" rx="13" ry="33" fill="${A}" stroke="${c}" stroke-width="2.5"/><path d="M46,30C46,20 50,12 58,10L61,16C56,18 55,22 55,30Z" fill="#4d7c0f" stroke="#1a2e05" stroke-width="2" stroke-linejoin="round"/>`+HL('M18,52C20,44 24,38 30,35',.5),
+peach:(A,R,a,b,c)=>`<circle cx="50" cy="58" r="34" fill="${R}" stroke="${c}" stroke-width="2.5"/><path d="M50,26C40,42 40,72 54,90" stroke="${c}" stroke-width="2.5" stroke-opacity=".45" fill="none" stroke-linecap="round"/><path d="M50,26C50,18 52,12 58,8" stroke="#6b4423" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M54,18C62,6 80,8 86,16C78,28 62,28 54,18Z" ${LEAF}/>`+HL('M26,50C28,42 34,36 42,34',.6)
+});
+
+/* ---------------------------------------------------------------
+   4. ПАЛІТРИ, ПРЕДМЕТИ І 5 НОВИХ КЕЙСІВ
+---------------------------------------------------------------- */
+const N=PAL.length;
+PAL.push(
+ ['#ff9a9a','#e02424','#7a0a0a'], // RED
+ ['#d9f99d','#65a30d','#365314'], // LIME
+ ['#ffd29a','#f97316','#9a3412'], // ORG
+ ['#fff7a0','#facc15','#a16207'], // YEL
+ ['#e9b8ff','#9333ea','#4c1d95'], // PUR
+ ['#ffc2d9','#ec4899','#831843'], // PNK
+ ['#86efac','#16a34a','#14532d'], // GRN
+ ['#ff8a9a','#be123c','#4c0519'], // CRM
+ ['#a3e635','#3f6212','#1a2e05'], // AVO
+ ['#fff1a8','#f59e0b','#92400e'], // GLD
+ ['#c4a3ff','#6d28d9','#2e1065']  // VIO
+);
+const RED=N,LIME=N+1,ORG=N+2,YEL=N+3,PUR=N+4,PNK=N+5,GRN=N+6,CRM=N+7,AVO=N+8,GLD=N+9,VIO=N+10,
+      ICE=4,MNT=9,RNB=14,WHT=19;
+
+/* [kind, назва, палітра, рідкість, ціна предмета у частках від ціни кейса] */
+const FZ=[
+ {id:'fz_orchard',name:'ФРУКТОВИЙ САД',price:20000,badge:'ФРУКТИ 🍎',rgb:'239,68,68',l:[
+  ['apple','Red Apple',RED,'common',.13],['pear','Green Pear',LIME,'common',.15],['banana','Sweet Banana',YEL,'common',.18],
+  ['peach','Juicy Peach',ORG,'rare',.42],['cherry','Sweet Cherry',CRM,'rare',.5],['citrus','Ripe Orange',ORG,'rare',.6],
+  ['apple','Frost Apple',ICE,'epic',1.1],['pear','Rose Pear',PNK,'epic',1.3],['grape','Plum Cluster',PUR,'epic',1.5],
+  ['apple','Golden Apple',GLD,'legendary',3],['cherry','Diamond Cherry',WHT,'legendary',4],
+  ['apple','Apple of Eden',RNB,'mythic',10]]},
+ {id:'fz_veggie',name:'ОВОЧЕВА ГРЯДКА',price:35000,badge:'ОВОЧІ 🥕',rgb:'34,197,94',l:[
+  ['carrot','Fresh Carrot',ORG,'common',.13],['tomato','Red Tomato',RED,'common',.15],['broc','Green Broccoli',GRN,'common',.17],
+  ['corn','Sweet Corn',YEL,'rare',.42],['eggplant','Purple Eggplant',VIO,'rare',.5],['pepper','Red Pepper',RED,'rare',.6],
+  ['carrot','Golden Carrot',GLD,'epic',1.1],['tomato','Fire Tomato',7,'epic',1.3],['broc','Jade Broccoli',MNT,'epic',1.5],
+  ['corn','Gold Corn',GLD,'legendary',3],['eggplant','Void Eggplant',15,'legendary',4],
+  ['pepper','Cosmic Pepper',RNB,'mythic',10]]},
+ {id:'fz_tropic',name:'ТРОПІЧНИЙ МІКС',price:50000,badge:'ТРОПІКИ 🍍',rgb:'250,204,21',l:[
+  ['lemon','Sour Lemon',YEL,'common',.13],['citrus','Sunny Orange',ORG,'common',.15],['avocado','Avocado',AVO,'common',.17],
+  ['melon','Watermelon',RED,'rare',.42],['pine','Pineapple',YEL,'rare',.5],['lemon','Fresh Lime',GRN,'rare',.6],
+  ['melon','Dragon Melon',PNK,'epic',1.1],['pine','Blue Pineapple',ICE,'epic',1.3],['lemon','Neon Lime',MNT,'epic',1.5],
+  ['pine','Golden Pineapple',GLD,'legendary',3],['melon','Crystal Melon',WHT,'legendary',4],
+  ['pine','Pineapple of Gods',RNB,'mythic',10]]},
+ {id:'fz_berry',name:'ЯГІДНИЙ ВИБУХ',price:75000,badge:'ЯГОДИ 🍓',rgb:'217,70,239',l:[
+  ['berry','Strawberry',RED,'common',.13],['grape','Dark Grapes',PUR,'common',.15],['cherry','Wild Cherry',CRM,'common',.17],
+  ['peach','Pink Peach',PNK,'rare',.42],['grape','Rose Grapes',PNK,'rare',.5],['berry','Blue Berry',ICE,'rare',.6],
+  ['cherry','Frost Cherry',ICE,'epic',1.1],['grape','Moon Grapes',5,'epic',1.3],['berry','Neon Strawberry',10,'epic',1.5],
+  ['berry','Gold Strawberry',GLD,'legendary',3],['grape','Diamond Grapes',WHT,'legendary',4],
+  ['berry','Cosmic Berry',RNB,'mythic',10]]},
+ {id:'fz_gold',name:'ЗОЛОТИЙ УРОЖАЙ',price:100000,badge:'GOLD 👑',rgb:'245,158,11',l:[
+  ['pumpkin','Orange Pumpkin',ORG,'common',.13],['shroom','Red Mushroom',RED,'common',.15],['corn','Harvest Corn',YEL,'common',.17],
+  ['pear','Golden Pear',GLD,'rare',.42],['shroom','Moon Mushroom',5,'rare',.5],['eggplant','Midnight Eggplant',VIO,'rare',.6],
+  ['pumpkin','Ghost Pumpkin',0,'epic',1.1],['shroom','Neon Mushroom',MNT,'epic',1.3],['banana','Gold Banana',GLD,'epic',1.5],
+  ['pumpkin','Golden Pumpkin',GLD,'legendary',3],['apple','Platinum Apple',18,'legendary',4],
+  ['pumpkin','King Pumpkin',RNB,'mythic',8]]}
+];
+
+FZ.forEach((d,ci)=>{
+  const ids=[];
+  d.l.forEach((x,i)=>{
+    const id='f'+(ci+1)+'_'+i;
+    /* enumerable:false -> предмети НЕ потрапляють у Колекцію та Апгрейд, але працюють усюди (інвентар, трейди, маркет) */
+    Object.defineProperty(ITEMS,id,{value:{id,kind:x[0],name:x[1].toUpperCase(),pal:x[2],rarity:x[3],val:Math.round(d.price*x[4]/100)*100,fz:1},enumerable:false,writable:true,configurable:true});
+    ids.push(id);
+  });
+  CASES.push({id:d.id,name:d.name,cat:'FARM',price:d.price,badge:d.badge,off:0,n:[0,0,0,0,0],items:ids,rgb:d.rgb,fi:ids[ids.length-1]});
+});
+
+/* ---------------------------------------------------------------
+   5. РОЗДІЛ НА ГОЛОВНІЙ
+---------------------------------------------------------------- */
+function farmSection(){
+  const L=CASES.filter(c=>c.cat==='FARM').sort((a,b)=>b.price-a.price);
+  if(!L.length)return '';
+  const mx=Math.max(...L.map(c=>Math.max(...c.items.map(i=>ITEMS[i].val))));
+  const card=(c,hero)=>{
+    const it=c.items.map(i=>ITEMS[i]).sort((a,b)=>b.val-a.val),top=it[0];
+    return `<div onclick="go('case','${c.id}')" class="fcard rc${hero?' fhero':''}" style="--rgb:${c.rgb};${hero?'grid-column:span 2':''}">
+      <span class="fbadge">${c.badge}</span>
+      <div class="fart"><div class="fa fa-l">${art(it[1])}</div><div class="fa fa-c fl">${art(top)}</div><div class="fa fa-r">${art(it[2])}</div></div>
+      <div class="fname">${c.name}</div>
+      <div class="fmeta"><span class="fprice">⭐ ${fmt(c.price)}</span><span class="fmax">дроп до ⭐ ${fmt(top.val)}</span></div></div>`;
+  };
+  return `<div class="fsec"><div class="fhead"><div><div class="ft">🍎 ФРУКТИ &amp; ОВОЧІ 🥕</div><div class="fs">${L.length} нових кейсів · дроп до ⭐ ${fmt(mx)}</div></div><span class="fnew">NEW</span></div>
+  <div class="grid grid-cols-2 gap-3">${L.map((c,i)=>card(c,i===0)).join('')}</div></div>`;
+}
+const _rh6=renderHome;
+renderHome=function(m){
+  _rh6(m);
+  const w=m.firstElementChild;if(!w)return;
+  const first=w.firstElementChild,html=farmSection();
+  if(first)first.insertAdjacentHTML('afterend',html);else w.insertAdjacentHTML('afterbegin',html);
+};
+
+/* ---------------------------------------------------------------
+   6. ПЛАВНА ПОЯВА ЕКРАНІВ ПРИ ПЕРЕХОДІ
+---------------------------------------------------------------- */
+let RT=0;
+const _go6=go;
+go=function(v,p,keep){
+  if(S.spin)return;
+  _go6(v,p,keep);
+  if(keep)return;
+  const m=document.getElementById('main');
+  m.classList.remove('rise');void m.offsetWidth;m.classList.add('rise');
+  clearTimeout(RT);RT=setTimeout(()=>m.classList.remove('rise'),900);
+};
+
+})();
+// ===================== END PATCH v6 =====================
 /* ============ INIT ============ */
 hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
