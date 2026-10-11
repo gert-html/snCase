@@ -1767,6 +1767,589 @@ mkSettle=function(){
     .catch(()=>{delete ON.mkc[l.id]});
   });
 };
+  /* =====================================================================
+   snCase PATCH v6
+   ВСТАВИТИ ПЕРЕД рядком-коментарем "INIT" (============ INIT ============)
+   (тобто після блоку "RTDB: транзакції трейдів і маркету")
+
+   Що всередині:
+   1. 🥕 Кейс "ОВОЧЕВА СКАРБНИЦЯ" за ⭐ 10 000 (15 NFT-овочів)
+   2. ⚡ Швидке відкриття з галочкою (до 50 000 кейсів за раз)
+   3. 🔴 Жива LIVE-стрічка реальних дропів (ticker + список)
+   4. 🏰 Клани (створення = ⭐ 100 000), скарбниця, чат, щоденний бонус
+   5. 🛠️ Адмін-панель (відкривається промокодом admin4444)
+   6. ✨ Новий інтерфейс (аврора, неон, hero-банер, анімації)
+
+   Рекомендовані правила Realtime Database (щоб працювали нові вузли):
+   {
+     "rules": {
+       ".read": "auth != null", ".write": "auth != null",
+       "players": {".indexOn": ["code"]},
+       "trades": {".indexOn": ["from","to"]},
+       "market": {".indexOn": ["st","seller"]},
+       "feed": {".indexOn": ["ts"]},
+       "global": {".indexOn": ["ts"]},
+       "sxp": {".indexOn": ["season"]},
+       "refs": {".indexOn": ["by"]},
+       "gifts": {".indexOn": ["to"]},
+       "clans": {".indexOn": ["name","tag"]},
+       "chats": {"$p": {"msgs": {".indexOn": ["ts"]}}},
+       "clanchat": {"$c": {".indexOn": ["ts"]}}
+     }
+   }
+   ===================================================================== */
+
+/* ---------- службові ---------- */
+const n0=v=>Math.floor(Number(v)||0);
+XK.push('adm','cc');
+S.adm=false;S.cc=0;
+
+/* =====================================================================
+   A. ОВОЧІ + КЕЙС ЗА 10 000
+   ===================================================================== */
+const P0=PAL.length;
+PAL.push(['#f3d9a8','#b8844a','#5a3a18'],['#fff0f6','#e8a0c8','#7a3a5a'],['#c8ffb8','#2fa84a','#0a4a1a'],['#fff0e0','#d8a080','#6a3a20']);
+
+K.potato=(A,R,a,b,c)=>`<ellipse cx="50" cy="58" rx="38" ry="28" fill="${R}" stroke="${c}" stroke-width="2.5" transform="rotate(-14 50 58)"/><g fill="${c}" opacity=".55"><circle cx="34" cy="56" r="3"/><circle cx="56" cy="46" r="2.5"/><circle cx="66" cy="66" r="3"/><circle cx="44" cy="72" r="2"/><circle cx="72" cy="52" r="2"/></g><ellipse cx="36" cy="46" rx="12" ry="5" fill="#fff" opacity=".4" transform="rotate(-20 36 46)"/>`;
+K.onion=(A,R,a,b,c)=>`<path d="M50,16C54,28 86,38 86,62C86,82 70,92 50,92C30,92 14,82 14,62C14,38 46,28 50,16Z" fill="${R}" stroke="${c}" stroke-width="2.5"/><path d="M50,22C38,42 34,68 42,90M50,22C62,42 66,68 58,90M50,22V92" stroke="${c}" stroke-opacity=".45" fill="none" stroke-width="2"/><path d="M50,16C44,10 46,4 50,2C54,4 56,10 50,16Z" fill="#86efac" stroke="#166534" stroke-width="1.5"/><path d="M44,92l-3,6M50,92v7M56,92l3,6" stroke="#e5d3b3" stroke-width="2" stroke-linecap="round"/><ellipse cx="34" cy="52" rx="6" ry="14" fill="#fff" opacity=".35" transform="rotate(12 34 52)"/>`;
+K.radish=(A,R,a,b,c)=>`<path d="M50,36C74,36 84,52 76,68C70,80 58,86 50,98C42,86 30,80 24,68C16,52 26,36 50,36Z" fill="${R}" stroke="${c}" stroke-width="2.5"/><path d="M50,98C46,90 44,84 46,78C52,84 54,90 50,98Z" fill="#fff" opacity=".85"/><path d="M50,38C34,30 24,16 34,6C44,10 50,22 50,38ZM50,38C66,30 76,16 66,6C56,10 50,22 50,38ZM50,38C46,26 46,14 50,4C54,14 54,26 50,38Z" fill="#4ade80" stroke="#166534" stroke-width="1.5"/><ellipse cx="38" cy="54" rx="8" ry="5" fill="#fff" opacity=".45" transform="rotate(-25 38 54)"/>`;
+K.cucumber=(A,R,a,b,c)=>`<g transform="rotate(-38 50 50)"><rect x="6" y="32" width="88" height="36" rx="18" fill="${A}" stroke="${c}" stroke-width="2.5"/><g fill="#fff" opacity=".35"><circle cx="24" cy="42" r="2"/><circle cx="40" cy="58" r="2"/><circle cx="56" cy="42" r="2"/><circle cx="72" cy="58" r="2"/><circle cx="84" cy="44" r="1.8"/></g><rect x="14" y="36" width="60" height="6" rx="3" fill="#fff" opacity=".35"/><rect x="2" y="44" width="8" height="12" rx="3" fill="#4d7c0f"/></g>`;
+K.carrot=(A,R,a,b,c)=>`<path d="M50,98C44,82 34,56 36,38C38,26 62,26 64,38C66,56 56,82 50,98Z" fill="${A}" stroke="${c}" stroke-width="2.5"/><path d="M38,46h12M50,58h12M40,70h10M52,80h6" stroke="${c}" stroke-opacity=".55" stroke-width="2.5" stroke-linecap="round"/><path d="M50,30C36,26 24,14 30,4C42,8 48,18 50,30ZM50,30C64,26 76,14 70,4C58,8 52,18 50,30ZM50,30C46,20 46,10 50,2C54,10 54,20 50,30Z" fill="#4ade80" stroke="#166534" stroke-width="1.5"/><path d="M42,38C40,50 42,60 46,72" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none" opacity=".5"/>`;
+K.tomato=(A,R,a,b,c)=>`<circle cx="50" cy="58" r="35" fill="${R}" stroke="${c}" stroke-width="2.5"/><ellipse cx="36" cy="44" rx="11" ry="6" fill="#fff" opacity=".55" transform="rotate(-35 36 44)"/><path d="M50,30L56,38L67,34L63,44L74,49L63,53L65,62L50,55L35,62L37,53L26,49L37,44L33,34L44,38Z" fill="#4ade80" stroke="#166534" stroke-width="1.5" stroke-linejoin="round"/><rect x="47" y="14" width="6" height="18" rx="3" fill="#65a30d" stroke="#166534"/>`;
+K.broccoli=(A,R,a,b,c)=>`<path d="M40,98L45,58H55L60,98Z" fill="#bef264" stroke="#4d7c0f" stroke-width="2"/><path d="M45,70L32,56M55,70L68,56" stroke="#a3e635" stroke-width="5" stroke-linecap="round"/><g fill="${R}" stroke="${c}" stroke-width="2"><circle cx="26" cy="46" r="16"/><circle cx="74" cy="46" r="16"/><circle cx="50" cy="30" r="20"/><circle cx="38" cy="54" r="14"/><circle cx="62" cy="54" r="14"/></g><g fill="#fff" opacity=".35"><circle cx="44" cy="22" r="4"/><circle cx="22" cy="40" r="3"/><circle cx="70" cy="40" r="3"/><circle cx="58" cy="48" r="2.5"/></g>`;
+K.corn=(A,R,a,b,c)=>{let k='';for(let r=0;r<7;r++)for(let q=0;q<3;q++)k+=`<ellipse cx="${41+q*9+(r%2?4:0)}" cy="${22+r*9}" rx="4" ry="4.5" fill="#fff" opacity=".28"/>`;return `<g transform="rotate(18 50 50)"><ellipse cx="50" cy="46" rx="21" ry="38" fill="${A}" stroke="${c}" stroke-width="2.5"/>${k}<path d="M50,98C28,84 22,52 32,36C38,58 44,80 50,98Z" fill="#4ade80" stroke="#166534" stroke-width="1.5"/><path d="M50,98C72,84 78,52 68,36C62,58 56,80 50,98Z" fill="#22c55e" stroke="#166534" stroke-width="1.5"/></g>`};
+K.mushroom=(A,R,a,b,c)=>`<path d="M36,50H64L61,88Q50,98 39,88Z" fill="#fde8d0" stroke="#8a6040" stroke-width="2"/><path d="M8,54C8,26 28,8 50,8C72,8 92,26 92,54Z" fill="${R}" stroke="${c}" stroke-width="2.5"/><g fill="#fff" opacity=".9"><circle cx="30" cy="34" r="6"/><circle cx="54" cy="24" r="5"/><circle cx="70" cy="40" r="7"/><circle cx="46" cy="44" r="4"/></g><path d="M12,56H88" stroke="${c}" stroke-width="3" opacity=".6"/>`;
+K.eggplant=(A,R,a,b,c)=>`<path d="M60,24C84,28 90,52 74,72C60,90 36,98 24,86C12,74 28,52 42,40C50,32 50,26 60,24Z" fill="${A}" stroke="${c}" stroke-width="2.5"/><path d="M50,30C42,18 52,10 60,16C68,10 78,20 68,30C62,26 56,32 50,30Z" fill="#4ade80" stroke="#166534" stroke-width="1.5"/><path d="M56,12C56,6 60,4 64,6" stroke="#65a30d" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M60,44C74,48 78,60 70,72" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".45"/>`;
+K.chili=(A,R,a,b,c)=>`<path d="M30,24C56,16 80,30 78,56C76,78 62,92 40,98C54,82 56,64 46,52C38,44 28,40 30,24Z" fill="${A}" stroke="${c}" stroke-width="2.5"/><path d="M30,24C24,16 28,6 40,4C36,10 38,16 42,20Z" fill="#4ade80" stroke="#166534" stroke-width="1.5"/><path d="M52,28C68,32 72,46 68,60" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".5"/>`;
+K.pumpkin=(A,R,a,b,c)=>`<ellipse cx="30" cy="60" rx="22" ry="29" fill="${A}" stroke="${c}" stroke-width="2.5"/><ellipse cx="70" cy="60" rx="22" ry="29" fill="${A}" stroke="${c}" stroke-width="2.5"/><ellipse cx="50" cy="58" rx="22" ry="32" fill="${R}" stroke="${c}" stroke-width="2.5"/><path d="M50,28C44,44 44,72 50,88M36,34C28,50 28,70 36,84M64,34C72,50 72,70 64,84" stroke="${c}" stroke-opacity=".5" stroke-width="2" fill="none"/><path d="M46,28C46,18 50,12 56,10L60,16C56,18 56,24 56,28Z" fill="#65a30d" stroke="#166534" stroke-width="1.5"/><path d="M60,16C70,12 76,18 72,26" stroke="#4ade80" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+
+const VEG=[
+['vg_potato','potato','КАРТОПЛЯ',P0,'common',700],
+['vg_onion','onion','ЦИБУЛЯ',P0+1,'common',800],
+['vg_radish','radish','РЕДИСКА',3,'common',900],
+['vg_cucumber','cucumber','ОГІРОК',P0+2,'common',1000],
+['vg_carrot','carrot','МОРКВА',16,'common',1200],
+['vg_tomato','tomato','ПОМІДОР',13,'rare',3000],
+['vg_broccoli','broccoli','БРОКОЛІ',11,'rare',3800],
+['vg_corn','corn','КУКУРУДЗА',6,'rare',4500],
+['vg_mushroom','mushroom','ГРИБ-ЧЕМПІОН',P0+3,'rare',5500],
+['vg_eggplant','eggplant','БАКЛАЖАН',5,'epic',9000],
+['vg_chili','chili','ЧИЛІ-ВОГОНЬ',7,'epic',14000],
+['vg_pumpkin','pumpkin','ГАРБУЗ',16,'epic',20000],
+['vg_gpumpkin','pumpkin','ЗОЛОТИЙ ГАРБУЗ',6,'legendary',45000],
+['vg_dcarrot','carrot','АЛМАЗНА МОРКВА',19,'legendary',90000],
+['vg_cosmato','tomato','КОСМІЧНИЙ ПОМІДОР',14,'mythic',400000]];
+VEG.forEach(([id,kind,name,pal,rarity,val])=>{ITEMS[id]={id,kind,name,pal,rarity,val,veg:true}});
+const VCASE={id:'veggie',name:'ОВОЧЕВА СКАРБНИЦЯ',cat:'STARS',price:10000,badge:'ОВОЧІ 🥕',off:0,n:[0,0,0,0,0],items:VEG.map(v=>v[0]),fi:'vg_cosmato'};
+CASES.push(VCASE);
+ITEMS.k_veggie={id:'k_veggie',kind:'box',name:'📦 '+VCASE.name,pal:14,rarity:'mythic',val:8500,isCase:true,caseId:'veggie'};
+/* овочі не входять у стару колекцію (щоб не ламати вже зібране) */
+colList=r=>Object.values(ITEMS).filter(i=>!i.isCase&&!i.veg&&i.rarity===r);
+
+/* =====================================================================
+   B. ⚡ ШВИДКЕ ВІДКРИТТЯ (галочка + до 50 000)
+   ===================================================================== */
+const QOS=LSget('sn_qo',{});
+const QO={on:!!QOS.on,n:Math.min(50000,Math.max(1,(QOS.n|0)||10))};
+const qoSave=()=>LSset('sn_qo',{on:QO.on,n:QO.n});
+const qoMax=c=>c&&c.price>0?Math.max(1,Math.min(50000,Math.floor(S.stars/c.price))):1;
+
+function qoHTML(c){
+  const free=c.price===0;
+  return `<div class="qo-box"><label class="qo-chk"><input type="checkbox" ${QO.on?'checked':''} onchange="qoTog(this.checked)"><span class="qo-tick"></span><span class="qo-t">⚡ ШВИДКЕ ВІДКРИТТЯ<i>${free?'без анімації':'без анімації · до 50 000 за раз · дрібниця автопродається'}</i></span></label>
+  ${QO.on&&!free?`<div class="qo-body"><div class="flex flex-wrap gap-1.5 justify-center">${[10,100,1000,10000,50000].map(x=>`<button onclick="qoSet(${x})" class="qo-p">${fmt(x)}</button>`).join('')}<button onclick="qoSet(qoMax(cs(S.cur)))" class="qo-p qo-max">MAX</button></div>
+  <div class="flex items-center gap-2"><input id="qo-n" type="number" min="1" max="50000" class="inp" value="${QO.n}" oninput="qoInp(this.value)"><div id="qo-cost" class="shrink-0 text-[11px] font-black text-amber-300"></div></div>
+  <div class="text-[9px] text-slate-500 text-left">Епік і вище лишаються в інвентарі (до 300 шт.), решта автоматично продається за ⭐. MAX за твій баланс: ${fmt(qoMax(c))}.</div></div>`:''}</div>`;
+}
+function qoCost(){
+  const c=cs(S.cur);if(!c)return;
+  const n=c.price?QO.n:1,cost=c.price*n,e=$('qo-cost');
+  if(e)e.textContent='⭐ '+fmt(cost);
+  const b=$('openBtn');if(b&&QO.on&&!tokOK())b.textContent=c.price?`⚡ ВІДКРИТИ ×${fmt(n)} ЗА ⭐ ${fmt(cost)}`:'⚡ ВІДКРИТИ ШВИДКО';
+}
+function qoTog(v){QO.on=!!v;qoSave();go('case',S.cur,true)}
+function qoSet(n){QO.n=Math.max(1,Math.min(50000,n|0));qoSave();const i=$('qo-n');if(i)i.value=QO.n;qoCost()}
+function qoInp(v){QO.n=Math.max(1,Math.min(50000,parseInt(v)||1));qoSave();qoCost()}
+
+const _rc6=renderCase;
+renderCase=function(m,id){
+  _rc6(m,id);
+  const c=cs(id),btn=$('openBtn');if(!c||!btn)return;
+  if(!tokOK()){
+    btn.insertAdjacentHTML('beforebegin',qoHTML(c));
+    if(QO.on){const mu=[...btn.parentElement.children].find(x=>x.textContent.includes('МНОЖНИК'));if(mu)mu.style.display='none'}
+    qoCost();
+  }
+  const st=m.querySelector('.mask');
+  if(st&&st.parentElement)st.parentElement.insertAdjacentHTML('beforeend','<div class="ctr-line"></div>');
+};
+const _sc6=spinCase;
+spinCase=function(){
+  const c=cs(S.cur);
+  if(c&&QO.on&&!tokOK()&&!S.spin)return quickOpen(c);
+  _sc6();
+};
+function quickOpen(c){
+  if(S.spin)return;
+  const now=Date.now();
+  if(c.price===0&&S.cd[c.id]>now)return toast('⏳ Зачекайте '+Math.ceil((S.cd[c.id]-now)/60000)+' хв');
+  const n=c.price===0?1:Math.max(1,Math.min(50000,QO.n|0)),cost=c.price*n;
+  if(S.stars<cost)return toast('❌ Недостатньо Stars ⭐ (треба '+fmt(cost)+')');
+  S.stars-=cost;if(c.price===0)S.cd[c.id]=now+c.cd*1000;
+  /* кидаємо n разів по накопичених вагах */
+  const o=odds(c),cum=[];let acc=0;o.forEach(i=>{acc+=i.w;cum.push(acc)});
+  const cnt={};
+  for(let k=0;k<n;k++){
+    const r=Math.random()*acc;let lo=0,hi=cum.length-1;
+    while(lo<hi){const mid=(lo+hi)>>1;if(r<cum[mid])hi=mid;else lo=mid+1}
+    cnt[o[lo].id]=(cnt[o[lo].id]||0)+1;
+  }
+  const ids=Object.keys(cnt).sort((a,b)=>ITEMS[b].val-ITEMS[a].val);
+  const keepAll=n<=25;let room=Math.max(0,300-S.inv.length),uid=nid(S);
+  const R={n,cost,cnt,ids,byR:{},sold:0,soldN:0,keptN:0,keptVal:0,uids:[]};
+  let xp=0;
+  ids.forEach(id=>{
+    const it=ITEMS[id],k=cnt[id];
+    R.byR[it.rarity]=(R.byR[it.rarity]||0)+k;xp+=RXP[it.rarity]*k;
+    let take=0;
+    if(keepAll)take=k;
+    else if(RAR.indexOf(it.rarity)>=2||it.isCase){take=Math.min(k,room);room-=take}
+    for(let i=0;i<take;i++){S.inv.push({id,uid:uid});R.uids.push(uid);uid++}
+    R.keptN+=take;R.keptVal+=take*it.val;
+    R.soldN+=k-take;R.sold+=(k-take)*it.val;
+  });
+  S.stars+=R.sold;S.opened+=n;
+  const best=ids.reduce((a,id)=>RAR.indexOf(ITEMS[id].rarity)>RAR.indexOf(a)?ITEMS[id].rarity:a,'common'),bi=RAR.indexOf(best);
+  save();
+  AU.win(best);if(bi>=2)confetti(20+bi*15);if(bi>=3)shake();
+  qoModal(R);
+  feedPush(ids.slice(0,3).map(id=>({id,uid:0})));
+  addXP(Math.min(2000,xp));
+  if(S.tab==='case')qoCost();
+}
+function qoModal(R){
+  const rows=RAR.slice().reverse().filter(r=>R.byR[r]).map(r=>`<div class="flex items-center justify-between rounded-xl px-3 py-1.5 border ${RC[r].b} bg-gradient-to-r ${RC[r].bg}"><span class="text-[11px] font-black uppercase ${RC[r].t}">${r}</span><span class="text-sm font-black">×${fmt(R.byR[r])}</span></div>`).join('');
+  const top=R.ids.slice(0,6).map(id=>{const i=ITEMS[id],r=RC[i.rarity];return `<div class="flex items-center gap-2 rounded-xl p-2 border ${r.b} bg-gradient-to-b ${r.bg}"><div class="w-10 h-10 shrink-0">${art(i)}</div><div class="text-left overflow-hidden"><div class="text-[10px] font-black truncate">${esc(i.name)}</div><div class="text-[9px] text-amber-300 font-bold">⭐ ${fmt(i.val)} · ×${fmt(R.cnt[id])}</div></div></div>`}).join('');
+  const net=R.sold+R.keptVal-R.cost;
+  mc.innerHTML=`<div class="max-h-[80vh] overflow-y-auto nos"><div class="text-xs font-black text-amber-400 tracking-widest">⚡ ШВИДКЕ ВІДКРИТТЯ ×${fmt(R.n)}</div>
+  <div class="grid gap-1.5 my-3">${rows}</div>
+  <div class="text-[9px] font-black text-slate-400 text-left mb-1">НАЙЦІННІШЕ</div><div class="grid grid-cols-2 gap-1.5 mb-3">${top}</div>
+  <div class="bg-slate-900 rounded-xl p-2.5 text-[11px] font-bold space-y-1 text-left">
+   <div class="flex justify-between"><span class="text-slate-400">Витрачено</span><span class="text-red-300">−⭐ ${fmt(R.cost)}</span></div>
+   <div class="flex justify-between"><span class="text-slate-400">Автопродаж (${fmt(R.soldN)} шт.)</span><span class="text-green-300">+⭐ ${fmt(R.sold)}</span></div>
+   <div class="flex justify-between"><span class="text-slate-400">В інвентар (${fmt(R.keptN)} шт.)</span><span class="text-cyan-300">≈ ⭐ ${fmt(R.keptVal)}</span></div>
+   <div class="flex justify-between border-t border-slate-700 pt-1"><span>Підсумок</span><span class="${net>=0?'text-green-400':'text-red-400'}">${net>=0?'+':'−'}⭐ ${fmt(Math.abs(net))}</span></div></div>
+  <div class="flex gap-2 mt-3">${R.uids.length?`<button onclick='sellUids(${JSON.stringify(R.uids)})' class="flex-1 py-2.5 rounded-xl bg-amber-500 text-black font-extrabold text-xs">ПРОДАТИ ЗБЕРЕЖЕНЕ</button>`:''}<button onclick="closeModal()" class="flex-1 py-2.5 rounded-xl bg-slate-800 border border-slate-700 font-extrabold text-xs">ОК</button></div></div>`;
+  ov.style.display='flex';setTimeout(()=>mc.classList.remove('scale-95','opacity-0'),10);
+}
+
+/* =====================================================================
+   C. 🔴 ЖИВА LIVE-СТРІЧКА (реальні дропи rare+ з бази)
+   ===================================================================== */
+const ago=ts=>{const s=Math.max(0,Math.floor((Date.now()-(ts|0))/1000));return s<10?'щойно':s<60?s+' с тому':s<3600?Math.floor(s/60)+' хв тому':Math.floor(s/3600)+' год тому'};
+const liveData=()=>(ON.feed||[]).filter(f=>f&&ITEMS[f.id]).sort((a,b)=>(a.ts|0)-(b.ts|0));
+const lvItem=f=>{const it=ITEMS[f.id],r=RC[it.rarity];return `<span class="lv-chip lv-${it.rarity}"><span class="lv-ico">${art(it)}</span><span><b>${esc(f.name||'Гравець')}</b> <u class="${r.t}">${esc(it.name)}</u>${f.cn?` <em>${esc(f.cn)}</em>`:''}</span><span class="lv-v">⭐${fmt(it.val)}</span></span>`};
+function tkHTML(){
+  const real=liveData().slice(-20).reverse();
+  if(!real.length)return {c:'',h:'<span class="lv-empty">Чекаємо на перший дроп... відкривай кейси 🔥</span>'};
+  let L=real.slice();while(L.length<8)L=L.concat(real);
+  const a=L.map(lvItem).join('');return {c:'tkr',h:a+a};
+}
+ticker=function(){
+  const t=tkHTML();
+  return `<div class="glass lv-bar"><span class="lv-live"><i></i>LIVE</span><div class="lv-win"><div id="tkrw" class="${t.c}">${t.h}</div></div></div>`;
+};
+function liveRows(){
+  const L=liveData().slice(-6).reverse();
+  if(!L.length)return '<div class="text-center text-[10px] text-slate-500 py-4">Поки тихо… вибий рідкісний предмет — і ти будеш першим у стрічці 🔥</div>';
+  return L.map(f=>{const it=ITEMS[f.id],r=RC[it.rarity];return `<div class="lv-row lv-${it.rarity}"><div class="w-10 h-10 shrink-0">${art(it)}</div><div class="min-w-0 flex-1"><div class="text-[11px] font-black truncate"><span class="text-slate-300">${esc(f.name||'Гравець')}</span> <span class="${r.t}">${esc(it.name)}</span></div><div class="text-[9px] text-slate-500 truncate">${f.cn?esc(f.cn)+' · ':''}${ago(f.ts)}</div></div><div class="text-[11px] font-black text-amber-300 shrink-0">⭐ ${fmt(it.val)}</div></div>`}).join('');
+}
+let LVK='';
+function liveUpd(){
+  const key=liveData().map(f=>(f.ts|0)+f.id+(f.name||'')).join('|');
+  if(key===LVK)return;LVK=key;
+  const t=$('tkrw');if(t){const x=tkHTML();t.className=x.c;t.innerHTML=x.h}
+  const L=$('livelist');if(L)L.innerHTML=liveRows();
+}
+setInterval(()=>{const L=$('livelist');if(L)L.innerHTML=liveRows()},15000);
+feedPush=function(got){
+  const un=(users()[ME]||{}).n||'Player',c=cs(S.cur),cn=c?c.name:'',list=[];
+  got.forEach(e=>{const i=ITEMS[e.id];if(i&&RAR.indexOf(i.rarity)>=1)list.push({name:un,id:i.id,val:i.val,cn,ts:Date.now()+list.length})});
+  if(!list.length)return;
+  ON.feed=(ON.feed||[]).concat(list).slice(-40);liveUpd();
+  if(ON.ready)list.forEach(f=>ON.db.collection('feed').add(f).catch(()=>{}));
+};
+
+/* =====================================================================
+   D. 🏰 КЛАНИ (створення = ⭐ 100 000)
+   ===================================================================== */
+const CL={all:[],chat:[],unsub:null,cid:'',busy:0};
+const CL_COST=100000,CL_MAX=30;
+const clMine=()=>ON.ready?CL.all.find(c=>c.members&&c.members[ON.uid]):null;
+const clLvl=t=>Math.floor(Math.sqrt(n0(t)/5000))+1;
+const clMembers=c=>Object.entries(c.members||{}).map(([uid,m])=>Object.assign({uid},m));
+const myName=()=>(users()[ME]||{}).n||'Player';
+
+function clLive(){
+  if(S.tab!=='more'||MORE.t!=='cl'||S.spin)return;
+  const a=document.activeElement;
+  if(a&&['cli','cl-n','cl-t','cl-d'].includes(a.id))return;
+  mRender();
+}
+function clCreateHTML(){
+  const ok=S.stars>=CL_COST;
+  return `<div class="glass rounded-3xl p-4 space-y-3"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-amber-300">🏰 КЛАНИ</h2><p class="text-[10px] text-slate-400">Збери друзів, поповнюй скарбницю, піднімай рівень клану й забирай щоденний клан-бонус.</p></div>
+  <input id="cl-n" class="inp" maxlength="16" placeholder="Назва клану (3–16)"><input id="cl-t" class="inp uppercase" maxlength="4" placeholder="ТЕГ (2–4, напр. SNC)" autocapitalize="characters">
+  <div class="text-center text-[11px] font-black ${ok?'text-green-300':'text-red-300'}">Вартість: ⭐ ${fmt(CL_COST)} · у тебе ⭐ ${fmt(S.stars)}</div>
+  <button onclick="clCreate()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-black text-xs uppercase ${ok?'':'opacity-50'}">🏰 СТВОРИТИ КЛАН ЗА ⭐ 100 000</button></div>`;
+}
+function clMyHTML(c){
+  const mem=clMembers(c).sort((a,b)=>n0(b.d)-n0(a.d)),lv=clLvl(c.treasury),a=(lv-1)*(lv-1)*5000,b=lv*lv*5000;
+  const p=Math.min(100,(n0(c.treasury)-a)/(b-a)*100),own=c.owner===ON.uid,now=Date.now(),can=(S.cc||0)<=now,g=lv*500+mem.length*100;
+  return `<div class="glass rounded-3xl p-4 space-y-3"><div class="flex items-center gap-3"><div class="cl-badge">${esc(c.tag)}</div><div class="min-w-0"><div class="text-sm font-black truncate">${esc(c.name)}</div><div class="text-[10px] text-slate-400 font-bold">РІВЕНЬ ${lv} · 👥 ${mem.length}/${CL_MAX} · 👑 ${esc(c.oname||'')}</div></div></div>
+  <div class="flex justify-between text-[10px] font-black"><span class="text-amber-300">💰 Скарбниця ⭐ ${fmt(c.treasury)}</span><span class="text-slate-400">до LV${lv+1}: ⭐ ${fmt(b)}</span></div>
+  <div class="h-2 bg-slate-900 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-cyan-400 to-amber-400" style="width:${p}%"></div></div>
+  <button onclick="clClaim()" ${can?'':'disabled'} class="w-full py-2.5 rounded-xl font-black text-xs ${can?'bg-gradient-to-r from-cyan-400 to-blue-500 text-black':'bg-slate-800 text-slate-500'}">${can?'🎁 КЛАН-БОНУС +⭐ '+fmt(g):'⏳ клан-бонус через '+Math.ceil(((S.cc||0)-now)/3600000)+' год'}</button>
+  <div class="flex gap-2"><input id="cl-d" type="number" min="1" class="inp" placeholder="Внести ⭐ у скарбницю"><button onclick="clDonInp()" class="px-4 rounded-xl bg-amber-400 text-black font-black text-xs">ВНЕСТИ</button></div>
+  <div class="grid grid-cols-3 gap-1.5">${[1000,10000,100000].map(x=>`<button onclick="clDonate(${x})" class="py-1.5 rounded-lg bg-slate-800 text-[10px] font-black">+${fmt(x)}</button>`).join('')}</div></div>
+  <div class="glass rounded-3xl p-4 space-y-1.5 mt-3"><h3 class="text-[11px] font-black tracking-widest text-slate-300">👥 УЧАСНИКИ</h3>${mem.map(m=>`<div class="flex items-center justify-between gap-2 bg-slate-800/50 rounded-xl px-3 py-1.5"><span class="text-[11px] font-black truncate">${m.uid===c.owner?'👑':'👤'} ${esc(m.n||'Гравець')}</span><span class="flex items-center gap-2 shrink-0"><span class="text-[10px] text-amber-300 font-bold">⭐ ${fmt(m.d)}</span>${own&&m.uid!==ON.uid?`<button onclick="clKick('${esc(m.uid)}')" class="px-2 py-0.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 text-[9px] font-black">✕</button>`:''}</span></div>`).join('')}</div>
+  <div class="glass rounded-3xl p-3 mt-3 flex flex-col"><div class="text-xs font-black text-center text-cyan-300 pb-2">💬 ЧАТ КЛАНУ</div><div id="clm" class="h-44 overflow-y-auto nos space-y-1.5"></div>
+  <div class="flex gap-2 pt-2"><input id="cli" class="inp" maxlength="200" placeholder="Повідомлення клану..." autocomplete="off" onkeydown="if(event.key==='Enter')clSend()"><button onclick="clSend()" class="px-4 rounded-xl bg-cyan-500 text-black font-black text-xs">➤</button></div></div>
+  <button onclick="${own?'clDisband()':'clLeave()'}" class="w-full mt-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-[10px] font-extrabold ${own?'text-red-300':''}">${own?'💥 РОЗПУСТИТИ КЛАН':'🚪 ВИЙТИ З КЛАНУ'}</button>`;
+}
+function clListHTML(my){
+  const L=[...CL.all].filter(c=>c&&c.name).sort((a,b)=>n0(b.treasury)-n0(a.treasury)).slice(0,20);
+  return `<div class="glass rounded-3xl p-4 space-y-2 mt-3"><h3 class="text-[11px] font-black tracking-widest text-center text-amber-300">🏆 ТОП КЛАНІВ (${CL.all.length})</h3>`+
+  (L.length?L.map((c,i)=>{const n=Object.keys(c.members||{}).length;return `<div class="flex items-center justify-between gap-2 bg-slate-800/50 rounded-xl px-3 py-2 ${my&&my.id===c.id?'border border-cyan-500/40':''}"><div class="flex items-center gap-2 min-w-0"><span class="text-[10px] font-black text-slate-500 w-5">#${i+1}</span><span class="cl-badge cl-sm">${esc(c.tag)}</span><div class="min-w-0"><div class="text-[11px] font-black truncate">${esc(c.name)}</div><div class="text-[9px] text-slate-400 font-bold">LV${clLvl(c.treasury)} · 👥 ${n}/${CL_MAX} · ⭐ ${fmt(c.treasury)}</div></div></div>${!my&&n<CL_MAX?`<button onclick="clJoin('${esc(c.id)}')" class="shrink-0 px-3 py-1 rounded-lg bg-cyan-500 text-black text-[10px] font-extrabold">ВСТУПИТИ</button>`:''}</div>`}).join(''):'<div class="text-center text-[10px] text-slate-500 py-4">Кланів ще немає — створи перший!</div>')+'</div>';
+}
+function clHTML(){
+  if(!ON.ready)return offl();
+  const my=clMine();
+  return my?clMyHTML(my)+clListHTML(my):clCreateHTML()+clListHTML(null);
+}
+function clAfter(){const c=clMine();if(c){clChatSub(c);clDraw()}else closeClChat()}
+function clChatSub(c){
+  if(CL.cid===c.id&&CL.unsub)return;
+  closeClChat();CL.cid=c.id;
+  CL.unsub=ON.db.collection('clanchat/'+c.id).orderBy('ts').limitToLast(50).onSnapshot(s=>{CL.chat=s.docs.map(d=>d.data());clDraw()},()=>{});
+}
+function closeClChat(){if(CL.unsub){CL.unsub();CL.unsub=null}CL.cid='';CL.chat=[]}
+function clDraw(){
+  const b=$('clm');if(!b)return;
+  const near=b.scrollHeight-b.scrollTop-b.clientHeight<80;
+  b.innerHTML=CL.chat.length?CL.chat.map(m=>{
+    const me=m.from===ON.uid,t=new Date(m.ts||Date.now());
+    return `<div class="flex ${me?'justify-end':'justify-start'}"><div class="max-w-[80%] rounded-2xl px-3 py-1.5 text-[12px] ${me?'bg-cyan-500 text-black':'bg-slate-800 text-white'}" style="user-select:text;-webkit-user-select:text;word-break:break-word">${me?'':`<div class="text-[9px] font-black text-cyan-300">${esc(m.name||'Гравець')}</div>`}${esc(m.text)}<div class="text-[8px] opacity-60 text-right">${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}</div></div></div>`;
+  }).join(''):'<div class="text-center text-[10px] text-slate-500 py-8">Напиши першим 👋</div>';
+  b.scrollTop=b.scrollHeight;
+}
+let clLast=0;
+async function clSend(){
+  const i=$('cli'),c=clMine();if(!i||!c)return;
+  const t=i.value.trim().slice(0,200),now=Date.now();
+  if(!t||now-clLast<1000)return;clLast=now;i.value='';
+  try{await ON.db.collection('clanchat/'+c.id).add({from:ON.uid,name:myName(),text:t,ts:now})}catch(e){toast('❌ Не надіслано')}
+}
+async function clCreate(){
+  if(!ON.ready)return toast('🌐 Онлайн ще не готовий');
+  if(CL.busy||clMine())return;
+  const n=(($('cl-n')||{}).value||'').trim(),t=(($('cl-t')||{}).value||'').trim().toUpperCase();
+  if(!/^[A-Za-z0-9_А-Яа-яІіЇїЄєҐґ ]{3,16}$/.test(n))return toast('❌ Назва: 3–16 символів');
+  if(!/^[A-Z0-9]{2,4}$/.test(t))return toast('❌ Тег: 2–4 латинські літери/цифри');
+  if(CL.all.some(c=>(c.name||'').toLowerCase()===n.toLowerCase()||c.tag===t))return toast('❌ Назва або тег уже зайняті');
+  if(S.stars<CL_COST)return toast('❌ Потрібно ⭐ '+fmt(CL_COST));
+  CL.busy=1;S.stars-=CL_COST;save();
+  const id='c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),nm=myName();
+  try{
+    await ON.db.doc('clans/'+id).set({name:n,tag:t,owner:ON.uid,oname:nm,treasury:0,ts:Date.now(),members:{[ON.uid]:{n:nm,ts:Date.now(),d:0}}});
+    confetti(60);toast('🏰 Клан створено!');
+  }catch(e){S.stars+=CL_COST;save();toast('❌ Не вдалося створити клан')}
+  CL.busy=0;mRender();
+}
+async function clJoin(id){
+  if(CL.busy)return;if(clMine())return toast('Спочатку вийди зі свого клану');
+  CL.busy=1;const nm=myName();let o=null;
+  try{o=await ON.db.doc('clans/'+id).tx(c=>{const m=c.members||{};if(m[ON.uid]||Object.keys(m).length>=CL_MAX)return;return Object.assign({},c,{members:Object.assign({},m,{[ON.uid]:{n:nm,ts:Date.now(),d:0}})})})}catch(e){}
+  toast(o?'✅ Ти приєднався до клану':'❌ Не вдалося (клан заповнений?)');
+  CL.busy=0;mRender();
+}
+async function clLeave(){
+  const c=clMine();if(!c||CL.busy)return;
+  if(c.owner===ON.uid)return toast('Власник не може вийти — розпусти клан');
+  if(!confirm('Вийти з клану?'))return;
+  CL.busy=1;
+  try{await ON.db.doc('clans/'+c.id).tx(x=>{const m=Object.assign({},x.members||{});delete m[ON.uid];return Object.assign({},x,{members:m})});toast('Ти вийшов з клану')}catch(e){toast('❌ Помилка')}
+  CL.busy=0;closeClChat();mRender();
+}
+async function clKick(uid){
+  const c=clMine();if(!c||c.owner!==ON.uid||uid===ON.uid)return;
+  if(!confirm('Вигнати гравця з клану?'))return;
+  try{await ON.db.doc('clans/'+c.id).tx(x=>{if(x.owner!==ON.uid)return;const m=Object.assign({},x.members||{});delete m[uid];return Object.assign({},x,{members:m})});toast('Гравця вигнано')}catch(e){toast('❌ Помилка')}
+}
+async function clDonate(n){
+  const c=clMine();if(!c||CL.busy)return;n=Math.floor(n);
+  if(!(n>0))return toast('Введи суму');if(S.stars<n)return toast('❌ Недостатньо Stars');
+  CL.busy=1;S.stars-=n;save();let ok=null;
+  try{ok=await ON.db.doc('clans/'+c.id).tx(x=>{const m=x.members||{};if(!m[ON.uid])return;return Object.assign({},x,{treasury:n0(x.treasury)+n,members:Object.assign({},m,{[ON.uid]:Object.assign({},m[ON.uid],{d:n0(m[ON.uid].d)+n})})})})}catch(e){ok=null}
+  if(ok){toast('🏰 Внесено ⭐ '+fmt(n));confetti(20)}else{S.stars+=n;save();toast('❌ Не вдалося')}
+  CL.busy=0;mRender();
+}
+function clDonInp(){clDonate(parseInt((($('cl-d')||{}).value))||0)}
+function clClaim(){
+  const c=clMine();if(!c)return;const now=Date.now();
+  if((S.cc||0)>now)return toast('⏳ Ще не готово');
+  const g=clLvl(c.treasury)*500+Object.keys(c.members||{}).length*100;
+  S.cc=now+864e5;S.stars+=g;save();confetti(30);toast('🏰 Клан-бонус +⭐ '+fmt(g));mRender();
+}
+async function clDisband(){
+  const c=clMine();if(!c||c.owner!==ON.uid)return;
+  if(!confirm('Розпустити клан? Скарбницю буде втрачено, ⭐ за створення не повертаються.'))return;
+  try{await ON.db.doc('clans/'+c.id).set(null);toast('Клан розпущено')}catch(e){toast('❌ Помилка')}
+  closeClChat();mRender();
+}
+/* тег клану у профілі гравця */
+const _sp6=showPlayer;
+showPlayer=function(k){
+  _sp6(k);
+  const c=CL.all.find(x=>x.members&&x.members[k]);
+  if(c){const t=mc.querySelector('.text-base');if(t)t.insertAdjacentHTML('afterend',`<div class="text-[10px] font-black text-amber-300">🏰 [${esc(c.tag)}] ${esc(c.name)}</div>`)}
+};
+
+/* =====================================================================
+   E. 🛠️ АДМІН-ПАНЕЛЬ (промокод admin4444)
+   ===================================================================== */
+const _rd6=redeem;
+redeem=function(){
+  const code=(($('pc')||{}).value||'').trim().toUpperCase();
+  if(code==='ADMIN4444'){
+    S.adm=true;save();confetti(60);AU.win('mythic');
+    toast('🛠️ Адмін-панель відкрито: вкладка ЩЕ → 🛠️');
+    MORE.t='ad';go('more');return;
+  }
+  _rd6();
+};
+const GFT={};
+function adHTML(){
+  if(!S.adm)return '<div class="glass rounded-3xl p-8 text-center text-slate-500 text-xs">🔒 Немає доступу</div>';
+  const P=ON.players||{},ids=Object.keys(P).filter(k=>P[k]&&P[k].name),on=ids.filter(k=>isOn(P[k],k)).length,tot=ids.reduce((s,k)=>s+n0(P[k].stars),0);
+  const iopt=RAR.map(r=>`<optgroup label="${r.toUpperCase()}">${Object.values(ITEMS).filter(i=>i.rarity===r).sort((a,b)=>a.val-b.val).map(i=>`<option value="${i.id}">${esc(i.name)} · ⭐${fmt(i.val)}</option>`).join('')}</optgroup>`).join('');
+  const pl=ids.filter(k=>k!==ON.uid).sort((a,b)=>n0(P[b].val)-n0(P[a].val));
+  const popt=pl.map(k=>`<option value="${esc(k)}">${isOn(P[k],k)?'🟢':'⚪'} ${esc(P[k].name)} · ⭐${fmt(P[k].stars)}</option>`).join('');
+  const tb=pl.slice(0,12).map(k=>`<div class="flex items-center justify-between gap-2 bg-slate-800/50 rounded-xl px-3 py-1.5"><div class="min-w-0 text-[11px] font-black truncate">${dot(k)} ${esc(P[k].name)}<div class="text-[9px] text-slate-500 font-bold">⭐ ${fmt(P[k].stars)} · 🎒 ${fmt(P[k].val)}</div></div><button onclick="adGift('${esc(k)}',100000,'','🎁 від адміна')" class="shrink-0 px-2 py-1 rounded-lg bg-amber-400 text-black text-[10px] font-black">+100k</button></div>`).join('');
+  const cl=CL.all.slice(0,8).map(c=>`<div class="flex items-center justify-between gap-2 bg-slate-800/50 rounded-xl px-3 py-1.5"><span class="text-[11px] font-black truncate">[${esc(c.tag)}] ${esc(c.name)}</span><button onclick="adDelClan('${esc(c.id)}')" class="shrink-0 px-2 py-1 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 text-[10px] font-black">ВИДАЛИТИ</button></div>`).join('');
+  return `<div class="glass rounded-3xl p-4 space-y-3 adm-box"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-red-300">🛠️ АДМІН-ПАНЕЛЬ</h2><p class="text-[10px] text-slate-400">гравців: ${ids.length} · 🟢 ${on} · ⭐ у гравців: ${fmt(tot)} · кланів: ${CL.all.length}</p></div>
+  <div class="text-[10px] font-black text-slate-400">⭐ СОБІ</div>
+  <div class="grid grid-cols-4 gap-1.5">${[10000,100000,1000000,100000000].map(x=>`<button onclick="adStars(${x})" class="py-1.5 rounded-lg bg-slate-800 text-[10px] font-black">+${fmt(x)}</button>`).join('')}</div>
+  <div class="flex gap-2"><input id="ad-st" type="number" class="inp" placeholder="± кількість ⭐"><button onclick="adStarsInp()" class="px-4 rounded-xl bg-amber-400 text-black font-black text-xs">OK</button></div>
+  <div class="text-[10px] font-black text-slate-400">🎁 ПРЕДМЕТ СОБІ</div>
+  <div class="flex gap-2"><select id="ad-it" class="inp">${iopt}</select><input id="ad-qt" type="number" min="1" max="100" value="1" class="inp" style="width:72px"></div>
+  <button onclick="adItem()" class="w-full py-2 rounded-xl bg-cyan-500 text-black font-black text-xs">ВИДАТИ ПРЕДМЕТ</button>
+  <div class="flex gap-1.5"><button onclick="adCd()" class="flex-1 py-1.5 rounded-lg bg-slate-800 text-[10px] font-black">⏱ СКИНУТИ КУЛДАУНИ</button><button onclick="adXp(5000)" class="flex-1 py-1.5 rounded-lg bg-slate-800 text-[10px] font-black">🆙 +5000 XP</button></div>
+  <div class="text-[10px] font-black text-slate-400 pt-1">📨 ПОДАРУНОК ГРАВЦЮ</div>
+  <select id="ad-pl" class="inp"><option value="">-- обери гравця --</option>${popt}</select>
+  <div class="flex gap-2"><input id="ad-gs" type="number" min="0" class="inp" placeholder="⭐"><select id="ad-gi" class="inp"><option value="">без предмета</option>${iopt}</select></div>
+  <input id="ad-gn" class="inp" maxlength="60" placeholder="Коментар (необовʼязково)">
+  <button onclick="adGiftSend()" class="w-full py-2 rounded-xl bg-fuchsia-500 text-black font-black text-xs">НАДІСЛАТИ ПОДАРУНОК</button>
+  <div class="text-[10px] font-black text-slate-400 pt-1">📣 ОГОЛОШЕННЯ ВСІМ ОНЛАЙН</div>
+  <div class="flex gap-2"><input id="ad-tx" class="inp" maxlength="140" placeholder="Текст оголошення"><button onclick="adAnn()" class="px-4 rounded-xl bg-red-500 text-black font-black text-xs">📣</button></div></div>
+  <div class="glass rounded-3xl p-4 space-y-1.5 mt-3"><h3 class="text-[11px] font-black tracking-widest text-slate-300">👥 ГРАВЦІ (топ за інвентарем)</h3>${tb||'<div class="text-[10px] text-slate-500 text-center">Немає</div>'}</div>
+  ${cl?`<div class="glass rounded-3xl p-4 space-y-1.5 mt-3"><h3 class="text-[11px] font-black tracking-widest text-slate-300">🏰 КЛАНИ</h3>${cl}</div>`:''}
+  <button onclick="adOff()" class="w-full mt-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-[10px] font-extrabold">🔒 ВИМКНУТИ АДМІН-ДОСТУП</button>`;
+}
+function adStars(n){S.stars=Math.max(0,S.stars+n);save();toast('⭐ '+(n>=0?'+':'')+fmt(n))}
+function adStarsInp(){const v=parseInt(($('ad-st')||{}).value)||0;if(v)adStars(v)}
+function adItem(){
+  const id=$('ad-it').value,q=Math.min(100,Math.max(1,parseInt($('ad-qt').value)||1));
+  if(!ITEMS[id])return;let n=nid(S);for(let i=0;i<q;i++)S.inv.push({id,uid:n++});
+  save();confetti(20);toast('🎁 +'+q+' × '+ITEMS[id].name);
+}
+function adCd(){S.cd={};S.wheel=0;S.bonus={};S.cc=0;save();toast('⏱ Кулдауни скинуто')}
+function adXp(n){addXP(n);toast('🆙 +'+fmt(n)+' XP')}
+function adOff(){if(!confirm('Вимкнути адмін-доступ?'))return;S.adm=false;save();MORE.t='col';renderMore($('main'))}
+async function adGift(to,st,it,note){
+  if(!ON.ready)return toast('🌐 Онлайн ще не готовий');
+  try{await ON.db.collection('gifts').add({to,stars:st|0,item:it||'',note:note||'',from:'admin',claimed:false,ts:Date.now()});toast('🎁 Подарунок надіслано')}
+  catch(e){toast('❌ Не надіслано')}
+}
+function adGiftSend(){
+  const to=$('ad-pl').value,st=Math.max(0,parseInt($('ad-gs').value)||0),it=$('ad-gi').value,note=($('ad-gn').value||'').slice(0,60);
+  if(!to)return toast('Обери гравця');if(!st&&!it)return toast('Вкажи ⭐ або предмет');
+  adGift(to,st,it,note);
+}
+async function adAnn(){
+  const t=(($('ad-tx')||{}).value||'').trim().slice(0,140);if(!t||!ON.ready)return;
+  try{await ON.db.doc('announce/cur').set({text:t,ts:Date.now(),by:myName()});toast('📣 Надіслано всім');$('ad-tx').value=''}catch(e){toast('❌ Помилка')}
+}
+async function adDelClan(id){
+  if(!confirm('Видалити клан?'))return;
+  try{await ON.db.doc('clans/'+id).set(null);toast('Клан видалено')}catch(e){toast('❌ Помилка')}
+}
+function annBanner(d){
+  const e=document.createElement('div');e.className='ann';
+  e.innerHTML=`<b>📣 ${esc(d.by||'Адмін')}</b><span>${esc(d.text)}</span>`;
+  document.body.appendChild(e);AU.win('legendary');
+  setTimeout(()=>e.classList.add('ann-out'),8000);setTimeout(()=>e.remove(),8600);
+}
+
+/* =====================================================================
+   F. ВКЛАДКА "ЩЕ": нові розділи
+   ===================================================================== */
+MT.push(['cl','🏰','КЛАНИ'],['ad','🛠️','АДМІН']);
+renderMore=function(m){
+  const T=MT.filter(t=>t[0]!=='ad'||S.adm);
+  m.innerHTML=`<div class="space-y-3"><div class="grid grid-cols-5 gap-1.5">${T.map(([k,e,t])=>`<button onclick="setMT('${k}')" class="py-1.5 rounded-xl text-[8px] font-black flex flex-col items-center ${MORE.t===k?'bg-cyan-500 text-black':'bg-slate-800 text-slate-300'}"><span class="text-base">${e}</span>${t}</button>`).join('')}</div><div id="mbody"></div></div>`;
+  mRender();
+};
+mRender=function(){
+  const b=$('mbody');if(!b)return;
+  const F={col:colHTML,q:qHTML,bp:bpHTML,mk:mkHTML,bt:btHTML,gm:gmHTML,gc:gcHTML,pf:pfHTML,rf:rfHTML,cl:clHTML,ad:adHTML};
+  b.innerHTML=(F[MORE.t]||colHTML)();
+  if(MORE.t==='gc'){gcSub();gcDraw()}
+  if(MORE.t==='gm'){mnDraw();crDraw()}
+  if(MORE.t==='bt')btShow();
+  if(MORE.t==='cl')clAfter();
+};
+
+/* =====================================================================
+   G. ОНЛАЙН-ПІДПИСКИ (feed, клани, подарунки, оголошення)
+   ===================================================================== */
+const _enter6=enter;
+enter=function(k){S.adm=false;S.cc=0;closeClChat();CL.all=[];_enter6(k)};
+const _ob6=onlineBoot;
+onlineBoot=async function(){
+  const r=await _ob6();
+  if(r&&!ON.v6){
+    ON.v6=1;const db=ON.db;
+    db.collection('feed').orderBy('ts').limitToLast(30).onSnapshot(s=>{ON.feed=s.docs.map(d=>d.data());liveUpd()},()=>{});
+    db.collection('clans').onSnapshot(s=>{CL.all=s.docs.map(d=>Object.assign({id:d.id},d.data()));clLive()},()=>{});
+    db.collection('gifts').where('to','==',ON.uid).onSnapshot(s=>{
+      s.docs.forEach(d=>{
+        const g=d.data();if(!g||g.claimed||GFT[d.id])return;GFT[d.id]=1;
+        db.doc('gifts/'+d.id).tx(x=>x.claimed?undefined:Object.assign({},x,{claimed:true})).then(o=>{
+          if(!o)return;
+          if(g.stars)S.stars+=n0(g.stars);
+          if(g.item&&ITEMS[g.item])S.inv.push({id:g.item,uid:nid(S)});
+          save();confetti(40);AU.win('epic');
+          toast('🎁 Подарунок'+(g.note?': '+g.note:'')+(g.stars?' · ⭐ +'+fmt(g.stars):''));
+        }).catch(()=>{delete GFT[d.id]});
+      });
+    },()=>{});
+    db.doc('announce/cur').onSnapshot(s=>{
+      if(!s.exists)return;const d=s.data();
+      if(!d||!d.ts||d.ts<Date.now()-120000||d.ts<=(ON.annTs||0))return;
+      ON.annTs=d.ts;annBanner(d);
+    },()=>{});
+  }
+  return r;
+};
+
+/* =====================================================================
+   H. ✨ ІНТЕРФЕЙС: hero-банер на головній + CSS
+   ===================================================================== */
+function heroHTML(){
+  const P=ON.players||{},ks=Object.keys(P).filter(k=>P[k]&&P[k].name),on=ks.filter(k=>isOn(P[k],k)).length;
+  return `<div class="hero"><div class="hero-in">
+   <div class="flex items-start justify-between gap-3"><div><div class="text-[9px] font-black tracking-[.3em] text-cyan-300">NFT CASE SIMULATOR</div><div class="hl mt-1">ВІДКРИВАЙ.<br>ЗБИРАЙ.<br>ДОМІНУЙ.</div>
+   <div class="flex flex-wrap gap-1.5 mt-3"><span class="hero-chip">🟢 ${on} онлайн</span><span class="hero-chip">👥 ${ks.length}</span><span class="hero-chip">📦 ${fmt(S.opened)}</span></div></div>
+   <div class="relative w-28 h-28 shrink-0"><div class="absolute inset-0 rounded-full bg-fuchsia-500/30 blur-2xl"></div><div class="fl absolute inset-2">${art(ITEMS.vg_cosmato)}</div></div></div>
+   <div onclick="go('case','veggie')" class="vg-card rc"><div class="vg-new">NEW</div><div class="flex -space-x-3 shrink-0">${['vg_gpumpkin','vg_dcarrot','vg_tomato','vg_broccoli'].map((id,i)=>`<div class="w-11 h-11 fl" style="animation-delay:${i*.4}s">${art(ITEMS[id])}</div>`).join('')}</div><div class="min-w-0 flex-1"><div class="text-xs font-black truncate">🥕 ОВОЧЕВА СКАРБНИЦЯ</div><div class="text-[10px] text-slate-300">NFT-овочі до ⭐ 400 000</div></div><div class="vg-price">⭐ 10 000</div></div>
+  </div></div>`;
+}
+const _rh6=renderHome;
+renderHome=function(m){
+  _rh6(m);
+  const w=m.firstElementChild;
+  if(w&&w.firstElementChild)w.firstElementChild.insertAdjacentHTML('afterend',heroHTML()+`<div class="glass lv-panel"><div class="lv-ph"><span class="lv-live"><i></i>ЖИВИЙ ДРОП</span><small>реальні гравці · rare+</small></div><div id="livelist" class="space-y-1.5">${liveRows()}</div></div>`);
+};
+
+if(!$('sn6css')){
+  const st=document.createElement('style');st.id='sn6css';
+  st.textContent=`
+html{background:#070a12}
+body{background:transparent!important}
+#aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;background:radial-gradient(ellipse at 50% -10%,#10203a 0%,#070a12 62%)}
+#aurora i{position:absolute;border-radius:50%;filter:blur(70px);opacity:.45;animation:drift 18s ease-in-out infinite}
+#aurora i:nth-child(1){width:320px;height:320px;left:-80px;top:8%;background:#0ea5e9}
+#aurora i:nth-child(2){width:300px;height:300px;right:-90px;top:32%;background:#7c3aed;animation-delay:-6s}
+#aurora i:nth-child(3){width:280px;height:280px;left:20%;bottom:-60px;background:#db2777;animation-delay:-11s;opacity:.3}
+#aurora::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:36px 36px;-webkit-mask-image:radial-gradient(ellipse at center,#000 30%,transparent 80%);mask-image:radial-gradient(ellipse at center,#000 30%,transparent 80%)}
+@keyframes drift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(40px,-50px) scale(1.15)}}
+@keyframes hspin{to{transform:rotate(360deg)}}
+@keyframes bshift{0%,100%{background-position:0 50%}50%{background-position:100% 50%}}
+@keyframes tshift{0%{background-position:0 50%}100%{background-position:300% 50%}}
+@keyframes glowp{0%,100%{box-shadow:0 0 0 1px rgba(250,204,21,.4),0 10px 30px -8px rgba(250,204,21,.55)}50%{box-shadow:0 0 0 1px rgba(250,204,21,.7),0 10px 40px -4px rgba(250,204,21,.9)}}
+@keyframes shine{0%,60%{left:-120%}100%{left:170%}}
+@keyframes ping6{70%{box-shadow:0 0 0 8px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
+@keyframes annin{from{transform:translate(-50%,-30px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+@keyframes mythp{0%,100%{box-shadow:0 0 12px rgba(239,68,68,.35)}50%{box-shadow:0 0 26px rgba(239,68,68,.8)}}
+header.glass{background:linear-gradient(180deg,rgba(10,16,30,.94),rgba(10,16,30,.72))!important;border-bottom:1px solid transparent;border-image:linear-gradient(90deg,transparent,#22d3ee,#a78bfa,#f472b6,transparent) 1}
+header span.text-cyan-200{background:linear-gradient(90deg,#67e8f9,#fde68a,#f0abfc,#67e8f9);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:tshift 6s linear infinite}
+body .glass{background:linear-gradient(160deg,rgba(30,42,66,.62),rgba(14,20,34,.74));box-shadow:0 10px 30px -12px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.07)}
+nav.glass{background:linear-gradient(0deg,rgba(8,12,24,.96),rgba(12,18,34,.8))!important;border-top:1px solid rgba(34,211,238,.25)}
+nav button{transition:transform .2s,color .2s;position:relative;line-height:1.15}
+nav button.text-cyan-400{transform:translateY(-3px);text-shadow:0 0 12px rgba(34,211,238,.9)}
+nav button.text-cyan-400::before{content:"";position:absolute;top:-9px;left:22%;right:22%;height:3px;border-radius:3px;background:linear-gradient(90deg,#22d3ee,#a78bfa);box-shadow:0 0 12px #22d3ee}
+#main h2.text-xs{display:flex;align-items:center;gap:8px}
+#main h2.text-xs::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(148,163,184,.4),transparent)}
+.rc{position:relative;overflow:hidden;transition:transform .25s,box-shadow .25s,border-color .25s}
+.rc:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 18px 40px -14px rgba(34,211,238,.45)}
+.rc::after{content:"";position:absolute;top:0;left:-120%;width:55%;height:100%;pointer-events:none;background:linear-gradient(100deg,transparent,rgba(255,255,255,.16),transparent);transform:skewX(-20deg);animation:shine 5s ease-in-out infinite}
+button[class*="bg-gradient-to-r"]{background-size:200% 100%;animation:bshift 4s ease infinite}
+#openBtn{animation:glowp 2.2s ease-in-out infinite,bshift 4s ease infinite;letter-spacing:.06em}
+.border-purple-500{box-shadow:0 0 14px rgba(168,85,247,.35)}
+.border-blue-500{box-shadow:0 0 12px rgba(59,130,246,.3)}
+.border-amber-500{box-shadow:0 0 18px rgba(245,158,11,.45)}
+.border-red-500{animation:mythp 2.4s ease-in-out infinite}
+.ctr-line{position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;z-index:20;pointer-events:none;background:linear-gradient(180deg,transparent,#22d3ee,#fde68a,#22d3ee,transparent);box-shadow:0 0 12px #22d3ee}
+.hero{position:relative;border-radius:26px;overflow:hidden;background:#0a0f1c}
+.hero::before{content:"";position:absolute;inset:-60%;background:conic-gradient(from 0deg,transparent 0 60%,rgba(34,211,238,.9),rgba(167,139,250,.9),transparent 90%);animation:hspin 8s linear infinite}
+.hero::after{content:"";position:absolute;inset:1.5px;border-radius:25px;background:linear-gradient(135deg,#0c2a4a,#2a1458 55%,#4a1442)}
+.hero-in{position:relative;z-index:1;padding:16px;display:grid;gap:14px}
+.hl{font-weight:900;font-size:24px;line-height:1.02;background:linear-gradient(90deg,#67e8f9,#fde68a,#f0abfc,#67e8f9);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:tshift 6s linear infinite}
+.hero-chip{font-size:10px;font-weight:900;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}
+.vg-card{position:relative;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:18px;cursor:pointer;background:linear-gradient(90deg,rgba(251,146,60,.2),rgba(34,197,94,.16));border:1px solid rgba(251,191,36,.45)}
+.vg-new{position:absolute;top:-1px;right:-1px;background:linear-gradient(135deg,#f472b6,#ef4444);font-size:8px;font-weight:900;padding:2px 10px;border-radius:0 17px 0 12px}
+.vg-price{font-size:12px;font-weight:900;color:#fcd34d;white-space:nowrap}
+.lv-bar{border-radius:16px;overflow:hidden;display:flex;align-items:center;padding:6px 0}
+.lv-live{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:900;color:#f87171;padding:0 8px;flex-shrink:0;letter-spacing:.08em}
+.lv-live i{width:7px;height:7px;border-radius:50%;background:#ef4444;animation:ping6 1.4s infinite}
+.lv-win{overflow:hidden;flex:1;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.lv-empty{display:block;padding:4px 10px;font-size:10px;font-weight:700;color:#64748b;white-space:nowrap}
+.lv-chip{display:inline-flex;align-items:center;gap:6px;margin:0 6px;padding:3px 10px 3px 4px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:10px;white-space:nowrap}
+.lv-ico{width:24px;height:24px;flex-shrink:0;display:block}
+.lv-chip em{font-style:normal;color:#64748b;font-size:9px}
+.lv-chip b{color:#cbd5e1}
+.lv-chip u{text-decoration:none;font-weight:900}
+.lv-v{color:#fcd34d;font-weight:900}
+.lv-epic{border-color:rgba(168,85,247,.5)}
+.lv-legendary{border-color:rgba(245,158,11,.6);box-shadow:0 0 10px rgba(245,158,11,.25)}
+.lv-mythic{border-color:rgba(239,68,68,.7);box-shadow:0 0 14px rgba(239,68,68,.4)}
+.lv-panel{border-radius:20px;padding:12px}
+.lv-ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.lv-ph small{font-size:9px;color:#64748b;font-weight:700}
+.lv-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);animation:pop .35s}
+.qo-box{border:1px dashed rgba(250,204,21,.4);background:rgba(250,204,21,.05);border-radius:16px;padding:10px;text-align:left}
+.qo-chk{position:relative;display:flex;align-items:center;gap:10px;cursor:pointer}
+.qo-chk input{position:absolute;opacity:0;pointer-events:none}
+.qo-tick{width:24px;height:24px;border-radius:8px;border:2px solid #475569;background:#0d131f;display:inline-block;position:relative;flex-shrink:0;transition:.2s}
+.qo-chk input:checked+.qo-tick{background:linear-gradient(135deg,#fbbf24,#f59e0b);border-color:#fde68a;box-shadow:0 0 14px rgba(251,191,36,.7)}
+.qo-chk input:checked+.qo-tick::after{content:"✓";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#000;font-weight:900;font-size:15px}
+.qo-t{font-size:11px;font-weight:900;color:#fde68a}
+.qo-t i{display:block;font-style:normal;font-size:9px;color:#94a3b8;font-weight:700}
+.qo-body{margin-top:10px;display:grid;gap:8px}
+.qo-p{padding:4px 10px;border-radius:10px;background:#1e293b;border:1px solid #334155;font-size:11px;font-weight:900;color:#e2e8f0}
+.qo-max{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#000;border-color:#fde68a}
+.cl-badge{min-width:48px;height:48px;padding:0 6px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:#000;background:linear-gradient(135deg,#fde68a,#f59e0b);box-shadow:0 0 16px rgba(245,158,11,.5)}
+.cl-sm{min-width:34px;height:26px;border-radius:8px;font-size:10px}
+.ann{position:fixed;left:50%;top:calc(4.2rem + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:95;width:min(92vw,22rem);padding:10px 14px;border-radius:16px;background:linear-gradient(135deg,#7f1d1d,#be123c);border:1px solid rgba(254,202,202,.5);box-shadow:0 14px 40px -8px rgba(244,63,94,.7);animation:annin .4s ease-out;display:flex;flex-direction:column;gap:2px;font-size:12px}
+.ann b{font-size:10px;letter-spacing:.1em;color:#fecdd3}
+.ann-out{opacity:0;transition:opacity .6s}
+.adm-box{border:1px solid rgba(248,113,113,.35)}
+`;
+  document.head.appendChild(st);
+}
+if(!$('aurora'))document.body.insertAdjacentHTML('afterbegin','<div id="aurora"><i></i><i></i><i></i></div>');
+/* ================= END PATCH v6 ================= */
 /* ============ INIT ============ */
 hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
