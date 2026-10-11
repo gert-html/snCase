@@ -1136,6 +1136,519 @@ renderTop=function(m){
   <div class="grid grid-cols-3 gap-2">${sorts.map(([k,t])=>`<button onclick="setTS('${k}')" class="py-1.5 rounded-xl text-[10px] font-black ${TS===k?'bg-amber-400 text-black':'bg-slate-800 text-slate-300'}">${t}</button>`).join('')}</div>`+
   (all.length?all.slice(0,30).map(row).join('')+(meIx>=30?row(all[meIx],meIx):''):'<div class="glass p-8 rounded-3xl text-center text-slate-500 text-xs">Поки немає гравців</div>')+'</div>';
 };
+/* ===== PATCH v5: вкладка ЩЕ (колекція, квести, пас, маркет, батл, ігри, чат, профіль, магазин, реферали) ===== */
+
+/* ---------- базові дані ---------- */
+const XK=['got','colClaim','q','bp','refDone','refPaid','ava','frame','title','fav','shopBuys','sclaim'];
+const XDEF=()=>({got:{},colClaim:{},q:{day:'',wk:0,d:{},w:{},cd:{},cw:{},lo:null},bp:{season:'',xp:0,prem:false,fr:{},pr:{}},refDone:0,refPaid:0,ava:'',frame:'',title:'',fav:[],shopBuys:0,sclaim:{}});
+Object.assign(S,XDEF());
+Object.assign(ON,{mk:[],mine:[],mkc:{},feed:[],sx:[],xl:false,refN:0});
+const fmt=n=>Number(n||0).toLocaleString();
+const offl=()=>'<div class="glass p-8 rounded-3xl text-center text-slate-400 text-xs space-y-2"><div class="text-3xl">🌐</div><div>Онлайн-зʼєднання ще не готове. Зачекай кілька секунд або перезавантаж сторінку.</div></div>';
+const seasonNow=()=>new Date().toISOString().slice(0,7);
+const seasonPrev=()=>{const d=new Date();d.setUTCDate(0);return d.toISOString().slice(0,7)};
+function bpRoll(){const s=seasonNow();if(!S.bp||S.bp.season!==s)S.bp={season:s,xp:0,prem:false,fr:{},pr:{}}}
+function qRoll(){
+  const q=S.q,day=new Date().toDateString(),wk=Math.floor((Date.now()/864e5-4)/7);
+  if(q.day!==day){q.day=day;q.d={};q.cd={}}
+  if(q.wk!==wk){q.wk=wk;q.w={};q.cw={}}
+}
+const qAdd=(k,n=1)=>{qRoll();S.q.d[k]=(S.q.d[k]||0)+n;S.q.w[k]=(S.q.w[k]||0)+n};
+function xTrack(){
+  S.got=S.got||{};S.inv.forEach(e=>{S.got[e.id]=1});
+  qRoll();const q=S.q;if(q.lo==null)q.lo=S.opened;
+  const d=S.opened-q.lo;if(d>0)qAdd('open',d);q.lo=S.opened;
+}
+const _save5=save;
+save=function(){
+  xTrack();_save5();
+  if(ME){try{const U=users();if(U[ME]){XK.forEach(k=>{U[ME].d[k]=S[k]});LSset('sn_users',U)}}catch(e){}}
+};
+
+/* ---------- хуки для квестів ---------- */
+const _sellU=sellUids;sellUids=function(u){const n=S.inv.length;_sellU(u);if(S.inv.length<n){qAdd('sell',n-S.inv.length);save()}};
+const _sellA=sellAll;sellAll=function(){const n=S.inv.length;_sellA();if(n){qAdd('sell',n);save()}};
+const _sw5=spinWheel;spinWheel=function(){const b=S.spin;_sw5();if(!b&&S.spin){qAdd('wheel');save()}};
+const _ug5=upGo;upGo=function(){const b=UP.busy;_ug5();if(!b&&UP.busy){qAdd('upg');save()}};
+const _cg5=ctGo;ctGo=function(){const n=S.inv.length;_cg5();if(S.inv.length===n-4){qAdd('ct');save()}};
+const _cf5=cfGo;cfGo=function(){const b=S.spin;_cf5();if(!b&&S.spin){qAdd('game');save()}};
+const _ax5=addXP;addXP=function(n){bpRoll();S.bp.xp+=n;_ax5(n)};
+
+/* ================= НАВІГАЦІЯ ================= */
+$('n-bonuses').insertAdjacentHTML('afterend','<button id="n-more" onclick="go(\'more\')" class="relative flex flex-col items-center text-[9px] font-bold flex-1 px-0.5">✨<span>ЩЕ</span></button>');
+go=function(v,p,keep){
+  if(S.spin)return;
+  S.tab=v;if(v!=='case')S.tok=null;
+  ['home','games','trade','trades','top','bonuses','more','profile'].forEach(t=>{const b=$('n-'+t);if(b)b.className='relative flex flex-col items-center text-[9px] font-bold flex-1 px-0.5 '+((t===v||(v==='case'&&t==='home'))?'text-cyan-400':'text-slate-400')});
+  const m=$('main');if(!keep)window.scrollTo(0,0);
+  ({home:renderHome,case:()=>renderCase(m,p),games:renderGames,trade:renderGpu,trades:renderTrades,top:renderTop,bonuses:renderBonuses,more:renderMore,profile:renderProfile})[v](m);
+};
+const MORE={t:'col'};
+const MT=[['col','📚','КОЛЕКЦІЯ'],['q','🎯','КВЕСТИ'],['bp','🎫','ПАС'],['mk','🏪','МАРКЕТ'],['bt','⚔️','БАТЛ'],['gm','🎮','ІГРИ'],['gc','🌍','ЧАТ'],['pf','🖼️','ПРОФІЛЬ'],['sh','💳','МАГАЗИН'],['rf','👥','РЕФ']];
+function renderMore(m){
+  m.innerHTML=`<div class="space-y-3"><div class="grid grid-cols-5 gap-1.5">${MT.map(([k,e,t])=>`<button onclick="setMT('${k}')" class="py-1.5 rounded-xl text-[8px] font-black flex flex-col items-center ${MORE.t===k?'bg-cyan-500 text-black':'bg-slate-800 text-slate-300'}"><span class="text-base">${e}</span>${t}</button>`).join('')}</div><div id="mbody"></div></div>`;
+  mRender();
+}
+function setMT(k){if(S.spin)return;MORE.t=k;renderMore($('main'))}
+function mRender(){
+  const b=$('mbody');if(!b)return;
+  const F={col:colHTML,q:qHTML,bp:bpHTML,mk:mkHTML,bt:btHTML,gm:gmHTML,gc:gcHTML,pf:pfHTML,sh:shHTML,rf:rfHTML};
+  b.innerHTML=F[MORE.t]();
+  if(MORE.t==='gc'){gcSub();gcDraw()}
+  if(MORE.t==='gm'){mnDraw();crDraw()}
+  if(MORE.t==='bt')btShow();
+}
+function mLive(t){if(S.tab==='more'&&MORE.t===t&&!S.spin)mRender()}
+
+/* ================= 1. КОЛЕКЦІЯ ================= */
+const COLR={common:5000,rare:15000,epic:40000,legendary:100000,mythic:300000};
+const colList=r=>Object.values(ITEMS).filter(i=>!i.isCase&&i.rarity===r);
+function colHTML(){
+  const all=Object.values(ITEMS).filter(i=>!i.isCase),have=all.filter(i=>S.got[i.id]).length;
+  return `<div class="glass rounded-3xl p-4 text-center"><h2 class="text-sm font-black tracking-widest text-amber-300">📚 КОЛЕКЦІЯ NFT</h2><p class="text-[10px] text-slate-400">Знайдено ${have} / ${all.length} · за повну рідкість — нагорода ⭐</p></div>`+
+  RAR.map(r=>{
+    const L=colList(r),h=L.filter(i=>S.got[i.id]).length,done=h===L.length,cl=S.colClaim[r],rc=RC[r];
+    return `<div class="glass rounded-3xl p-3 space-y-2 mt-3"><div class="flex justify-between items-center"><span class="text-xs font-black uppercase ${rc.t}">${r} · ${h}/${L.length}</span><button ${done&&!cl?'':'disabled'} onclick="claimCol('${r}')" class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold ${cl?'bg-slate-800 text-green-400':done?'bg-amber-400 text-black':'bg-slate-800 text-slate-500'}">${cl?'✅':'⭐ '+fmt(COLR[r])}</button></div>
+    <div class="h-1.5 bg-slate-900 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-cyan-400 to-amber-400" style="width:${h/L.length*100}%"></div></div>
+    <div class="grid grid-cols-5 gap-1.5">${L.map(i=>S.got[i.id]?`<div class="w-full aspect-square" title="${esc(i.name)}">${art(i)}</div>`:`<div class="w-full aspect-square" style="filter:brightness(0);opacity:.3">${art(i)}</div>`).join('')}</div></div>`;
+  }).join('');
+}
+function claimCol(r){
+  const L=colList(r);if(S.colClaim[r]||!L.every(i=>S.got[i.id]))return;
+  S.colClaim[r]=1;S.stars+=COLR[r];save();confetti(40);toast('📚 +⭐ '+fmt(COLR[r]));mRender();
+}
+
+/* ================= 2. КВЕСТИ ================= */
+const QD=[['d1','Відкрий 5 кейсів','open',5,1000],['d2','Зроби 1 апгрейд','upg',1,800],['d3','Зіграй 3 рази в ігри','game',3,600],['d4','Продай 2 предмети','sell',2,400],['d5','Крутни колесо','wheel',1,500]];
+const QW=[['w1','Відкрий 50 кейсів','open',50,10000],['w2','Зроби 10 апгрейдів','upg',10,6000],['w3','Зіграй 5 батлів','battle',5,5000],['w4','Зіграй 30 ігор','game',30,8000],['w5','Виконай 3 контракти','ct',3,6000]];
+function qHTML(){
+  qRoll();
+  const row=(a,sc)=>{
+    const [id,l,k,n,r]=a,p=Math.min(n,S.q[sc][k]||0),done=S.q[sc==='d'?'cd':'cw'][id],ok=!done&&p>=n;
+    return `<div class="bg-slate-800/50 rounded-xl p-2.5 space-y-1.5"><div class="flex justify-between text-[11px] font-black"><span>${l}</span><span class="text-slate-400">${p}/${n}</span></div><div class="h-1.5 bg-slate-900 rounded-full overflow-hidden"><div class="h-full bg-cyan-400" style="width:${p/n*100}%"></div></div>
+    <button ${ok?'':'disabled'} onclick="claimQ('${id}','${sc}')" class="w-full py-1 rounded-lg text-[10px] font-extrabold ${done?'bg-slate-800 text-green-400':ok?'bg-amber-400 text-black':'bg-slate-800 text-slate-500'}">${done?'✅ ОТРИМАНО':'⭐ '+fmt(r)}</button></div>`;
+  };
+  return `<div class="glass rounded-3xl p-4 space-y-2"><h2 class="text-sm font-black tracking-widest text-center text-cyan-300">🎯 ЩОДЕННІ КВЕСТИ</h2>${QD.map(a=>row(a,'d')).join('')}</div>
+  <div class="glass rounded-3xl p-4 space-y-2 mt-3"><h2 class="text-sm font-black tracking-widest text-center text-fuchsia-300">🗓️ ТИЖНЕВІ КВЕСТИ</h2>${QW.map(a=>row(a,'w')).join('')}</div>`;
+}
+function claimQ(id,sc){
+  qRoll();const a=(sc==='d'?QD:QW).find(x=>x[0]===id),cl=S.q[sc==='d'?'cd':'cw'];
+  if(!a||cl[id]||(S.q[sc][a[2]]||0)<a[3])return;
+  cl[id]=1;S.stars+=a[4];confetti(25);toast('🎯 +⭐ '+fmt(a[4]));addXP(sc==='d'?30:100);mRender();
+}
+
+/* ================= 3. BATTLE PASS + СЕЗОННИЙ ТОП ================= */
+const BPC=['meme','autumn','dragon','love','neon','royal','ton','diamond','cyber','vip'];
+const bpF=l=>l*200;
+const bpP=l=>({s:l*400,i:l===30?'x20':(l%5===0?'k_'+BPC[(l/5-1)%BPC.length]:null)});
+const bpLv=()=>Math.min(30,Math.floor(S.bp.xp/120));
+function bpHTML(){
+  bpRoll();const lv=bpLv(),into=S.bp.xp-lv*120,p=lv>=30?100:into/120*100;
+  const rows=[];
+  for(let l=1;l<=30;l++){
+    const f=bpF(l),pr=bpP(l),open=lv>=l,fd=S.bp.fr[l],pd=S.bp.pr[l];
+    rows.push(`<div class="flex items-center gap-2 text-[10px] font-black ${open?'':'opacity-50'}"><span class="w-6 text-slate-400">${l}</span>
+    <button ${open&&!fd?'':'disabled'} onclick="bpClaim(${l},'fr')" class="flex-1 py-1.5 rounded-lg ${fd?'bg-slate-800 text-green-400':open?'bg-cyan-500 text-black':'bg-slate-800 text-slate-500'}">${fd?'✅':'⭐ '+fmt(f)}</button>
+    <button ${open&&S.bp.prem&&!pd?'':'disabled'} onclick="bpClaim(${l},'pr')" class="flex-1 py-1.5 rounded-lg ${pd?'bg-slate-800 text-green-400':open&&S.bp.prem?'bg-amber-400 text-black':'bg-slate-800 text-slate-500'}">${pd?'✅':(S.bp.prem?'':'🔒 ')+'⭐ '+fmt(pr.s)+(pr.i?' +🎁':'')}</button></div>`);
+  }
+  const L=[...ON.sx].sort((a,b)=>b.xp-a.xp).slice(0,10),prev=seasonPrev();
+  return `<div class="glass rounded-3xl p-4 space-y-3"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-amber-300">🎫 BATTLE PASS · ${seasonNow()}</h2><p class="text-[10px] text-slate-400">Сезонний XP: ${fmt(S.bp.xp)} · 120 XP = 1 рівень</p></div>
+  <div class="flex justify-between text-[10px] font-black"><span class="text-cyan-300">РІВЕНЬ ${lv} / 30</span><span class="text-slate-400">${lv>=30?'MAX':into+' / 120'}</span></div>
+  <div class="h-2 bg-slate-900 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-cyan-400 to-amber-400" style="width:${p}%"></div></div>
+  ${S.bp.prem?'<div class="text-center text-[11px] font-black text-amber-300">👑 PREMIUM АКТИВНИЙ</div>':'<button onclick="bpPrem()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-black text-xs">👑 КУПИТИ PREMIUM ЗА ⭐ 5 000</button>'}
+  <div class="flex gap-2 text-[9px] font-black text-slate-400"><span class="w-6">LV</span><span class="flex-1 text-center">FREE</span><span class="flex-1 text-center">PREMIUM (рівні 5,10… = кейс, 30 = Genesis Crown)</span></div>
+  <div class="space-y-1.5 max-h-80 overflow-y-auto nos">${rows.join('')}</div></div>
+  <div class="glass rounded-3xl p-4 space-y-2 mt-3"><h2 class="text-sm font-black tracking-widest text-center text-red-300">🏆 СЕЗОННИЙ ТОП</h2><p class="text-[10px] text-slate-400 text-center">Призи за сезон: 🥇 ⭐50 000 · 🥈 ⭐25 000 · 🥉 ⭐10 000</p>
+  ${L.length?L.map((x,i)=>`<div class="flex justify-between text-[11px] font-black bg-slate-800/50 rounded-xl px-3 py-1.5 ${x.uid===ON.uid?'border border-cyan-500/40':''}"><span>#${i+1} ${esc(x.name||'Гравець')}</span><span class="text-amber-300">${fmt(x.xp)} XP</span></div>`).join(''):'<div class="text-center text-[10px] text-slate-500">Поки порожньо</div>'}
+  <button onclick="sClaim()" class="w-full py-2 rounded-xl bg-slate-800 border border-slate-700 text-[10px] font-extrabold">🎁 ЗАБРАТИ ПРИЗ ЗА МИНУЛИЙ СЕЗОН (${prev})</button></div>`;
+}
+function bpClaim(l,t){
+  bpRoll();if(l>bpLv()||S.bp[t][l])return;
+  if(t==='pr'&&!S.bp.prem)return toast('🔒 Потрібен PREMIUM');
+  const r=t==='pr'?bpP(l):{s:bpF(l)};
+  S.bp[t][l]=1;S.stars+=r.s;if(r.i)S.inv.push({id:r.i,uid:nid(S)});
+  save();confetti(20);toast('🎫 +⭐ '+fmt(r.s)+(r.i?' + '+ITEMS[r.i].name:''));mRender();
+}
+function bpPrem(){
+  if(S.bp.prem)return;if(S.stars<5000)return toast('❌ Недостатньо Stars');
+  S.stars-=5000;S.bp.prem=true;save();confetti(40);toast('👑 PREMIUM активовано');mRender();
+}
+async function sClaim(){
+  if(!ON.ready)return toast('🌐 Онлайн ще не готовий');
+  const prev=seasonPrev();if(S.sclaim[prev])return toast('Вже перевірено');
+  try{
+    const s=await ON.db.collection('sxp').where('season','==',prev).get();
+    const L=s.docs.map(d=>d.data()).sort((a,b)=>b.xp-a.xp),i=L.findIndex(x=>x.uid===ON.uid);
+    if(i<0||i>2){S.sclaim[prev]=1;save();return toast('У минулому сезоні ти не в топ-3')}
+    await ON.db.doc('sclaims/'+prev+'_'+ON.uid).set({season:prev,uid:ON.uid,rank:i+1,ts:Date.now()});
+    const pr=[50000,25000,10000][i];S.stars+=pr;S.sclaim[prev]=1;save();confetti(60);toast('🏆 Місце #'+(i+1)+': +⭐ '+fmt(pr));mRender();
+  }catch(e){toast('❌ Помилка або приз вже отримано')}
+}
+
+/* ================= 4. МАРКЕТ ================= */
+const MK={busy:0};
+function mkHTML(){
+  if(!ON.ready)return offl();
+  const open=[...ON.mk].filter(l=>ITEMS[l.item&&l.item.id]).sort((a,b)=>a.price-b.price);
+  const inv=[...S.inv].sort((a,b)=>ITEMS[b.id].val-ITEMS[a.id].val);
+  const lot=l=>{const it=ITEMS[l.item.id],r=RC[it.rarity],own=l.seller===ON.uid;
+    return `<div class="bg-gradient-to-b ${r.bg} border ${r.b} rounded-2xl p-2.5 flex flex-col items-center"><div class="w-14 h-14">${art(it)}</div><div class="text-[10px] font-black truncate w-full text-center">${esc(it.name)}</div><div class="text-[8px] text-slate-400 truncate w-full text-center">${esc(l.sname||'')}</div><div class="text-[9px] text-slate-400">≈ ⭐ ${fmt(it.val)}</div>
+    <button onclick="${own?`mkCancel('${l.id}')`:`mkBuy('${l.id}')`}" class="w-full mt-1 py-1 rounded-lg text-[10px] font-extrabold ${own?'bg-slate-800 border border-slate-700':'bg-amber-400 text-black'}">${own?'ЗНЯТИ':'КУПИТИ ⭐ '+fmt(l.price)}</button></div>`};
+  return `<div class="glass rounded-3xl p-4 space-y-2"><h2 class="text-sm font-black tracking-widest text-center text-lime-300">🏪 МАРКЕТ</h2><p class="text-[10px] text-slate-400 text-center">Тапни предмет → введи ціну. Комісія 5% з продажу.</p>
+  ${inv.length?`<div class="grid grid-cols-4 gap-1.5 max-h-44 overflow-y-auto nos">${inv.map(e=>tcard(ITEMS[e.id],false,`mkList(${e.uid})`)).join('')}</div>`:'<div class="text-center text-[10px] text-slate-500">Інвентар порожній</div>'}</div>
+  <div class="glass rounded-3xl p-4 space-y-2 mt-3"><h2 class="text-xs font-black tracking-widest text-slate-300">ЛОТИ (${open.length})</h2>${open.length?`<div class="grid grid-cols-2 gap-2.5">${open.map(lot).join('')}</div>`:'<div class="text-center text-[10px] text-slate-500 py-6">Лотів поки немає</div>'}</div>`;
+}
+async function mkList(uid){
+  if(!ON.ready)return toast('🌐 Онлайн ще не готовий');
+  const e=S.inv.find(x=>x.uid===uid);if(!e)return;const it=ITEMS[e.id];
+  const p=parseInt(prompt('Ціна в ⭐ для '+it.name+' (оцінка ≈ '+it.val+', комісія 5%)',it.val));
+  if(!p||p<1||p>1e9)return;
+  if(ON.mine.filter(l=>l.st==='open').length>=20)return toast('❌ Максимум 20 лотів');
+  S.inv=S.inv.filter(x=>x.uid!==uid);save();
+  try{await ON.db.collection('market').add({seller:ON.uid,sname:(users()[ME]||{}).n||'Player',item:{id:e.id,uid:e.uid},price:p,st:'open',claimed:false,ts:Date.now()});toast('🏪 Виставлено')}
+  catch(err){S.inv.push(e);save();toast('❌ Не вдалося виставити')}
+  mRender();
+}
+async function mkBuy(id){
+  if(MK.busy)return;const l=ON.mk.find(x=>x.id===id);if(!l||l.seller===ON.uid)return;
+  if(S.stars<l.price)return toast('❌ Недостатньо Stars');
+  MK.busy=1;S.stars-=l.price;save();
+  const ref=ON.db.doc('market/'+id);let ok=false;
+  try{ok=await firebase.firestore().runTransaction(async tx=>{const s=await tx.get(ref),d=s.data();if(!d||d.st!=='open')return false;tx.update(ref,{st:'sold',buyer:ON.uid});return true})}catch(e){ok=false}
+  if(ok){S.inv.push({id:l.item.id,uid:nid(S)});save();confetti(25);toast('✅ Куплено: '+ITEMS[l.item.id].name)}
+  else{S.stars+=l.price;save();toast('❌ Лот недоступний')}
+  MK.busy=0;mRender();
+}
+async function mkCancel(id){
+  const ref=ON.db.doc('market/'+id);
+  try{await firebase.firestore().runTransaction(async tx=>{const s=await tx.get(ref),d=s.data();if(!d||d.st!=='open'||d.seller!==ON.uid)return;tx.update(ref,{st:'cancelled'})});toast('↩️ Лот знято')}
+  catch(e){toast('❌ Помилка')}
+}
+/* продавець забирає результат: продано -> 95% ціни, знято -> предмет назад */
+function mkSettle(){
+  ON.mine.forEach(l=>{
+    if(l.claimed||l.st==='open'||ON.mkc[l.id])return;ON.mkc[l.id]=1;
+    const ref=ON.db.doc('market/'+l.id);
+    firebase.firestore().runTransaction(async tx=>{const s=await tx.get(ref),d=s.data();if(!d||d.claimed||d.st==='open')return null;tx.update(ref,{claimed:true});return d})
+    .then(d=>{if(!d)return;
+      if(d.st==='sold'){const g=Math.floor(d.price*.95);S.stars+=g;toast('💰 Продано: +⭐ '+fmt(g))}
+      else{S.inv.push({id:d.item.id,uid:nid(S)});toast('↩️ Предмет повернуто')}
+      save()})
+    .catch(()=>{delete ON.mkc[l.id]});
+  });
+}
+
+/* ================= 5. БАТЛ З БОТОМ ================= */
+const BT={c:'meme',r:1,res:null};
+function btHTML(){
+  const L=CASES.filter(c=>c.price>0&&!c.nb),c=cs(BT.c)||L[0];
+  return `<div class="glass rounded-3xl p-4 space-y-3"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-red-300">⚔️ БАТЛ З БОТОМ</h2><p class="text-[10px] text-slate-400">Обидва відкривають однаковий кейс. Дорожчий дроп забирає ВСЕ. Нічия — свої предмети лишаються тобі.</p></div>
+  <select class="inp" onchange="BT.c=this.value;BT.res=null;mRender()">${L.map(x=>`<option value="${x.id}" ${x.id===c.id?'selected':''}>${x.name} · ⭐${x.price}</option>`).join('')}</select>
+  <div class="flex justify-center gap-2">${[1,2,3].map(n=>`<button onclick="BT.r=${n};BT.res=null;mRender()" class="px-3 py-1 rounded-xl text-xs font-black ${BT.r===n?'bg-red-500 text-black':'bg-slate-800 text-slate-300'}">${n} раунд${n>1?'и':''}</button>`).join('')}</div>
+  <button onclick="btGo()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-red-500 to-orange-500 text-black font-black text-xs uppercase active:scale-95 transition">ПОЧАТИ БАТЛ ЗА ⭐ ${fmt(c.price*BT.r)}</button>
+  <div id="btr"></div></div>`;
+}
+function btShow(){
+  const e=$('btr');if(!e||!BT.res)return;const R=BT.res;
+  const col=(arr,sc)=>`<div class="flex-1 bg-slate-800/50 rounded-2xl p-2 space-y-1.5 text-center">${arr.slice(0,R.show).map(i=>`<div class="pop flex items-center gap-1.5"><div class="w-9 h-9 shrink-0">${art(i)}</div><div class="text-left overflow-hidden"><div class="text-[9px] font-black truncate">${esc(i.name)}</div><div class="text-[9px] text-amber-300 font-bold">⭐ ${fmt(i.val)}</div></div></div>`).join('')}${R.done?`<div class="text-[11px] font-black text-amber-300 pt-1">Σ ⭐ ${fmt(sc)}</div>`:''}</div>`;
+  e.innerHTML=`<div class="flex gap-2 text-[9px] font-black text-slate-400"><span class="flex-1 text-center">ТИ</span><span class="flex-1 text-center">🤖 БОТ</span></div><div class="flex gap-2">${col(R.me,R.sm)}${col(R.bot,R.sb)}</div>
+  ${R.done?`<div class="text-center text-sm font-black mt-2 ${R.out==='win'?'text-green-400':R.out==='draw'?'text-slate-300':'text-red-400'}">${R.out==='win'?'🏆 ПЕРЕМОГА! Забираєш усе':R.out==='draw'?'🤝 НІЧИЯ — свої предмети твої':'💥 ПРОГРАШ'}</div>`:''}`;
+}
+function btGo(){
+  if(S.spin)return;const c=cs(BT.c);if(!c||c.price<=0)return;
+  const cost=c.price*BT.r;if(S.stars<cost)return toast('❌ Недостатньо Stars ⭐');
+  S.stars-=cost;S.spin=true;save();
+  const me=[],bot=[];for(let i=0;i<BT.r;i++){me.push(roll(c));bot.push(roll(c))}
+  BT.res={me,bot,sm:me.reduce((s,i)=>s+i.val,0),sb:bot.reduce((s,i)=>s+i.val,0),show:0,done:false};btShow();
+  const tm=setInterval(()=>{
+    BT.res.show++;btShow();AU.tick();
+    if(BT.res.show>=BT.r){clearInterval(tm);setTimeout(btEnd,700)}
+  },800);
+}
+function btEnd(){
+  const R=BT.res;R.done=true;
+  R.out=R.sm>R.sb?'win':R.sm===R.sb?'draw':'lose';
+  const give=R.out==='win'?R.me.concat(R.bot):R.out==='draw'?R.me:[];
+  give.forEach(i=>S.inv.push({id:i.id,uid:nid(S)}));
+  S.opened+=BT.r;S.spin=false;qAdd('battle');
+  if(R.out==='win'){AU.win('epic');confetti(40)}else AU.tone(R.out==='draw'?220:110,0,.5,'square',.1);
+  save();btShow();addXP(20*BT.r);
+}
+
+/* ================= 6. МІНІ-ІГРИ: МІНЕР + КРАШ ================= */
+const MN={bet:100,m:3,on:false,open:[],mines:[],k:0,cur:0,msg:''};
+const mnMult=(k,m)=>{let x=.96;for(let i=0;i<k;i++)x*=(25-i)/(25-m-i);return x};
+function gmHTML(){return `<div id="mn" class="glass p-4 rounded-3xl space-y-3 text-center"></div><div id="cr" class="glass p-4 rounded-3xl space-y-3 text-center mt-3"></div>`}
+function mnDraw(){
+  const e=$('mn');if(!e)return;const fin=!MN.on&&MN.mines.length;
+  let cells='';
+  for(let i=0;i<25;i++){
+    const op=MN.open.includes(i),mi=MN.mines.includes(i);
+    cells+=`<button ${MN.on&&!op?'':'disabled'} onclick="mnPick(${i})" class="aspect-square rounded-xl text-xl font-black ${op?'bg-green-500/30 border border-green-400':fin&&mi?'bg-red-600/40 border border-red-500':'bg-slate-800 border border-slate-700'}">${op?'💎':fin&&mi?'💣':''}</button>`;
+  }
+  const mult=mnMult(MN.k,MN.m);
+  e.innerHTML=`<h2 class="text-sm font-black tracking-widest text-green-300">💣 МІНЕР</h2><p class="text-[10px] text-slate-400">Відкривай 💎, уникай 💣. Множник росте з кожним кроком.</p>
+  <div class="grid grid-cols-5 gap-1.5">${cells}</div>
+  ${MN.on?`<div class="text-xs font-black text-amber-300">x${mult.toFixed(2)} · ⭐ ${fmt(Math.floor(MN.cur*mult))}</div><button onclick="mnCash()" ${MN.k?'':'disabled'} class="w-full py-3 rounded-2xl bg-green-400 text-black font-black text-xs ${MN.k?'':'opacity-40'}">ЗАБРАТИ</button>`:
+  `<div class="text-[11px] font-black ${MN.msg.startsWith('💥')?'text-red-400':'text-green-300'}">${MN.msg}</div>
+  <div class="flex justify-center gap-2">${[1,3,5,10].map(n=>`<button onclick="MN.m=${n};mnDraw()" class="px-3 py-1 rounded-xl text-xs font-black ${MN.m===n?'bg-green-400 text-black':'bg-slate-800 text-slate-300'}">${n} 💣</button>`).join('')}</div>
+  <div class="flex gap-2"><input type="number" min="1" class="inp" value="${MN.bet}" oninput="MN.bet=Math.max(1,parseInt(this.value)||1)"><button onclick="mnStart()" class="px-5 rounded-xl bg-green-400 text-black font-black text-xs">СТАРТ</button></div>`}`;
+}
+function mnStart(){
+  if(S.spin||MN.on)return;const b=MN.bet|0;
+  if(b<1||b>S.stars)return toast('❌ Недостатньо Stars');
+  S.stars-=b;S.spin=true;MN.on=true;MN.cur=b;MN.k=0;MN.open=[];MN.msg='';
+  const pool=[...Array(25).keys()];MN.mines=[];
+  for(let i=0;i<MN.m;i++)MN.mines.push(pool.splice(Math.random()*pool.length|0,1)[0]);
+  qAdd('game');save();mnDraw();
+}
+function mnPick(i){
+  if(!MN.on||MN.open.includes(i))return;
+  if(MN.mines.includes(i)){
+    MN.on=false;S.spin=false;MN.msg='💥 Міна! −⭐ '+fmt(MN.cur);
+    AU.tone(110,0,.5,'square',.1);shake();save();mnDraw();return;
+  }
+  MN.open.push(i);MN.k++;AU.tick();
+  if(MN.k>=25-MN.m)return mnCash();
+  mnDraw();
+}
+function mnCash(){
+  if(!MN.on||!MN.k)return;
+  const w=Math.floor(MN.cur*mnMult(MN.k,MN.m));
+  S.stars+=w;MN.on=false;S.spin=false;MN.msg='🎉 Забрано ⭐ '+fmt(w)+' (x'+mnMult(MN.k,MN.m).toFixed(2)+')';
+  AU.win('rare');confetti(25);save();mnDraw();
+}
+
+const CR={bet:100,auto:0,on:false,x:1,pt:1,t0:0,cur:0,msg:''};
+function crDraw(){
+  const e=$('cr');if(!e)return;
+  e.innerHTML=`<h2 class="text-sm font-black tracking-widest text-orange-300">📈 КРАШ</h2><p class="text-[10px] text-slate-400">Множник росте — встигни забрати до краху.</p>
+  <div id="crx" class="text-4xl font-black ${CR.on?'text-amber-300':'text-slate-300'}">${CR.x.toFixed(2)}x</div>
+  ${CR.on?`<button id="crb" onclick="crCash()" class="w-full py-3 rounded-2xl bg-orange-400 text-black font-black text-xs">ЗАБРАТИ ⭐ ${fmt(Math.floor(CR.cur*CR.x))}</button>`:
+  `<div class="text-[11px] font-black ${CR.msg.startsWith('💥')?'text-red-400':'text-green-300'}">${CR.msg}</div>
+  <div class="flex gap-2"><input type="number" min="1" class="inp" value="${CR.bet}" oninput="CR.bet=Math.max(1,parseInt(this.value)||1)"><input type="number" step="0.1" min="0" class="inp" value="${CR.auto||''}" placeholder="авто x" oninput="CR.auto=parseFloat(this.value)||0"><button onclick="crStart()" class="px-4 rounded-xl bg-orange-400 text-black font-black text-xs">СТАРТ</button></div>`}`;
+}
+function crStart(){
+  if(S.spin||CR.on)return;const b=CR.bet|0;
+  if(b<1||b>S.stars)return toast('❌ Недостатньо Stars');
+  S.stars-=b;S.spin=true;CR.on=true;CR.cur=b;CR.x=1;CR.msg='';
+  const r=Math.random();CR.pt=Math.min(1000,Math.max(1,Math.floor(96/(1-r))/100)); /* 4% перевага казино */
+  CR.t0=performance.now();qAdd('game');save();crDraw();requestAnimationFrame(crLoop);
+}
+const crX=()=>Math.exp((performance.now()-CR.t0)*0.00035);
+function crLoop(){
+  if(!CR.on)return;
+  const x=crX();
+  if(x>=CR.pt){CR.x=CR.pt;return crEnd(false)}
+  CR.x=x;
+  if(CR.auto>1.01&&x>=CR.auto)return crCash(CR.auto);
+  const a=$('crx');if(a)a.textContent=x.toFixed(2)+'x';
+  const b=$('crb');if(b)b.textContent='ЗАБРАТИ ⭐ '+fmt(Math.floor(CR.cur*x));
+  requestAnimationFrame(crLoop);
+}
+function crCash(fx){
+  if(!CR.on)return;
+  const x=fx||crX();
+  if(x>=CR.pt){CR.x=CR.pt;return crEnd(false)}
+  CR.x=x;crEnd(true,Math.floor(CR.cur*x));
+}
+function crEnd(win,w){
+  CR.on=false;S.spin=false;
+  if(win){S.stars+=w;CR.msg='🎉 Забрано ⭐ '+fmt(w)+' на x'+CR.x.toFixed(2);AU.win('rare');confetti(25)}
+  else{CR.msg='💥 КРАШ на x'+CR.pt.toFixed(2)+' · −⭐ '+fmt(CR.cur);AU.tone(110,0,.5,'square',.1);shake()}
+  save();crDraw();
+}
+
+/* ================= 7. ЗАГАЛЬНИЙ ЧАТ ================= */
+const GC={unsub:null,msgs:[],last:0,first:true,err:false};
+function gcHTML(){
+  if(!ON.ready)return offl();GC.first=true;
+  return `<div class="glass rounded-3xl p-3 flex flex-col" style="height:min(65vh,480px)"><div class="text-xs font-black text-center text-cyan-300 pb-2">🌍 ЗАГАЛЬНИЙ ЧАТ</div><div id="gcm" class="flex-1 overflow-y-auto nos space-y-1.5"></div>
+  <div class="flex gap-2 pt-2"><input id="gci" class="inp" maxlength="200" placeholder="Повідомлення всім..." autocomplete="off" onkeydown="if(event.key==='Enter')gcSend()"><button onclick="gcSend()" class="px-4 rounded-xl bg-cyan-500 text-black font-black text-xs">➤</button></div></div>`;
+}
+function gcSub(){
+  if(GC.unsub||!ON.ready)return;
+  GC.unsub=ON.db.collection('global').orderBy('ts').limitToLast(60).onSnapshot(s=>{GC.err=false;GC.msgs=s.docs.map(d=>d.data());gcDraw()},()=>{GC.err=true;gcDraw()});
+}
+function gcDraw(){
+  const b=$('gcm');if(!b)return;
+  if(GC.err){b.innerHTML='<div class="text-center text-[10px] text-red-400 py-6">Не вдалося завантажити чат (перевір правила Firestore)</div>';return}
+  const near=b.scrollHeight-b.scrollTop-b.clientHeight<80;
+  b.innerHTML=GC.msgs.length?GC.msgs.map(m=>{
+    const me=m.from===ON.uid,t=new Date(m.ts||Date.now()),p=ON.players[m.from];
+    return `<div class="flex ${me?'justify-end':'justify-start'} items-end gap-1.5">${me?'':avaHTML(p||{},24)}<div class="max-w-[78%] rounded-2xl px-3 py-1.5 text-[12px] ${me?'bg-cyan-500 text-black':'bg-slate-800 text-white'}" style="user-select:text;-webkit-user-select:text;word-break:break-word">${me?'':`<div class="text-[9px] font-black text-cyan-300 cursor-pointer" onclick="showPlayer('${esc(m.from)}')">${esc(m.name||'Гравець')}</div>`}${esc(m.text)}<div class="text-[8px] opacity-60 text-right">${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}</div></div></div>`;
+  }).join(''):'<div class="text-center text-[10px] text-slate-500 py-8">Напиши першим 👋</div>';
+  if(near||GC.first)b.scrollTop=b.scrollHeight;GC.first=false;
+}
+async function gcSend(){
+  const i=$('gci');if(!i||!ON.ready)return;
+  const t=i.value.trim().slice(0,200),now=Date.now();
+  if(!t||now-GC.last<1500)return;GC.last=now;i.value='';
+  try{await ON.db.collection('global').add({from:ON.uid,name:(users()[ME]||{}).n||'Player',text:t,ts:now})}
+  catch(e){toast('❌ Не надіслано')}
+}
+
+/* ================= 8. ПРОФІЛЬ: аватар, рамка, титул, вітрина ================= */
+const FR=[[1,'#64748b','Сталь'],[3,'#22c55e','Смарагд'],[5,'#3b82f6','Сапфір'],[8,'#a855f7','Аметист'],[12,'#f59e0b','Золото'],[20,'#ef4444','Рубін']];
+const TTL=[['Новачок',()=>true],['Колекціонер',()=>Object.keys(S.got).length>=30],['Мисливець',()=>lvlOf(S.xp)>=5],['Магнат',()=>iv(S.inv)>=10000],['Легенда',()=>lvlOf(S.xp)>=15],['Міфік-мисливець',()=>Object.keys(S.got).some(k=>ITEMS[k]&&ITEMS[k].rarity==='mythic')],['Бог кейсів',()=>S.opened>=500]];
+function frameCol(p){
+  const l=(p&&p.lvl)||1;let i=(p&&typeof p.frame==='number')?p.frame:-1;
+  if(i<0||!FR[i]||l<FR[i][0]){i=0;FR.forEach((f,k)=>{if(l>=f[0])i=k})}
+  return FR[i][1];
+}
+const avaHTML=(p,sz=40)=>{
+  const col=frameCol(p),it=p&&ITEMS[p.ava];
+  return `<div style="width:${sz}px;height:${sz}px;border-radius:50%;border:3px solid ${col};background:#0d131f;padding:${Math.round(sz/10)}px;box-shadow:0 0 8px ${col}88;flex-shrink:0;box-sizing:border-box;overflow:hidden">${it?art(it):`<div style="font-size:${Math.round(sz*.4)}px;text-align:center;line-height:${sz-10}px">👤</div>`}</div>`;
+};
+function pfHTML(){
+  const lv=lvlOf(S.xp),me={ava:S.ava,frame:S.frame,lvl:lv};
+  const got=Object.keys(S.got).filter(k=>ITEMS[k]&&!ITEMS[k].isCase).sort((a,b)=>ITEMS[b].val-ITEMS[a].val).slice(0,48);
+  const favC=[...new Set(S.inv.map(e=>e.id))].filter(i=>ITEMS[i]&&!ITEMS[i].isCase).sort((a,b)=>ITEMS[b].val-ITEMS[a].val).slice(0,24);
+  return `<div class="glass rounded-3xl p-4 space-y-3"><h2 class="text-sm font-black tracking-widest text-center text-fuchsia-300">🖼️ МІЙ ПРОФІЛЬ</h2>
+  <div class="flex items-center gap-3">${avaHTML(me,64)}<div><div class="text-sm font-black">${esc((users()[ME]||{}).n||'')}</div><div class="text-[10px] text-cyan-300 font-black">${esc(S.title||'Новачок')} · РІВЕНЬ ${lv}</div></div></div>
+  <div class="text-[10px] font-black text-slate-400">ТИТУЛ</div><div class="flex flex-wrap gap-1.5">${TTL.map(t=>t[1]()?`<button onclick="setTitle('${t[0]}')" class="px-2.5 py-1 rounded-lg text-[10px] font-black ${(S.title||'Новачок')===t[0]?'bg-fuchsia-500 text-black':'bg-slate-800 text-slate-300'}">${t[0]}</button>`:`<span class="px-2.5 py-1 rounded-lg text-[10px] font-black bg-slate-900 text-slate-600">🔒 ${t[0]}</span>`).join('')}</div>
+  <div class="text-[10px] font-black text-slate-400">РАМКА (за рівень)</div><div class="flex flex-wrap gap-1.5">${FR.map((f,i)=>lv>=f[0]?`<button onclick="setFrame(${i})" class="px-2.5 py-1 rounded-lg text-[10px] font-black bg-slate-800" style="border:2px solid ${f[1]}">${f[2]}</button>`:`<span class="px-2.5 py-1 rounded-lg text-[10px] font-black bg-slate-900 text-slate-600">🔒 LV${f[0]}</span>`).join('')}</div>
+  <div class="text-[10px] font-black text-slate-400">АВАТАР (будь-який знайдений NFT)</div>${got.length?`<div class="grid grid-cols-6 gap-1.5 max-h-36 overflow-y-auto nos">${got.map(k=>`<div onclick="setAva('${k}')" class="cursor-pointer rounded-xl p-1 ${S.ava===k?'ring-2 ring-fuchsia-400 bg-slate-800':'bg-slate-900/60'}"><div class="w-full aspect-square">${art(ITEMS[k])}</div></div>`).join('')}</div>`:'<div class="text-[10px] text-slate-500">Відкрий кейс, щоб обрати аватар</div>'}
+  <div class="text-[10px] font-black text-slate-400">ВІТРИНА (до 3 предметів з інвентаря) · обрано ${S.fav.length}/3</div>${favC.length?`<div class="grid grid-cols-6 gap-1.5 max-h-36 overflow-y-auto nos">${favC.map(k=>`<div onclick="togFav('${k}')" class="cursor-pointer rounded-xl p-1 ${S.fav.includes(k)?'ring-2 ring-amber-400 bg-slate-800':'bg-slate-900/60'}"><div class="w-full aspect-square">${art(ITEMS[k])}</div></div>`).join('')}</div>`:'<div class="text-[10px] text-slate-500">Інвентар порожній</div>'}</div>`;
+}
+function setTitle(t){S.title=t;save();mRender()}
+function setFrame(i){S.frame=i;save();mRender()}
+function setAva(k){S.ava=k;save();mRender()}
+function togFav(k){const i=S.fav.indexOf(k);if(i>=0)S.fav.splice(i,1);else{if(S.fav.length>=3)return toast('Максимум 3');S.fav.push(k)}save();mRender()}
+function showPlayer(k){
+  const p0=ON.players[k];if(!p0)return;const me=k===ON.uid;
+  const p=me?Object.assign({},p0,{ava:S.ava,frame:S.frame,title:S.title,fav:S.fav,lvl:lvlOf(S.xp),stars:S.stars,val:iv(S.inv),opened:S.opened}):p0;
+  const favs=(p.fav||[]).filter(i=>ITEMS[i]);
+  mc.innerHTML=`<div class="flex flex-col items-center gap-2">${avaHTML(p,72)}<div class="text-base font-black">${esc(p.name||'Гравець')}</div><div class="text-[10px] font-black text-cyan-300">${esc(p.title||'Новачок')} · РІВЕНЬ ${p.lvl||1}</div><div class="text-[10px] text-slate-400">${lastSeen(k)}</div>
+  <div class="grid grid-cols-3 gap-2 w-full text-[10px] font-black"><div class="bg-slate-800/60 rounded-xl p-2">⭐<div class="text-amber-300">${fmt(p.stars)}</div></div><div class="bg-slate-800/60 rounded-xl p-2">🎒<div class="text-cyan-300">${fmt(p.val)}</div></div><div class="bg-slate-800/60 rounded-xl p-2">📦<div>${p.opened|0}</div></div></div>
+  <div class="text-[10px] font-black text-slate-400 mt-1">ВІТРИНА</div><div class="flex gap-2 justify-center min-h-[56px]">${favs.length?favs.map(i=>`<div class="w-14 h-14">${art(ITEMS[i])}</div>`).join(''):'<span class="text-[10px] text-slate-500 self-center">порожньо</span>'}</div>
+  ${me?'':`<div class="grid grid-cols-2 gap-2 w-full mt-2"><button onclick="closeModal();tradeWith('${esc(k)}')" class="py-2 rounded-xl bg-cyan-500 text-black text-[11px] font-extrabold">🔁 ТРЕЙД</button><button onclick="closeModal();openChat('${esc(k)}')" class="py-2 rounded-xl bg-slate-800 border border-slate-700 text-[11px] font-extrabold">💬 ЧАТ</button></div>`}
+  <button onclick="closeModal()" class="w-full py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-extrabold mt-1">ЗАКРИТИ</button></div>`;
+  ov.style.display='flex';setTimeout(()=>mc.classList.remove('scale-95','opacity-0'),10);
+}
+
+/* лідерборд з аватарами, рівнем і кліком на профіль */
+const _rt5=renderTop;
+renderTop=function(m){
+  if(!ON.ready)return _rt5(m);
+  const mine=ON.uid;
+  const all=Object.entries(ON.players).filter(([k,p])=>p&&p.name).map(([k,p])=>{
+    const me=k===mine,pp=me?Object.assign({},p,{ava:S.ava,frame:S.frame,title:S.title,lvl:lvlOf(S.xp)}):p;
+    return {k,p:pp,n:p.name,o:me?S.opened:(p.opened|0),v:me?iv(S.inv):(p.val|0),s:me?S.stars:(p.stars|0),l:pp.lvl||1,on:isOn(p,k)};
+  });
+  all.sort(TS==='stars'?(a,b)=>b.s-a.s:TS==='lvl'?(a,b)=>b.l-a.l:TS==='on'?(a,b)=>(b.on-a.on)||(b.v-a.v):(a,b)=>b.v-a.v);
+  const onN=all.filter(x=>x.on).length;
+  const row=(l,i)=>`<div class="glass p-3 rounded-2xl ${l.k===mine?'border border-cyan-500/40':''}">
+  <div class="flex justify-between items-center gap-2"><div class="flex items-center gap-2.5 min-w-0 cursor-pointer" onclick="showPlayer('${esc(l.k)}')"><div class="w-7 h-7 shrink-0 rounded-lg ${['bg-amber-400 text-black','bg-slate-300 text-black','bg-amber-700'][i]||'bg-slate-800 text-slate-400'} font-black text-[10px] flex items-center justify-center">#${i+1}</div>${avaHTML(l.p,36)}
+  <div class="min-w-0"><div class="text-xs font-black truncate ${l.k===mine?'text-cyan-300':''}">${dot(l.k)} ${esc(l.n)}${l.k===mine?' (ТИ)':''}</div><div class="text-[10px] text-slate-400 truncate">LV${l.l} · ${esc(l.p.title||'Новачок')} · ${lastSeen(l.k)}</div></div></div>
+  <div class="text-right shrink-0"><div class="text-[11px] font-black text-amber-300">⭐ ${fmt(l.s)}</div><div class="text-[11px] font-black text-cyan-300">🎒 ${fmt(l.v)}</div></div></div>
+  ${l.k!==mine?`<div class="grid grid-cols-2 gap-2 mt-2"><button onclick="tradeWith('${esc(l.k)}')" class="py-1.5 rounded-lg bg-cyan-500 text-black text-[10px] font-extrabold">🔁 ТРЕЙД</button><button onclick="openChat('${esc(l.k)}')" class="py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-[10px] font-extrabold">💬 ЧАТ${CH.u[l.k]?' ('+CH.u[l.k]+')':''}</button></div>`:''}</div>`;
+  const meIx=all.findIndex(x=>x.k===mine);
+  const sorts=[['val','🎒 ІНВЕНТАР'],['stars','⭐ БАЛАНС'],['lvl','🆙 РІВЕНЬ'],['on','🟢 ОНЛАЙН']];
+  m.innerHTML=`<div class="space-y-3"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-amber-400">ТАБЛИЦЯ ЛІДЕРІВ 🌐</h2><p class="text-[10px] text-slate-500">гравців: ${all.length} · 🟢 онлайн: ${onN} · тапни гравця для профілю</p></div>
+  <div class="grid grid-cols-4 gap-1.5">${sorts.map(([k,t])=>`<button onclick="setTS('${k}')" class="py-1.5 rounded-xl text-[9px] font-black ${TS===k?'bg-amber-400 text-black':'bg-slate-800 text-slate-300'}">${t}</button>`).join('')}</div>`+
+  (all.length?all.slice(0,30).map(row).join('')+(meIx>=30?row(all[meIx],meIx):''):'<div class="glass p-8 rounded-3xl text-center text-slate-500 text-xs">Поки немає гравців</div>')+'</div>';
+};
+
+/* ================= 9. РЕАЛЬНА LIVE-СТРІЧКА ================= */
+ticker=function(){
+  const real=(ON.feed||[]).filter(f=>ITEMS[f.id]).map(f=>({n:f.name,it:ITEMS[f.id]}));
+  let list=real.length?real.slice().reverse():Array.from({length:14},fakeDrop);
+  while(real.length&&list.length<12)list=list.concat(real);
+  const a=list.map(dropHTML).join('');
+  return `<div class="glass rounded-2xl overflow-hidden py-2 flex items-center"><span class="px-2 text-[9px] font-black text-red-400 shrink-0">● LIVE</span><div class="overflow-hidden flex-1"><div class="tkr">${a}${a}</div></div></div>`;
+};
+const _wm5=winModal;
+winModal=function(got){_wm5(got);feedPush(got)};
+function feedPush(got){
+  if(!ON.ready)return;const un=(users()[ME]||{}).n||'Player';
+  got.forEach(e=>{const i=ITEMS[e.id];if(i&&RAR.indexOf(i.rarity)>=2)ON.db.collection('feed').add({name:un,id:i.id,val:i.val,ts:Date.now()}).catch(()=>{})});
+}
+
+/* ================= 10. МАГАЗИН (ДЕМО) + РЕФЕРАЛИ ================= */
+const SHOP_DEMO=true; /* true = безкоштовне нарахування для тесту. Для реальних грошей: підключи оплату в payHook() і нараховуй ⭐ лише з сервера */
+const PACKS=[['Стартовий',1000,0,'$0.99'],['Малий',5000,10,'$4.99'],['Середній',10000,20,'$9.99'],['Великий',25000,30,'$24.99'],['Мега',50000,40,'$49.99']];
+function shHTML(){
+  return `<div class="glass rounded-3xl p-4 space-y-2"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-amber-300">💳 МАГАЗИН ⭐</h2><p class="text-[10px] text-slate-400">${SHOP_DEMO?'ДЕМО-режим: реальної оплати немає':'Оплата через платіжний провайдер'}${S.shopBuys?'':' · перша покупка +25% бонус!'}</p></div>
+  ${PACKS.map((p,i)=>{const tot=Math.round(p[1]*(1+p[2]/100+(S.shopBuys?0:.25)));return `<div class="flex items-center justify-between bg-slate-800/50 rounded-xl px-3 py-2.5"><div><div class="text-xs font-black">${p[0]}</div><div class="text-[10px] text-amber-300 font-bold">⭐ ${fmt(tot)}${p[2]?` <span class="text-green-400">(+${p[2]}%)</span>`:''}</div></div><button onclick="buyPack(${i})" class="px-3 py-1.5 rounded-lg bg-amber-400 text-black text-[11px] font-black">${p[3]}</button></div>`}).join('')}</div>`;
+}
+function payHook(i){toast('Підключи оплату в payHook()')}
+function buyPack(i){
+  const p=PACKS[i];if(!p)return;if(!SHOP_DEMO)return payHook(i);
+  const tot=Math.round(p[1]*(1+p[2]/100+(S.shopBuys?0:.25)));
+  if(!confirm('ДЕМО: реальної оплати немає. Нарахувати ⭐ '+fmt(tot)+' безкоштовно для тесту?'))return;
+  S.stars+=tot;S.shopBuys++;save();confetti(30);toast('⭐ +'+fmt(tot));mRender();
+}
+const myCode=()=>ON.uid?ON.uid.slice(0,8).toUpperCase():'';
+function rfHTML(){
+  if(!ON.ready)return offl();
+  return `<div class="glass rounded-3xl p-4 space-y-3 text-center"><h2 class="text-sm font-black tracking-widest text-cyan-300">👥 ЗАПРОШУЙ ДРУЗІВ</h2>
+  <p class="text-[10px] text-slate-400">Ти: ⭐ 3 000 + 📦 MEME LEGENDS за кожного друга.<br>Друг: ⭐ 2 000 + 📦 ОСІННІЙ.</p>
+  <div class="bg-slate-900 rounded-xl py-3 text-xl font-black tracking-widest text-amber-300" style="user-select:text;-webkit-user-select:text">${myCode()}</div>
+  <button onclick="refCopy()" class="w-full py-2 rounded-xl bg-cyan-500 text-black font-black text-xs">📋 КОПІЮВАТИ ПОСИЛАННЯ</button>
+  <div class="text-[11px] font-black text-slate-300">Запрошено друзів: <span class="text-amber-300">${ON.refN}</span></div>
+  ${S.refDone?'<div class="text-[11px] font-black text-green-400">✅ Ти вже використав код друга</div>':`<div class="flex gap-2"><input id="rfc" class="inp uppercase" placeholder="Код друга" maxlength="12" value="${esc(ON.rfp||'')}" autocapitalize="characters"><button onclick="refUse()" class="px-4 rounded-xl bg-cyan-500 text-black font-black text-xs">OK</button></div>`}</div>`;
+}
+function refCopy(){
+  const l=location.href.split('#')[0]+'#ref='+myCode();
+  if(navigator.clipboard)navigator.clipboard.writeText(l).then(()=>toast('📋 Скопійовано'),()=>toast(l));else toast(l);
+}
+async function refUse(){
+  if(!ON.ready)return toast('🌐 Онлайн ще не готовий');
+  if(S.refDone)return toast('⚠️ Ти вже використав код');
+  const code=(($('rfc')||{}).value||'').trim().toUpperCase();
+  if(!code)return toast('Введи код');if(code===myCode())return toast('❌ Це твій код');
+  try{
+    const s=await ON.db.collection('players').where('code','==',code).limit(1).get();
+    if(s.empty)return toast('❌ Код не знайдено');
+    const by=s.docs[0].id;if(by===ON.uid)return toast('❌ Це твій код');
+    await ON.db.doc('refs/'+ON.uid).set({by,ts:Date.now()});
+    S.refDone=1;S.stars+=2000;S.inv.push({id:'k_autumn',uid:nid(S)});save();confetti(40);toast('🎉 +⭐ 2 000 і 📦 ОСІННІЙ');mRender();
+  }catch(e){toast('❌ Помилка (можливо, код вже використано)')}
+}
+function refPay(n){
+  if(n<=S.refPaid)return;const k=n-S.refPaid;S.refPaid=n;S.stars+=3000*k;
+  for(let i=0;i<k;i++)S.inv.push({id:'k_meme',uid:nid(S)});
+  save();confetti(40);toast('👥 Друзів: +'+k+' · ⭐ '+fmt(3000*k)+' і 📦');
+}
+
+/* ================= ОНЛАЙН: x-дані, push, підписки ================= */
+push=function(){
+  if(!ON.ready||!ME||!ON.xl)return;clearTimeout(ON.tm);bpRoll();
+  const x={};XK.forEach(k=>{x[k]=S[k]});
+  const p={name:(users()[ME]||{}).n||'Player',stars:S.stars,inv:S.inv,opened:S.opened,promo:S.promo,val:iv(S.inv),ts:Date.now(),seen:Date.now(),
+    code:myCode(),ava:S.ava||'',frame:(typeof S.frame==='number'?S.frame:''),title:S.title||'',fav:S.fav||[],lvl:lvlOf(S.xp),x};
+  const sp={season:S.bp.season,uid:ON.uid,name:p.name,xp:S.bp.xp,ts:Date.now()};
+  ON.tm=setTimeout(()=>{
+    ON.q=ON.q.then(()=>ON.db.doc('players/'+ON.uid).set(p)).catch(()=>{});
+    ON.db.doc('sxp/'+sp.season+'_'+ON.uid).set(sp).catch(()=>{});
+  },700);
+};
+function sub5(){
+  const db=ON.db,me=ON.uid,mp=s=>s.docs.map(d=>({id:d.id,...d.data()}));bpRoll();
+  db.collection('market').where('st','==','open').onSnapshot(s=>{ON.mk=mp(s);mLive('mk')},()=>{});
+  db.collection('market').where('seller','==',me).onSnapshot(s=>{ON.mine=mp(s);mkSettle();mLive('mk')},()=>{});
+  db.collection('feed').orderBy('ts').limitToLast(25).onSnapshot(s=>{ON.feed=s.docs.map(d=>d.data())},()=>{});
+  db.collection('refs').where('by','==',me).onSnapshot(s=>{ON.refN=s.size;refPay(s.size);mLive('rf')},()=>{});
+  db.collection('sxp').where('season','==',S.bp.season).onSnapshot(s=>{ON.sx=s.docs.map(d=>d.data());mLive('bp')},()=>{});
+}
+const _ob5=onlineBoot;
+onlineBoot=async function(){
+  const r=await _ob5();
+  if(!r){ON.xl=true;return r}
+  try{
+    const s=await ON.db.doc('players/'+ON.uid).get(),x=s.exists&&s.data().x;
+    if(x)XK.forEach(k=>{if(x[k]===undefined)return;S[k]=(k==='got'||k==='colClaim'||k==='sclaim')?Object.assign({},S[k],x[k]):x[k]});
+  }catch(e){}
+  const D0=XDEF();S.q=Object.assign(D0.q,S.q);S.bp=Object.assign(D0.bp,S.bp);S.fav=S.fav||[];
+  ON.xl=true;bpRoll();qRoll();S.q.lo=S.opened;
+  const h=location.hash.match(/ref=([A-Za-z0-9]+)/);if(h)ON.rfp=h[1].toUpperCase();
+  if(!ON.s5){ON.s5=1;sub5()}
+  save();return r;
+};
+const _en5=enter;
+enter=function(k){Object.assign(S,XDEF());ON.xl=false;GC.msgs=[];_en5(k)};
+/* ================= END PATCH v5 ================= */
 /* ============ INIT ============ */
 hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
