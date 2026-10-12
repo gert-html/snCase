@@ -2738,6 +2738,390 @@ onlineBoot=async function(){
 function banCheck11(){hdr()}
 })();
 // ===================== END PATCH v11 =====================
+// ===================== PATCH v12: МОВИ + ПРЕФІКСИ =====================
+// ВСТАВ ПІСЛЯ PATCH v11 і ПЕРЕД блоком  /* ============ INIT ============ */
+(function(){
+const isA=()=>!!(ME&&LSget('sn_adm',{})[ME]);
+
+/* ================================================================
+   1. МОВИ: English / Українська / Русский / Polski
+   Вибір показується один раз при першому вході (потім -- кнопка 🌐 у шапці).
+   Переклад працює на льоту по всьому інтерфейсу за словником DICT.
+   Щоб додати/виправити фразу -- додай рядок [uk, en, ru, pl].
+================================================================= */
+const LANGS=[['en','🇬🇧','English'],['uk','🇺🇦','Українська'],['ru','🌍','Русский'],['pl','🇵🇱','Polski']];
+let LANG=LSget('sn_lang',null)||'en';
+const IX={en:1,ru:2,pl:3};
+const DICT=[
+/* навігація */
+['КЕЙСИ','CASES','КЕЙСЫ','SKRZYNIE'],['СПІН','SPIN','СПИН','SPIN'],['ВІДЮХИ','GPUS','ВИДЮХИ','GPU'],
+['ТРЕЙД','TRADE','ТРЕЙД','WYMIANA'],['БОНУСИ','BONUS','БОНУСЫ','BONUSY'],['ІНВЕНТАР','INVENTORY','ИНВЕНТАРЬ','EKWIPUNEK'],
+['ЩЕ','MORE','ЕЩЁ','WIĘCEJ'],
+/* головна / кейс */
+['БЕЗКОШТОВНИЙ','FREE','БЕСПЛАТНЫЙ','DARMOWA'],['БЕЗКОШТОВНО','FREE','БЕСПЛАТНО','ZA DARMO'],
+['ЗА ДРУГА','FOR A FRIEND','ЗА ДРУГА','ZA ZNAJOMEGO'],['РЕФЕРАЛ','REFERRAL','РЕФЕРАЛ','POLECENIE'],['ОСІННІЙ','AUTUMN','ОСЕННИЙ','JESIENNA'],
+['← До кейсів','← Back to cases','← К кейсам','← Do skrzyń'],['МНОЖНИК:','MULTIPLIER:','МНОЖИТЕЛЬ:','MNOŻNIK:'],
+['ВІДКРИТИ З ІНВЕНТАРЯ','OPEN FROM INVENTORY','ОТКРЫТЬ ИЗ ИНВЕНТАРЯ','OTWÓRZ Z EKWIPUNKU'],
+['ВІДКРИТИ ЗАРАЗ','OPEN NOW','ОТКРЫТЬ СЕЙЧАС','OTWÓRZ TERAZ'],['ВІДКРИТИ ЗА','OPEN FOR','ОТКРЫТЬ ЗА','OTWÓRZ ZA'],
+['ВІДКРИТИ','OPEN','ОТКРЫТЬ','OTWÓRZ'],['МОЖЛИВИЙ ДРОП','POSSIBLE DROP','ВОЗМОЖНЫЙ ДРОП','MOŻLIWY DROP'],
+['ВИТАЄМО! ВИ ВИБИЛИ:','CONGRATS! YOU GOT:','ПОЗДРАВЛЯЕМ! ВЫ ВЫБИЛИ:','GRATULACJE! WYLOSOWAŁEŚ:'],
+['Цінність:','Value:','Ценность:','Wartość:'],['В ІНВЕНТАР','TO INVENTORY','В ИНВЕНТАРЬ','DO EKWIPUNKU'],
+['ПРОДАТИ ВСЕ','SELL ALL','ПРОДАТЬ ВСЁ','SPRZEDAJ WSZYSTKO'],['ПРОДАТИ ЗА','SELL FOR','ПРОДАТЬ ЗА','SPRZEDAJ ZA'],
+['Продано все за','Sold everything for','Продано всё за','Sprzedano wszystko za'],['Продано за','Sold for','Продано за','Sprzedano za'],
+['Недостатньо Stars','Not enough Stars','Недостаточно Stars','Za mało Stars'],
+['Зачекайте','Wait','Подождите','Poczekaj'],['хвилин','minutes','минут','minut'],['хв','min','мин','min'],['год','h','ч','godz.'],
+['Інвентар порожній. Відкривайте кейси!','Inventory is empty. Open some cases!','Инвентарь пуст. Открывайте кейсы!','Ekwipunek jest pusty. Otwieraj skrzynie!'],
+['Інвентар порожній','Inventory is empty','Инвентарь пуст','Ekwipunek jest pusty'],
+['Відкрито кейсів:','Cases opened:','Открыто кейсов:','Otwarte skrzynie:'],['Кейсів:','Cases:','Кейсов:','Skrzynie:'],
+['ВИЙТИ','LOG OUT','ВЫЙТИ','WYLOGUJ'],['СКИДАННЯ','RESET','СБРОС','RESET'],
+['Загальна цінність:','Total value:','Общая ценность:','Łączna wartość:'],['Дані скинуто!','Data reset!','Данные сброшены!','Dane zresetowane!'],
+['РІВЕНЬ','LEVEL','УРОВЕНЬ','POZIOM'],['нагорода','reward','награда','nagroda'],
+/* авторизація */
+['ВХІД','LOGIN','ВХОД','LOGOWANIE'],['РЕЄСТРАЦІЯ','SIGN UP','РЕГИСТРАЦИЯ','REJESTRACJA'],['УВІЙТИ','LOG IN','ВОЙТИ','ZALOGUJ'],
+['СТВОРИТИ АКАУНТ','CREATE ACCOUNT','СОЗДАТЬ АККАУНТ','UTWÓRZ KONTO'],['Імʼя користувача','Username','Имя пользователя','Nazwa użytkownika'],
+['Повторіть пароль','Repeat password','Повторите пароль','Powtórz hasło'],['Пароль','Password','Пароль','Hasło'],
+['Невірне імʼя або пароль','Wrong username or password','Неверное имя или пароль','Zła nazwa lub hasło'],
+['Таке імʼя вже зайняте','This username is taken','Такое имя уже занято','Ta nazwa jest zajęta'],
+['Паролі не збігаються','Passwords do not match','Пароли не совпадают','Hasła nie pasują'],
+['Вхід зберігається в цьому браузері, а прогрес, топ і трейди синхронізуються онлайн між реальними гравцями. Імʼя: 3–16 символів, пароль: від 4.',
+ 'Login is stored in this browser; progress, leaderboard and trades sync online between real players. Username: 3–16 chars, password: 4+.',
+ 'Вход сохраняется в этом браузере, а прогресс, топ и трейды синхронизируются онлайн между реальными игроками. Имя: 3–16 символов, пароль: от 4.',
+ 'Logowanie zapisuje się w tej przeglądarce, a postęp, ranking i wymiany synchronizują się online. Nazwa: 3–16 znaków, hasło: min. 4.'],
+/* бонуси */
+['ПРОМОКОД','PROMO CODE','ПРОМОКОД','KOD PROMOCYJNY'],['Введи промокод','Enter promo code','Введи промокод','Wpisz kod'],
+['Кожен промокод діє один раз на акаунт · від ⭐ 1000 до ⭐ 5000','Each code works once per account · from ⭐ 1000 to ⭐ 5000','Каждый промокод действует один раз на аккаунт · от ⭐ 1000 до ⭐ 5000','Każdy kod działa raz na konto · od ⭐ 1000 do ⭐ 5000'],
+['ЩОДЕННІ БОНУСИ','DAILY BONUSES','ЕЖЕДНЕВНЫЕ БОНУСЫ','CODZIENNE BONUSY'],
+['Кожен бонус можна забрати раз на 24 години','Each bonus can be claimed once every 24 hours','Каждый бонус можно забрать раз в 24 часа','Każdy bonus raz na 24 godziny'],
+['ДЕНЬ','DAY','ДЕНЬ','DZIEŃ'],['ОТРИМАТИ','CLAIM','ПОЛУЧИТЬ','ODBIERZ'],
+['Невірний промокод','Invalid promo code','Неверный промокод','Zły kod'],['Цей промокод уже використано','This code was already used','Этот промокод уже использован','Kod już użyty'],
+['Промокод активовано:','Promo code activated:','Промокод активирован:','Kod aktywowany:'],['бонус отримано!','bonus claimed!','бонус получен!','bonus odebrany!'],
+['ДОСЯГНЕННЯ','ACHIEVEMENTS','ДОСТИЖЕНИЯ','OSIĄGNIĘCIA'],
+/* колесо, апгрейд, контракт, монетка */
+['Безкоштовний спін раз на 200 хвилин!','Free spin every 200 minutes!','Бесплатный спин раз в 200 минут!','Darmowy spin co 200 minut!'],
+['КРУТИТИ','SPIN','КРУТИТЬ','KRĘĆ'],['Наступний спін через','Next spin in','Следующий спин через','Następny spin za'],['Ви виграли','You won','Вы выиграли','Wygrałeś'],
+['АПГРЕЙД','UPGRADE','АПГРЕЙД','ULEPSZENIE'],
+['Виграєш -- отримаєш дорожчий предмет, програєш -- згорить','Win -- get a pricier item, lose -- it burns','Выиграешь -- получишь более дорогой предмет, проиграешь -- сгорит','Wygrasz -- dostaniesz droższy przedmiot, przegrasz -- spłonie'],
+['РИЗИКНУТИ','RISK IT','РИСКНУТЬ','RYZYKUJ'],['ОБЕРИ ПРЕДМЕТ','PICK AN ITEM','ВЫБЕРИ ПРЕДМЕТ','WYBIERZ PRZEDMIOT'],
+['ВИСОКИЙ ШАНС','HIGH CHANCE','ВЫСОКИЙ ШАНС','WYSOKA SZANSA'],['СЕРЕДНІЙ ШАНС','MEDIUM CHANCE','СРЕДНИЙ ШАНС','ŚREDNIA SZANSA'],['НИЗЬКИЙ ШАНС','LOW CHANCE','НИЗКИЙ ШАНС','NISKA SZANSA'],
+['Відкрий кейс -- і повертайся сюди','Open a case -- and come back','Открой кейс -- и возвращайся','Otwórz skrzynię i wróć'],
+['ДОЛЯ РІШАЄТЬСЯ…','FATE DECIDES…','СУДЬБА РЕШАЕТСЯ…','LOS DECYDUJE…'],
+['УСПІХ!','SUCCESS!','УСПЕХ!','SUKCES!'],['Не пощастило -- предмет згорів','Unlucky -- the item burned','Не повезло -- предмет сгорел','Pech -- przedmiot spłonął'],
+['КОНТРАКТ','CONTRACT','КОНТРАКТ','KONTRAKT'],
+['5 предметів однієї рідкості → 1 предмет рідкості вище','5 items of one rarity → 1 item of higher rarity','5 предметов одной редкости → 1 предмет редкостью выше','5 przedmiotów jednej rzadkości → 1 wyższej'],
+['УКЛАСТИ КОНТРАКТ','SIGN CONTRACT','ЗАКЛЮЧИТЬ КОНТРАКТ','ZAWRZYJ KONTRAKT'],['Обери 5 предметів','Pick 5 items','Выбери 5 предметов','Wybierz 5 przedmiotów'],['Немає предметів','No items','Нет предметов','Brak przedmiotów'],
+['МОНЕТКА','COIN FLIP','МОНЕТКА','RZUT MONETĄ'],['Шанс 48% · виграш x2','Chance 48% · win x2','Шанс 48% · выигрыш x2','Szansa 48% · wygrana x2'],['КИНУТИ','FLIP','БРОСИТЬ','RZUĆ'],
+/* відюхи */
+['ЦЕНТР ВІДЕОКАРТ','GPU CENTER','ЦЕНТР ВИДЕОКАРТ','CENTRUM GPU'],
+['Відюхи фармлять ⭐ навіть коли тебе нема (до 24 год)','GPUs farm ⭐ even when you are away (up to 24 h)','Видюхи фармят ⭐ даже когда тебя нет (до 24 ч)','GPU farmią ⭐ nawet gdy cię nie ma (do 24 godz.)'],
+['КОНВЕРТЕР','CONVERTER','КОНВЕРТЕР','KONWERTER'],['Кількість VD','VD amount','Количество VD','Ilość VD'],['Є:','Owned:','Есть:','Masz:'],
+/* трейди */
+['ТРЕЙДИ ТІЛЬКИ МІЖ РЕАЛЬНИМИ ГРАВЦЯМИ','TRADES ONLY BETWEEN REAL PLAYERS','ТРЕЙДЫ ТОЛЬКО МЕЖДУ РЕАЛЬНЫМИ ИГРОКАМИ','WYMIANY TYLKO MIĘDZY PRAWDZIWYMI GRACZAMI'],
+['ТРЕЙДИ','TRADES','ТРЕЙДЫ','WYMIANY'],['ВХІДНІ','INCOMING','ВХОДЯЩИЕ','PRZYCHODZĄCE'],['ВИХІДНІ','OUTGOING','ИСХОДЯЩИЕ','WYCHODZĄCE'],
+['СТВОРИТИ','CREATE','СОЗДАТЬ','UTWÓRZ'],['ІСТОРІЯ','HISTORY','ИСТОРИЯ','HISTORIA'],
+['КОМУ · гравців:','TO · players:','КОМУ · игроков:','DO · graczy:'],['онлайн:','online:','онлайн:','online:'],['-- обери гравця --','-- pick a player --','-- выбери игрока --','-- wybierz gracza --'],
+['ТИ ВІДДАЄШ','YOU GIVE','ТЫ ОТДАЁШЬ','DAJESZ'],['ТИ ПРОСИШ','YOU ASK','ТЫ ПРОСИШЬ','PROSISZ'],
+['ТОБІ ВІДДАЮТЬ','YOU RECEIVE','ТЕБЕ ОТДАЮТ','OTRZYMUJESZ'],['ВІД ТЕБЕ ХОЧУТЬ','THEY WANT FROM YOU','ОТ ТЕБЯ ХОТЯТ','CHCĄ OD CIEBIE'],
+['ДОДАТИ','ADD','ДОБАВИТЬ','DODAJ'],['ПРОСИШ','ASK','ПРОСИШЬ','PROSISZ'],['Віддаєш:','Give:','Отдаёшь:','Dajesz:'],['Просиш:','Ask:','Просишь:','Prosisz:'],
+['НАДІСЛАТИ ОФЕР','SEND OFFER','ОТПРАВИТЬ ОФФЕР','WYŚLIJ OFERTĘ'],['ПРИЙНЯТИ','ACCEPT','ПРИНЯТЬ','PRZYJMIJ'],['ВІДХИЛИТИ','DECLINE','ОТКЛОНИТЬ','ODRZUĆ'],
+['ЗУСТРІЧНИЙ','COUNTER','ВСТРЕЧНЫЙ','KONTRA'],['СКАСУВАТИ','CANCEL','ОТМЕНИТЬ','ANULUJ'],['ЧАТ','CHAT','ЧАТ','CZAT'],['нічого','nothing','ничего','nic'],
+['Вхідних оферів немає','No incoming offers','Входящих офферов нет','Brak przychodzących ofert'],
+['Активних вихідних оферів немає','No active outgoing offers','Активных исходящих офферов нет','Brak aktywnych wychodzących ofert'],
+['Історія порожня','History is empty','История пуста','Historia jest pusta'],
+['ПРИЙНЯТО','ACCEPTED','ПРИНЯТО','PRZYJĘTO'],['ВІДХИЛЕНО','DECLINED','ОТКЛОНЕНО','ODRZUCONO'],['СКАСОВАНО','CANCELLED','ОТМЕНЕНО','ANULOWANO'],['ОЧІКУЄ','PENDING','ОЖИДАЕТ','OCZEKUJE'],
+['Офер надіслано','Offer sent','Оффер отправлен','Oferta wysłana'],['Обмін виконано','Trade completed','Обмен выполнен','Wymiana zakończona'],
+/* топ */
+['ТАБЛИЦЯ ЛІДЕРІВ','LEADERBOARD','ТАБЛИЦА ЛИДЕРОВ','RANKING'],['гравців:','players:','игроков:','graczy:'],
+['тапни гравця для профілю','tap a player for profile','нажми на игрока для профиля','dotknij gracza, by zobaczyć profil'],
+['БАЛАНС','BALANCE','БАЛАНС','SALDO'],['ОНЛАЙН','ONLINE','ОНЛАЙН','ONLINE'],['онлайн','online','онлайн','online'],
+['був(ла)','seen','был(а)','widz.'],['тому','ago','назад','temu'],['дн','d','дн','d'],['Поки немає гравців','No players yet','Пока нет игроков','Jeszcze brak graczy'],
+/* вкладка ЩЕ */
+['КОЛЕКЦІЯ','COLLECTION','КОЛЛЕКЦИЯ','KOLEKCJA'],['КВЕСТИ','QUESTS','КВЕСТЫ','QUESTY'],['ПАС','PASS','ПАСС','PASS'],['МАРКЕТ','MARKET','МАРКЕТ','RYNEK'],
+['БАТЛ','BATTLE','БАТЛ','BITWA'],['ІГРИ','GAMES','ИГРЫ','GRY'],['ПРОФІЛЬ','PROFILE','ПРОФИЛЬ','PROFIL'],['РЕФ','REFS','РЕФ','POLEC.'],['НОВИНИ','NEWS','НОВОСТИ','NEWSY'],
+['ЩОДЕННІ КВЕСТИ','DAILY QUESTS','ЕЖЕДНЕВНЫЕ КВЕСТЫ','CODZIENNE QUESTY'],['ТИЖНЕВІ КВЕСТИ','WEEKLY QUESTS','НЕДЕЛЬНЫЕ КВЕСТЫ','TYGODNIOWE QUESTY'],
+['Відкрий 5 кейсів','Open 5 cases','Открой 5 кейсов','Otwórz 5 skrzyń'],['Зроби 1 апгрейд','Do 1 upgrade','Сделай 1 апгрейд','Zrób 1 ulepszenie'],
+['Зіграй 3 рази в ігри','Play games 3 times','Сыграй 3 раза в игры','Zagraj 3 razy'],['Продай 2 предмети','Sell 2 items','Продай 2 предмета','Sprzedaj 2 przedmioty'],['Крутни колесо','Spin the wheel','Крутани колесо','Zakręć kołem'],
+['ОТРИМАНО','CLAIMED','ПОЛУЧЕНО','ODEBRANO'],['ПРЕМІУМ АКТИВНИЙ','PREMIUM ACTIVE','ПРЕМИУМ АКТИВЕН','PREMIUM AKTYWNE'],
+['ЗАГАЛЬНИЙ ЧАТ','GLOBAL CHAT','ОБЩИЙ ЧАТ','CZAT OGÓLNY'],['Напиши першим 👋','Be the first to write 👋','Напиши первым 👋','Napisz pierwszy 👋'],
+['Повідомлення...','Message...','Сообщение...','Wiadomość...'],['Повідомлення всім...','Message to everyone...','Сообщение всем...','Wiadomość do wszystkich...'],
+['МІЙ ПРОФІЛЬ','MY PROFILE','МОЙ ПРОФИЛЬ','MÓJ PROFIL'],['ТИТУЛ','TITLE','ТИТУЛ','TYTUŁ'],['ВІТРИНА','SHOWCASE','ВИТРИНА','WITRYNA'],
+['ЗАПРОШУЙ ДРУЗІВ','INVITE FRIENDS','ПРИГЛАШАЙ ДРУЗЕЙ','ZAPRAŚ ZNAJOMYCH'],['ЗАКРИТИ','CLOSE','ЗАКРЫТЬ','ZAMKNIJ'],
+['БАТЛ З БОТОМ','BOT BATTLE','БАТЛ С БОТОМ','BITWA Z BOTEM'],['МІНЕР','MINES','САПЁР','SAPER'],['КРАШ','CRASH','КРАШ','CRASH'],['СТАРТ','START','СТАРТ','START'],['ЗАБРАТИ','CASH OUT','ЗАБРАТЬ','ODBIERZ'],
+['Новин поки немає','No news yet','Новостей пока нет','Brak newsów'],['ОПУБЛІКУВАТИ','PUBLISH','ОПУБЛИКОВАТЬ','OPUBLIKUJ'],
+/* маркет */
+['ЛОТИ','LOTS','ЛОТЫ','OFERTY'],['КУПИТИ','BUY','КУПИТЬ','KUP'],['ЗНЯТИ','REMOVE','СНЯТЬ','ZDEJMIJ'],['Лотів поки немає','No lots yet','Лотов пока нет','Brak ofert'],
+['Виставлено','Listed','Выставлено','Wystawiono'],['Лот недоступний','Lot unavailable','Лот недоступен','Oferta niedostępna'],
+/* ПРЕФІКСИ */
+['ПРЕФІКСИ В ПРОДАЖІ','PREFIXES FOR SALE','ПРЕФИКСЫ В ПРОДАЖЕ','PREFIKSY NA SPRZEDAŻ'],['ПРЕФІКСИ','PREFIXES','ПРЕФИКСЫ','PREFIKSY'],
+['Тег біля твого ніка. Купуй на маркеті або отримуй від адміна.','A tag next to your nickname. Buy it on the market or get it from an admin.','Тег рядом с твоим ником. Покупай на маркете или получай от админа.','Tag obok twojego nicku. Kup na rynku lub dostań od admina.'],
+['МОЇ ПРЕФІКСИ','MY PREFIXES','МОИ ПРЕФИКСЫ','MOJE PREFIKSY'],['Префіксів поки немає','No prefixes yet','Префиксов пока нет','Brak prefiksów'],
+['ЗНЯТИ ПРЕФІКС','UNEQUIP PREFIX','СНЯТЬ ПРЕФИКС','ZDEJMIJ PREFIKS'],['Префікс одягнено','Prefix equipped','Префикс надет','Prefiks założony'],['Префікс знято','Prefix removed','Префикс снят','Prefiks zdjęty'],
+['Префікс куплено','Prefix purchased','Префикс куплен','Prefiks kupiony'],['Тобі видали префікс','You received a prefix','Тебе выдали префикс','Dostałeś prefiks'],
+['Вже є','Owned','Уже есть','Masz już'],['ТІЛЬКИ ДЛЯ АДМІНІВ','ADMINS ONLY','ТОЛЬКО ДЛЯ АДМИНОВ','TYLKO DLA ADMINÓW'],
+['СТВОРИТИ ПРЕФІКС','CREATE PREFIX','СОЗДАТЬ ПРЕФИКС','UTWÓRZ PREFIKS'],['Назва (напр. VIP)','Name (e.g. VIP)','Название (напр. VIP)','Nazwa (np. VIP)'],
+['Ціна в ⭐ на маркеті (0 = не продавати)','Price in ⭐ on market (0 = not for sale)','Цена в ⭐ на маркете (0 = не продавать)','Cena w ⭐ na rynku (0 = nie sprzedawaj)'],
+['СПИСОК','LIST','СПИСОК','LISTA'],['не продається','not for sale','не продаётся','niedostępny'],
+['ВИДАТИ ГРАВЦЮ БЕЗ ЗАПИТУ','GIVE TO A PLAYER (NO REQUEST)','ВЫДАТЬ ИГРОКУ БЕЗ ЗАПРОСА','DAJ GRACZOWI (BEZ PROŚBY)'],
+['ВИДАТИ','GIVE','ВЫДАТЬ','DAJ'],['ЗАБРАТИ ПРЕФІКС','TAKE BACK','ЗАБРАТЬ ПРЕФИКС','ZABIERZ']
+];
+const MAP={};DICT.forEach(r=>MAP[r[0]]=r);
+const KEYS=Object.keys(MAP).sort((a,b)=>b.length-a.length);
+const rxe=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+let RX;
+try{RX=new RegExp('(?<![\\u0400-\\u04FF\\u02BC])(?:'+KEYS.map(rxe).join('|')+')(?![\\u0400-\\u04FF\\u02BC])','g')}
+catch(e){RX=new RegExp(KEYS.map(rxe).join('|'),'g')}
+const trStr=s=>LANG==='uk'?s:String(s).replace(RX,m=>{const r=MAP[m];return (r&&r[IX[LANG]])||m});
+
+const ORIG=new WeakMap();
+const skip=n=>{const p=n.parentElement;return !p||!!p.closest('[data-nt],.pfx,script,style,textarea')};
+function trNode(n){
+  const v=n.nodeValue;if(!v||!v.trim()||skip(n))return;
+  const rec=ORIG.get(n),base=(rec&&v===rec.t)?rec.o:v,out=LANG==='uk'?base:trStr(base);
+  if(out!==v)n.nodeValue=out;
+  ORIG.set(n,{o:base,t:out});
+}
+function trAttrs(root){
+  if(!root.querySelectorAll)return;
+  root.querySelectorAll('[placeholder]').forEach(e=>{
+    if(e.dataset.ph0===undefined)e.dataset.ph0=e.getAttribute('placeholder');
+    const o=e.dataset.ph0;e.setAttribute('placeholder',LANG==='uk'?o:trStr(o));
+  });
+}
+function textNodes(root){
+  const L=[];const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;
+  while((n=w.nextNode()))L.push(n);return L;
+}
+function walk(root){
+  if(root.nodeType===3){trNode(root);return}
+  if(root.nodeType!==1)return;
+  textNodes(root).forEach(trNode);trAttrs(root);
+}
+
+/* confirm/prompt теж перекладаємо */
+const _cf=window.confirm.bind(window),_pr=window.prompt.bind(window);
+window.confirm=m=>_cf(trStr(m));
+window.prompt=(m,d)=>_pr(trStr(m),d);
+
+function openLang(first){
+  const old=$('langov');if(old)old.remove();
+  const el=document.createElement('div');el.id='langov';el.setAttribute('data-nt','');
+  el.className='fixed inset-0 z-[300] bg-[#070a12] flex items-center justify-center p-6';
+  el.innerHTML=`<div class="w-full max-w-xs text-center space-y-3"><div class="text-4xl">🌐</div>
+  <div class="text-lg font-black text-cyan-200">Choose your language</div>
+  <div class="text-[11px] text-slate-400">Оберіть мову · Выберите язык · Wybierz język</div>
+  ${LANGS.map(([c,f,n])=>`<button onclick="setLang('${c}')" class="w-full py-3 rounded-2xl bg-slate-800 border border-slate-700 font-black text-sm ${(!first&&c===LANG)?'ring-2 ring-cyan-400':''}">${f} ${n}</button>`).join('')}
+  ${first?'':`<button onclick="document.getElementById('langov').remove()" class="w-full py-2 rounded-xl text-xs font-bold text-slate-400">✕</button>`}</div>`;
+  document.body.appendChild(el);
+}
+window.openLang=openLang;
+window.setLang=function(c){
+  if(!IX[c]&&c!=='uk')return;
+  LANG=c;LSset('sn_lang',c);document.documentElement.lang=c;
+  const el=$('langov');if(el)el.remove();
+  walk(document.body);
+  if(S.tab==='more'&&!S.spin)mRender();
+};
+const _h12=hdr;
+hdr=function(){
+  _h12();
+  const h=document.querySelector('header'),w=h&&h.lastElementChild;
+  if(w&&!$('langb'))w.insertAdjacentHTML('afterbegin','<button id="langb" onclick="openLang()" class="chip" data-nt>🌐</button>');
+};
+document.documentElement.lang=LANG;
+if(!LSget('sn_lang',null))openLang(true); /* перший вхід: вибір мови один раз */
+
+/* ================================================================
+   2. ПРЕФІКСИ
+   prefixes/{id}        -- {name,color,price}  (створює адмін; price>0 => продається на маркеті)
+   pxown/{uid}/{id}     -- {ts,how:'buy'|'gift'} (чим володіє гравець)
+   players/{uid}.pfx    -- {n,c} обраний префікс (бачать усі)
+================================================================= */
+Object.assign(ON,{pfxs:{},pxo:{},pxFirst:true,s12:0});
+S.pfxAct='';
+XK.push('pfxAct');
+const SEP='\u2063',SEP2='\u2064';
+const okCol=c=>/^#[0-9a-fA-F]{6}$/.test(c||'')?c:'#94a3b8';
+const cleanN=n=>String(n==null?'':n).replace(/[\u2063\u2064<>&"']/g,'').trim().slice(0,12);
+const mk=p=>(p&&p.n)?SEP+okCol(p.c)+SEP2+cleanN(p.n)+SEP:'';
+const curP=()=>{const id=S.pfxAct,d=id&&ON.pxo[id]&&ON.pfxs[id];return d?{n:cleanN(d.name),c:okCol(d.color),i:id}:null};
+const tagHTML=(n,c)=>`<span class="pfx" style="--c:${okCol(c)}">${esc(cleanN(n))}</span>`;
+
+/* стиль плашки */
+document.head.insertAdjacentHTML('beforeend','<style>.pfx{display:inline-block;margin-left:5px;padding:0 6px;border-radius:7px;font-size:.78em;font-weight:900;line-height:1.55;vertical-align:middle;letter-spacing:.02em;color:var(--c,#94a3b8);background:rgba(148,163,184,.14);background:color-mix(in srgb,var(--c) 16%,transparent);border:1px solid var(--c,#94a3b8);border:1px solid color-mix(in srgb,var(--c) 55%,transparent);text-shadow:0 0 8px var(--c)}</style>');
+
+/* нік гравця в ON.players отримує невидимий маркер -> перетворюється на плашку в DOM */
+const vis3=P=>{const o={};for(const k in P){const f=ON.fl&&ON.fl[k];if(f&&(f.hide||f.ban))continue;const p=P[k];o[k]=(p&&p.pfx&&p.pfx.n&&p.name)?Object.assign({},p,{name:p.name+mk(p.pfx)}):p}return o};
+Object.defineProperty(ON,'players',{configurable:true,enumerable:true,get(){return ON._pv||{}},set(v){ON._raw=v||{};ON._pv=vis3(ON._raw)}});
+ON.players=ON._raw||{};
+
+const MKR=/\u2063([^\u2063\u2064]*)\u2064([^\u2063]*)\u2063/g;
+function decoNode(t){
+  const v=t.nodeValue;if(!v||v.indexOf(SEP)<0)return;
+  const p=t.parentNode;if(!p)return;
+  if(/^(OPTION|TEXTAREA|TITLE|SCRIPT|STYLE)$/.test(p.nodeName)){t.nodeValue=v.replace(MKR,(m,c,n)=>' ['+n+']');return}
+  const f=document.createDocumentFragment();let last=0,m;MKR.lastIndex=0;
+  while((m=MKR.exec(v))){
+    if(m.index>last)f.appendChild(document.createTextNode(v.slice(last,m.index)));
+    const s=document.createElement('span');s.className='pfx';s.style.setProperty('--c',okCol(m[1]));s.textContent=m[2];f.appendChild(s);
+    last=MKR.lastIndex;
+  }
+  if(last<v.length)f.appendChild(document.createTextNode(v.slice(last)));
+  p.replaceChild(f,t);
+}
+function decoTree(n){
+  if(n.nodeType===3){decoNode(n);return}
+  if(n.nodeType!==1)return;
+  textNodes(n).forEach(t=>{if(t.nodeValue&&t.nodeValue.indexOf(SEP)>=0)decoNode(t)});
+}
+
+/* один спостерігач: плашки префіксів + переклад */
+new MutationObserver(ms=>{
+  ms.forEach(m=>{
+    if(m.type==='characterData'){decoNode(m.target);trNode(m.target)}
+    else m.addedNodes.forEach(n=>{decoTree(n);walk(n)});
+  });
+}).observe(document.body,{childList:true,subtree:true,characterData:true});
+walk(document.body);
+
+/* синхронізація обраного префікса в документ гравця */
+let sig='';
+function pxSync(){const s=JSON.stringify(curP());if(s!==sig){sig=s;if(ON.xl)save()}}
+
+/* --- вкладка ЩЕ → ПРЕФІКСИ --- */
+MT.splice(1,0,['px','🏷️','ПРЕФІКСИ']);
+const _mr12=mRender;
+mRender=function(){
+  if(MORE.t==='px'){const b=$('mbody');if(b)b.innerHTML=pxHTML();return}
+  _mr12();
+};
+function pxHTML(){
+  if(!ON.ready)return offl();
+  const own=Object.keys(ON.pxo).filter(id=>ON.pfxs[id]),eq=S.pfxAct;
+  let h=`<div class="glass rounded-3xl p-4 space-y-3"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-fuchsia-300">🏷️ ПРЕФІКСИ</h2><p class="text-[10px] text-slate-400">Тег біля твого ніка. Купуй на маркеті або отримуй від адміна.</p></div>
+  <div class="text-[10px] font-black text-slate-400">МОЇ ПРЕФІКСИ</div>
+  ${own.length?`<div class="flex flex-wrap gap-2">${own.map(id=>{const d=ON.pfxs[id];return `<button onclick="pxEquip('${id}')" class="px-2.5 py-1.5 rounded-xl text-[11px] font-black ${eq===id?'bg-fuchsia-500/25 ring-2 ring-fuchsia-400':'bg-slate-800'}">${esc((users()[ME]||{}).n||'')}${tagHTML(d.name,d.color)}</button>`}).join('')}</div>
+  ${eq?`<button onclick="pxEquip('')" class="w-full py-2 rounded-xl bg-slate-800 border border-slate-700 text-[10px] font-extrabold">ЗНЯТИ ПРЕФІКС</button>`:''}`:'<div class="text-[10px] text-slate-500">Префіксів поки немає</div>'}</div>`;
+  if(isA())h+=pxAdmin();
+  return h;
+}
+function pxAdmin(){
+  const P=Object.entries(ON._raw||{}).filter(([k,p])=>p&&p.name).sort((a,b)=>String(a[1].name).localeCompare(String(b[1].name)));
+  const L=Object.entries(ON.pfxs).filter(([id,d])=>d&&d.name);
+  return `<div class="glass rounded-3xl p-4 space-y-3 mt-3"><div class="text-[10px] font-black text-red-300">🛠 ТІЛЬКИ ДЛЯ АДМІНІВ</div>
+  <div class="text-[10px] font-black text-slate-400">СТВОРИТИ ПРЕФІКС</div>
+  <div class="flex gap-2"><input id="px-n" class="inp" maxlength="12" placeholder="Назва (напр. VIP)" autocomplete="off"><input id="px-c" type="color" value="#22d3ee" style="width:52px;height:42px;padding:2px;border-radius:12px;background:#0d131f;border:1px solid #232e42;flex-shrink:0"></div>
+  <div class="flex gap-2"><input id="px-p" type="number" min="0" class="inp" placeholder="Ціна в ⭐ на маркеті (0 = не продавати)"><button onclick="pxCreate()" class="px-4 rounded-xl bg-fuchsia-500 text-black font-black text-xs shrink-0">СТВОРИТИ</button></div>
+  <div class="text-[10px] font-black text-slate-400">СПИСОК (${L.length})</div>
+  ${L.length?L.map(([id,d])=>`<div class="flex items-center justify-between gap-2 bg-slate-800/50 rounded-xl px-3 py-2"><div class="min-w-0 text-[11px] font-black">${tagHTML(d.name,d.color)} <span class="text-[9px] text-slate-400">${(d.price|0)>0?'⭐ '+fmt(d.price):'не продається'}</span></div>
+  <div class="flex gap-1 shrink-0"><button onclick="pxPrice('${id}')" class="px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 text-[10px]">💰</button><button onclick="pxDel('${id}')" class="px-2 py-1 rounded-lg bg-red-500/20 border border-red-500/40 text-[10px]">🗑</button></div></div>`).join(''):'<div class="text-[10px] text-slate-500">Порожньо</div>'}
+  <div class="text-[10px] font-black text-slate-400">ВИДАТИ ГРАВЦЮ БЕЗ ЗАПИТУ</div>
+  <select id="px-u" class="inp">${P.map(([k,p])=>`<option value="${esc(k)}">${esc(p.name)} · LV${p.lvl||1}</option>`).join('')}</select>
+  <select id="px-s" class="inp">${L.map(([id,d])=>`<option value="${id}">${esc(d.name)}</option>`).join('')}</select>
+  <div class="grid grid-cols-2 gap-2"><button onclick="pxGive(1)" class="py-2.5 rounded-xl bg-cyan-500 text-black text-[11px] font-black">🎁 ВИДАТИ</button><button onclick="pxGive(0)" class="py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-[11px] font-black">↩️ ЗАБРАТИ ПРЕФІКС</button></div></div>`;
+}
+window.pxEquip=function(id){
+  if(id&&!ON.pxo[id])return;
+  S.pfxAct=id;save();toast(id?'🏷️ Префікс одягнено':'Префікс знято');mRender();
+};
+window.pxCreate=async function(){
+  if(!isA()||!ON.ready)return;
+  const n=cleanN(($('px-n')||{}).value),c=okCol(($('px-c')||{}).value),p=Math.max(0,parseInt(($('px-p')||{}).value)||0);
+  if(!n)return toast('Введи назву');
+  try{await ON.db.collection('prefixes').add({name:n,color:c,price:p,by:ON.uid,ts:Date.now()});toast('✅ Префікс створено')}
+  catch(e){toast('❌ Помилка (перевір правила бази для prefixes)')}
+};
+window.pxPrice=async function(id){
+  if(!isA())return;const d=ON.pfxs[id];if(!d)return;
+  const v=prompt('Нова ціна ⭐ (0 = не продавати)',d.price|0);if(v===null)return;
+  try{await firebase.database().ref('prefixes/'+id+'/price').set(Math.max(0,parseInt(v)||0));toast('✅ Ціну змінено')}
+  catch(e){toast('❌ Помилка')}
+};
+window.pxDel=async function(id){
+  if(!isA()||!confirm('Видалити цей префікс?'))return;
+  try{await firebase.database().ref('prefixes/'+id).remove();toast('🗑 Видалено')}
+  catch(e){toast('❌ Помилка')}
+};
+window.pxGive=async function(on){
+  if(!isA()||!ON.ready)return;
+  const u=($('px-u')||{}).value,id=($('px-s')||{}).value;
+  if(!u||!id)return toast('Обери гравця і префікс');
+  const ref=firebase.database().ref('pxown/'+u+'/'+id);
+  try{
+    if(on)await ref.set({ts:Date.now(),how:'gift',by:ON.uid});else await ref.remove();
+    toast(on?'🎁 Префікс видано':'↩️ Префікс забрано');
+  }catch(e){toast('❌ Помилка (перевір правила бази для pxown)')}
+};
+
+/* --- магазин префіксів на МАРКЕТІ --- */
+function pxShop(){
+  const L=Object.entries(ON.pfxs).filter(([id,d])=>d&&d.name&&(d.price|0)>0).sort((a,b)=>a[1].price-b[1].price);
+  if(!L.length)return '';
+  const nick=esc((users()[ME]||{}).n||'');
+  return `<div class="glass rounded-3xl p-4 space-y-2 mb-3"><h2 class="text-xs font-black tracking-widest text-fuchsia-300">🏷️ ПРЕФІКСИ В ПРОДАЖІ</h2>
+  <div class="grid grid-cols-2 gap-2">${L.map(([id,d])=>{const has=!!ON.pxo[id];return `<div class="bg-slate-800/50 rounded-2xl p-2.5 flex flex-col items-center gap-1.5 text-center"><div class="text-[11px] font-black">${nick}${tagHTML(d.name,d.color)}</div>
+  <button ${has?'disabled':''} onclick="pxBuy('${id}')" class="w-full py-1 rounded-lg text-[10px] font-extrabold ${has?'bg-slate-800 text-green-400':'bg-amber-400 text-black'}">${has?'✅ Вже є':'КУПИТИ ⭐ '+fmt(d.price)}</button></div>`}).join('')}</div></div>`;
+}
+const _mk12=mkHTML;
+mkHTML=function(){const h=_mk12();return ON.ready?pxShop()+h:h};
+let PB=0;
+window.pxBuy=async function(id){
+  if(PB||!ON.ready)return;const d=ON.pfxs[id];
+  if(!d||!((d.price|0)>0)||ON.pxo[id])return;
+  if(S.stars<d.price)return toast('❌ Недостатньо Stars');
+  PB=1;S.stars-=d.price;save();
+  try{
+    await ON.db.doc('pxown/'+ON.uid+'/'+id).set({ts:Date.now(),how:'buy'});
+    confetti(25);toast('✅ Префікс куплено');
+  }catch(e){S.stars+=d.price;save();toast('❌ Не вдалося купити')}
+  PB=0;
+};
+
+/* --- загальний чат: нік із префіксом --- */
+gcSend=async function(){
+  const i=$('gci');if(!i||!ON.ready)return;
+  const t=i.value.trim().slice(0,200),now=Date.now();
+  if(!t||now-GC.last<1500)return;GC.last=now;i.value='';
+  try{await ON.db.collection('global').add({from:ON.uid,name:((users()[ME]||{}).n||'Player')+mk(curP()),text:t,ts:now})}
+  catch(e){toast('❌ Не надіслано')}
+};
+
+/* --- підключення до онлайну --- */
+const _ob12=onlineBoot;
+onlineBoot=async function(){
+  const r=await _ob12();
+  if(!r)return r;
+  if(!ON.db.__w12){
+    ON.db.__w12=1;const d1=ON.db.doc;
+    ON.db.doc=function(path){
+      const ref=d1(path);
+      if(path==='players/'+ON.uid){
+        const s1=ref.set;
+        ref.set=function(d,o){
+          if(!(o&&o.merge)){const c=curP();d=Object.assign({},d,{pfx:c?{n:c.n,c:c.c}:null})}
+          return s1(d,o);
+        };
+      }
+      return ref;
+    };
+  }
+  if(!ON.s12){
+    ON.s12=1;
+    ON.db.collection('prefixes').onSnapshot(s=>{
+      const M={};s.docs.forEach(d=>{M[d.id]=d.data()});ON.pfxs=M;pxSync();mLive('px');mLive('mk');
+    },()=>{});
+    ON.db.collection('pxown/'+ON.uid).onSnapshot(s=>{
+      const M={};s.docs.forEach(d=>{M[d.id]=d.data()});
+      if(!ON.pxFirst)Object.keys(M).forEach(id=>{
+        if(!ON.pxo[id]&&M[id]&&M[id].how==='gift'){const p=ON.pfxs[id];toast('🎁 Тобі видали префікс'+(p?': '+cleanN(p.name):''));confetti(30)}
+      });
+      ON.pxFirst=false;ON.pxo=M;pxSync();mLive('px');mLive('mk');
+    },()=>{});
+  }
+  return r;
+};
+const _en12=enter;
+enter=function(k){S.pfxAct='';_en12(k)};
+})();
+// ===================== END PATCH v12 =====================
 /* ============ INIT ============ */
 hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
