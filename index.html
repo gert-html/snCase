@@ -207,7 +207,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const LSget=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}};
 const LSset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 const users=()=>LSget('sn_users',{});
-const DEF=()=>({stars:1000,coins:12500,inv:[],opened:0,cd:{},wheel:0,bonus:{},promo:{}});
+const DEF=()=>({stars:1000,coins:0,inv:[],opened:0,cd:{},wheel:0,bonus:{},promo:{}});
 let ME=null;
 let S={...DEF(),mult:1,tok:null,cur:null,tab:'home',spin:false};
 const nid=d=>d.inv.reduce((m,x)=>Math.max(m,x.uid),0)+1;
@@ -1946,7 +1946,7 @@ const st=document.createElement('style');st.id='ui6';st.textContent=css;document
 const hd=document.querySelector('header');
 if(hd){
   hd.innerHTML=`<div class="flex items-center gap-2.5 cursor-pointer" onclick="go('home')"><div class="logo">sn</div><div class="leading-none"><div class="brand">snCase</div><div class="tag">NFT CASES</div></div></div>
-  <div class="flex items-center gap-1.5"><div class="chip chip-lv">🆙 <span id="b-lvl">1</span></div><div class="chip">🪙 <span id="b-coins"></span></div><div class="chip chip-star">⭐ <span id="b-stars"></span></div></div>`;
+  <div class="flex items-center gap-1.5"><div class="chip chip-lv">🆙 <span id="b-lvl">1</span></div><div class="chip"> <span id="b-coins"></span></div><div class="chip chip-star">⭐ <span id="b-stars"></span></div></div>`;
 }
 const TW={};
 function tweenNum(id,to){
@@ -3123,6 +3123,15 @@ const _en12=enter;
 enter=function(k){S.pfxAct='';_en12(k)};
 })();
 // ===================== END PATCH v12 =====================
+(function(){
+  const U=users();
+  let ch=false;
+  Object.keys(U).forEach(k=>{
+    if(U[k]&&U[k].d&&U[k].d.coins){U[k].d.coins=0;ch=true}
+  });
+  if(ch)LSset('sn_users',U);
+  S.coins=0;
+})();
 /* ============ INIT ============ */
 hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
