@@ -2541,6 +2541,203 @@ showAuth=function(mode){
 };
 })();
 // ===================== END PATCH v10 =====================
+// ===================== PATCH v11: НОВИНИ + адмін-дії для офлайн-гравців + фікс "прибрати з топу" =====================
+// ВСТАВ ПІСЛЯ PATCH v10 і ПЕРЕД блоком  /* ============ INIT ============ */
+(function(){
+const isA=()=>!!(ME&&LSget('sn_adm',{})[ME]);
+const ADM=window.ADM;
+Object.assign(ON,{nws:[],nwFirst:true,cd11:{}});
+S.ac=S.ac||{};
+
+/* ---------------------------------------------------------------
+   1. ФІКС "ПРИБРАТИ З ТОПУ": раніше адмін бачив усіх гравців (обхід фільтра),
+      тому здавалось, що кнопка не працює. Тепер фільтр діє для всіх,
+      а в адмін-панелі гравці лишаються видимі (з позначкою 🙈 / 🚫).
+---------------------------------------------------------------- */
+const vis2=P=>{const o={};for(const k in P){const f=ON.fl&&ON.fl[k];if(f&&(f.hide||f.ban))continue;o[k]=P[k]}return o};
+Object.defineProperty(ON,'players',{configurable:true,enumerable:true,
+  get(){return ON._pv||{}},
+  set(v){ON._raw=v||{};ON._pv=vis2(ON._raw)}});
+ON.players=ON._raw||{};
+
+/* ---------------------------------------------------------------
+   2. АДМІН-ДІЇ ПРАЦЮЮТЬ І ДЛЯ ОФЛАЙН-ГРАВЦІВ
+      - дія одразу записується прямо в документ гравця (players/uid) транзакцією
+      - паралельно кладеться в чергу cmd2/uid: якщо гравець ОНЛАЙН, його клієнт
+        застосує зміну локально (інакше він перезаписав би документ старим станом)
+      - ключ дії (ac) захищає від подвійного застосування
+---------------------------------------------------------------- */
+async function admTx(k,key,c){
+  let applied=false;
+  const r=await firebase.database().ref('players/'+k).transaction(cur=>{
+    if(cur===null)return cur;
+    if(cur.ac&&cur.ac[key]){applied=true;return cur}
+    let inv=Array.isArray(cur.inv)?cur.inv.slice():Object.values(cur.inv||{});
+    if(c.t==='stars')cur.stars=Math.max(0,(cur.stars|0)+(c.n|0));
+    else if(c.t==='give'&&ITEMS[c.id]){
+      let u=inv.reduce((m,e)=>Math.max(m,e.uid|0),0)+1;const n=Math.min(Math.max(c.n|0,1),50);
+      for(let i=0;i<n;i++)inv.push({id:c.id,uid:u++});
+    }
+    else if(c.t==='take')inv=inv.filter(e=>!(e.uid===c.u&&e.id===c.id));
+    else if(c.t==='takeall')inv=[];
+    else if(c.t==='wipe'){cur.stars=0;inv=[]}
+    cur.inv=inv;cur.val=iv(inv);
+    cur.ac=Object.assign({},cur.ac,{[key]:1});
+    applied=true;
+    return cur;
+  },undefined,false);
+  return !!(r.committed&&r.snapshot.exists()&&applied);
+}
+async function admOp(k,c,msg){
+  if(!ON.ready)return toast('🌐 Онлайн ще не готовий');
+  const db=firebase.database(),key=db.ref('cmd2/'+k).push().key;
+  try{await db.ref('cmd2/'+k+'/'+key).set(Object.assign({},c,{ts:Date.now(),by:ON.uid}))}
+  catch(e){return toast('❌ Помилка (перевір правила бази для cmd2)')}
+  let direct=false;
+  try{direct=await admTx(k,key,c)}catch(e){console.error(e)}
+  toast('✅ '+msg+(direct?' — застосовано одразу':' — у черзі, застосується при вході гравця'));
+  setTimeout(()=>{if(S.tab==='admin'&&!S.spin)go('admin',null,true)},800);
+}
+window.admStars=function(sg){
+  const n=parseInt(($('ad-s')||{}).value)||0;if(!ADM.sel||n<1)return toast('Введи кількість');
+  admOp(ADM.sel,{t:'stars',n:sg*n},(sg>0?'Видано ':'Забрано ')+fmt(n)+' ⭐');
+};
+window.admGive=function(){
+  const id=($('ad-it')||{}).value,n=Math.min(50,Math.max(1,parseInt(($('ad-n')||{}).value)||1));
+  if(!ADM.sel||!id)return toast('Обери предмет');
+  admOp(ADM.sel,{t:'give',id,n},'Видано '+ITEMS[id].name+(n>1?' x'+n:''));
+};
+window.admTake=function(k,u,id){if(!confirm('Забрати '+ITEMS[id].name+'?'))return;admOp(k,{t:'take',u,id},'Предмет забрано')};
+window.admTakeAll=function(k){if(!confirm('Забрати ВЕСЬ інвентар?'))return;admOp(k,{t:'takeall'},'Інвентар очищено')};
+window.admWipe=function(k){if(!confirm('Обнулити акаунт (⭐ і інвентар)?'))return;admOp(k,{t:'wipe'},'Акаунт обнулено')};
+
+/* клієнт гравця: застосування черги cmd2 */
+function cmdApply(key,c){
+  if(ON.cd11[key])return;ON.cd11[key]=1;S.ac=S.ac||{};
+  const rm=()=>{try{firebase.database().ref('cmd2/'+ON.uid+'/'+key).remove()}catch(e){}};
+  if(S.ac[key]){rm();delete S.ac[key];save();return} /* уже застосовано в документі, поки гравець був офлайн */
+  let m='';
+  if(c.t==='stars'){const n=c.n|0;S.stars=Math.max(0,S.stars+n);m=(n>=0?'+':'')+fmt(n)+' ⭐'}
+  else if(c.t==='give'&&ITEMS[c.id]){let n=nid(S);const k=Math.min(Math.max(c.n|0,1),50);for(let i=0;i<k;i++)S.inv.push({id:c.id,uid:n++});m='+ '+ITEMS[c.id].name+(k>1?' x'+k:'')}
+  else if(c.t==='take'){S.inv=S.inv.filter(e=>!(e.uid===c.u&&e.id===c.id));m='предмет вилучено'}
+  else if(c.t==='takeall'){S.inv=[];m='інвентар очищено'}
+  else if(c.t==='wipe'){S.stars=0;S.inv=[];m='акаунт обнулено'}
+  if(!m){rm();return}
+  S.ac[key]=1;save();toast('🛠 Адмін: '+m);
+  if(!S.spin&&['profile','games','more','bonuses'].includes(S.tab))go(S.tab,null,true);
+  /* прибираємо команду лише після того, як стан встиг піти в базу */
+  setTimeout(()=>{rm();delete S.ac[key];save()},4000);
+}
+
+/* ---------------------------------------------------------------
+   3. ВКЛАДКА НОВИНИ (ЩЕ → 📰 НОВИНИ): пишуть лише адміни, читають усі
+---------------------------------------------------------------- */
+MT.unshift(['nw','📰','НОВИНИ']);
+$('n-more').insertAdjacentHTML('beforeend','<b id="nwb" style="display:none;position:absolute;top:-2px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#ef4444;color:#fff;font-size:9px;align-items:center;justify-content:center">0</b>');
+
+const nwUnread=()=>{const seen=LSget('sn_news_'+ME,0);return (ON.nws||[]).filter(n=>(n.ts||0)>seen&&n.by!==ON.uid).length};
+function nwBadge(){
+  const n=nwUnread(),open=S.tab==='more'&&MORE.t==='nw',b=$('nwb'),d=$('nwd');
+  if(b){b.textContent=n>9?'9+':n;b.style.display=(n&&!open)?'flex':'none'}
+  if(d)d.style.display=(n&&!open)?'block':'none';
+}
+function nwSeen(){const L=ON.nws||[];if(L.length)LSset('sn_news_'+ME,L[0].ts|0);nwBadge()}
+function nwList(){
+  const L=ON.nws||[],adm=isA();
+  return L.length?L.map(n=>{
+    const t=new Date(n.ts||Date.now()),p=x=>String(x).padStart(2,'0'),ds=p(t.getDate())+'.'+p(t.getMonth()+1)+'.'+t.getFullYear()+' '+p(t.getHours())+':'+p(t.getMinutes());
+    return `<div class="bg-slate-800/50 rounded-2xl p-3 space-y-1.5">
+    <div class="flex justify-between items-start gap-2"><div class="text-xs font-black text-amber-300 min-w-0" style="word-break:break-word">${esc(n.title||'Новина')}</div>${adm?`<button onclick="nwDel('${esc(n.id)}')" class="shrink-0 px-2 py-0.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 text-[9px] font-extrabold">🗑</button>`:''}</div>
+    <div class="text-[11px] text-slate-200 leading-snug" style="white-space:pre-wrap;word-break:break-word;user-select:text;-webkit-user-select:text">${esc(n.text||'')}</div>
+    <div class="text-[9px] text-slate-500 font-bold">🛠 ${esc(n.name||'Адмін')} · ${ds}</div></div>`;
+  }).join(''):'<div class="text-center text-[10px] text-slate-500 py-6">Новин поки немає</div>';
+}
+function nwHTML(){
+  if(!ON.ready)return offl();
+  return `<div class="glass rounded-3xl p-4 space-y-3"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-cyan-300">📰 НОВИНИ</h2><p class="text-[10px] text-slate-400">Оголошення від адміністрації</p></div>
+  ${isA()?`<div class="space-y-2 bg-slate-800/40 rounded-2xl p-3"><div class="text-[10px] font-black text-red-300">🛠 ТІЛЬКИ ДЛЯ АДМІНІВ</div>
+  <input id="nw-t" class="inp" maxlength="80" placeholder="Заголовок">
+  <textarea id="nw-x" class="inp" rows="4" maxlength="1000" placeholder="Текст новини..." style="resize:none"></textarea>
+  <button onclick="nwPost()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-black font-black text-xs uppercase">📢 ОПУБЛІКУВАТИ</button></div>`:''}
+  <div id="nwl" class="space-y-2">${nwList()}</div></div>`;
+}
+window.nwPost=async function(){
+  if(!isA()||!ON.ready)return;
+  const t=(($('nw-t')||{}).value||'').trim().slice(0,80),x=(($('nw-x')||{}).value||'').trim().slice(0,1000);
+  if(!x)return toast('Введи текст новини');
+  try{
+    await ON.db.collection('news').add({title:t,text:x,ts:Date.now(),by:ON.uid,name:(users()[ME]||{}).n||'Адмін'});
+    $('nw-t').value='';$('nw-x').value='';toast('📢 Новину опубліковано');
+  }catch(e){toast('❌ Помилка (перевір правила бази для news)')}
+};
+window.nwDel=async function(id){
+  if(!isA()||!confirm('Видалити цю новину?'))return;
+  try{await firebase.database().ref('news/'+id).remove();toast('🗑 Видалено')}
+  catch(e){toast('❌ Помилка')}
+};
+
+/* вкладка ЩЕ: додаємо крапку непрочитаного та новий рендер тіла */
+renderMore=function(m){
+  m.innerHTML=`<div class="space-y-3"><div class="grid grid-cols-5 gap-1.5">${MT.map(([k,e,t])=>`<button onclick="setMT('${k}')" class="relative py-1.5 rounded-xl text-[8px] font-black flex flex-col items-center ${MORE.t===k?'bg-cyan-500 text-black':'bg-slate-800 text-slate-300'}"><span class="text-base">${e}</span>${t}${k==='nw'?'<i id="nwd" style="display:none;position:absolute;top:3px;right:5px;width:8px;height:8px;border-radius:50%;background:#ef4444;box-shadow:0 0 6px #ef4444"></i>':''}</button>`).join('')}</div><div id="mbody"></div></div>`;
+  mRender();nwBadge();
+};
+mRender=function(){
+  const b=$('mbody');if(!b)return;
+  const F={nw:nwHTML,col:colHTML,q:qHTML,bp:bpHTML,mk:mkHTML,bt:btHTML,gm:gmHTML,gc:gcHTML,pf:pfHTML,rf:rfHTML};
+  b.innerHTML=F[MORE.t]();
+  if(MORE.t==='gc'){gcSub();gcDraw()}
+  if(MORE.t==='gm'){mnDraw();crDraw()}
+  if(MORE.t==='bt')btShow();
+  if(MORE.t==='nw')nwSeen();
+};
+const _hdr11=hdr;
+hdr=function(){_hdr11();nwBadge()};
+
+/* ---------------------------------------------------------------
+   4. ПІДКЛЮЧЕННЯ ДО ОНЛАЙНУ
+---------------------------------------------------------------- */
+const _ob11=onlineBoot;
+onlineBoot=async function(){
+  const r=await _ob11();
+  if(!r)return r;
+  /* які адмін-дії вже застосовані в документі, поки гравця не було */
+  try{
+    const s=await ON.db.doc('players/'+ON.uid).get(),d=s.exists&&s.data();
+    S.ac=(d&&mineDoc(d)&&d.ac)||{};
+  }catch(e){S.ac={}}
+  /* кожен повний push гравця несе ac (щоб не втрачати ключі) */
+  if(!ON.db.__w11){
+    ON.db.__w11=1;const d0=ON.db.doc;
+    ON.db.doc=function(path){
+      const ref=d0(path);
+      if(path==='players/'+ON.uid){
+        const s0=ref.set;
+        ref.set=function(d,o){
+          if(!(o&&o.merge)&&S.ac&&Object.keys(S.ac).length)d=Object.assign({},d,{ac:S.ac});
+          return s0(d,o);
+        };
+      }
+      return ref;
+    };
+  }
+  if(!ON.s11){
+    ON.s11=1;
+    ON.db.collection('cmd2/'+ON.uid).onSnapshot(s=>{s.docs.forEach(d=>cmdApply(d.id,d.data()))},()=>{});
+    ON.db.collection('news').orderBy('ts').limitToLast(30).onSnapshot(s=>{
+      const L=s.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>(b.ts|0)-(a.ts|0));
+      const old=ON.nws.length?(ON.nws[0].ts|0):0,first=ON.nwFirst;ON.nwFirst=false;ON.nws=L;
+      if(S.tab==='more'&&MORE.t==='nw'){const l=$('nwl');if(l)l.innerHTML=nwList();nwSeen()}
+      else if(!first&&L.length&&(L[0].ts|0)>old&&L[0].by!==ON.uid)toast('📰 '+(L[0].title||'Нова новина'));
+      hdr();
+    },()=>{});
+  }
+  banCheck11();
+  return r;
+};
+/* банер блокування оновлюємо і тут (flags можуть прийти до або після завантаження) */
+function banCheck11(){hdr()}
+})();
+// ===================== END PATCH v11 =====================
 /* ============ INIT ============ */
 hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
