@@ -856,7 +856,7 @@ const ACH=[
 ['a5','🔴 Міфік в інвентарі',()=>S.inv.some(e=>ITEMS[e.id].rarity==='mythic'),4000],
 ['a6','🆙 Рівень 5',()=>lvlOf(S.xp)>=5,2500],
 ['a7','💰 Інвентар на 10 000 ⭐',()=>iv(S.inv)>=10000,3000],
-['a8','🔥 Серія 7 днів',()=>(S.streak||0)>=7,3000]];
+['a8','🔥 Серія 7 днів',()=>(S.streak||0)>=7,100000]];
 function achHTML(){
   S.ach=S.ach||{};
   return `<div class="glass p-4 rounded-3xl space-y-2 mt-4"><h2 class="text-sm font-black tracking-widest text-center text-amber-300">🏅 ДОСЯГНЕННЯ</h2>`+
@@ -3132,6 +3132,426 @@ enter=function(k){S.pfxAct='';_en12(k)};
   if(ch)LSset('sn_users',U);
   S.coins=0;
 })();
+// ===================== PATCH v13: BATTLE PASS 100 РІВНІВ + КВЕСТИ З XP =====================
+// ВСТАВ ПІСЛЯ "END PATCH v12" і ПЕРЕД блоком, що обнуляє coins / перед  /* ============ INIT ============ */
+// Що змінено:
+//  • Battle Pass: 100 рівнів, 1 рівень = 500 XP, Premium = 25 000 ⭐
+//  • Квести: у кожного показано, скільки XP (і ⭐) він дає. XP йде в Battle Pass
+//  • Респавн квестів за 10 000 ⭐ (окремо для щоденних і тижневих, прогрес обнуляється)
+//  • Кожного дня / тижня набір квестів випадковий (5 щоденних, 4 тижневих)
+(function(){
+const XP_LV=500,MAXL=100,PREM=25000,RESP=10000;
+
+/* ---------------------------------------------------------------
+   1. СТИЛІ
+---------------------------------------------------------------- */
+const css=`
+@keyframes bpGlow{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.45)}50%{box-shadow:0 0 18px 2px rgba(251,191,36,.3)}}
+@keyframes bpPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+@keyframes bpShine{0%{transform:translateX(-160%) skewX(-20deg)}60%,100%{transform:translateX(520%) skewX(-20deg)}}
+
+.bp-hero{position:relative;overflow:hidden;border-radius:28px;padding:16px;border:1px solid rgba(251,191,36,.35);
+ background:radial-gradient(110% 90% at 0% 0%,rgba(34,211,238,.24),transparent 60%),radial-gradient(100% 90% at 100% 100%,rgba(217,70,239,.26),transparent 60%),linear-gradient(160deg,#18233f,#0a0f1d);
+ box-shadow:0 24px 50px -26px rgba(251,191,36,.55),inset 0 1px 0 rgba(255,255,255,.1)}
+.bp-hero::after{content:"";position:absolute;top:0;left:0;width:26%;height:100%;pointer-events:none;
+ background:linear-gradient(100deg,transparent,rgba(255,255,255,.09),transparent);animation:bpShine 7s ease-in-out infinite}
+.bp-ring{position:relative;width:104px;height:104px;flex-shrink:0}
+.bp-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.bp-lv{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.bp-lv b{font-family:'Unbounded',Inter,sans-serif;font-size:26px;line-height:1;font-weight:800;
+ background:linear-gradient(#fff,#fde68a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.bp-lv span{font-size:8px;font-weight:900;letter-spacing:.2em;color:#94a3b8;margin-top:4px}
+.bp-title{font-family:'Unbounded',Inter,sans-serif;font-weight:800;font-size:16px;letter-spacing:.02em;
+ background:linear-gradient(90deg,#fde68a,#f9a8d4 55%,#67e8f9);-webkit-background-clip:text;background-clip:text;color:transparent}
+.bp-bar{height:8px;border-radius:9px;background:rgba(2,6,23,.85);overflow:hidden;border:1px solid rgba(255,255,255,.06)}
+.bp-bar i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#22d3ee,#a78bfa,#fbbf24);box-shadow:0 0 12px rgba(34,211,238,.6)}
+
+.bp-prem{position:relative;overflow:hidden;border-radius:24px;padding:14px;border:1px solid rgba(251,191,36,.55);
+ background:linear-gradient(135deg,rgba(251,191,36,.22),rgba(236,72,153,.16) 60%,rgba(15,23,42,.9));animation:bpGlow 3s infinite}
+.bp-prem.on{animation:none;padding:10px 14px;text-align:center;font-weight:900;font-size:12px;color:#fde68a}
+.bp-btnp{position:relative;overflow:hidden;width:100%;padding:12px;border-radius:16px;font-weight:900;font-size:12px;color:#1a1200;
+ background:linear-gradient(135deg,#fde68a,#f59e0b);box-shadow:0 12px 28px -10px rgba(245,158,11,.85)}
+.bp-btnp::after{content:"";position:absolute;top:0;left:0;width:30%;height:100%;pointer-events:none;
+ background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);animation:bpShine 3.2s infinite}
+.bp-all{width:100%;padding:11px;border-radius:16px;font-weight:900;font-size:11px;color:#04121f;
+ background:linear-gradient(135deg,#67e8f9,#a78bfa);box-shadow:0 10px 26px -10px rgba(34,211,238,.8)}
+.bp-all:disabled{background:#1e293b;color:#64748b;box-shadow:none}
+
+/* ---- доріжка нагород ---- */
+.bp-sc{position:relative;max-height:480px;overflow-y:auto;border-radius:18px;scrollbar-width:none}
+.bp-sc::-webkit-scrollbar{display:none}
+.bp-head{position:sticky;top:0;z-index:6;display:grid;grid-template-columns:1fr 44px 1fr;gap:8px;padding:8px 0 10px;
+ background:linear-gradient(#0e1424 72%,transparent);font-size:9px;font-weight:900;letter-spacing:.14em;text-align:center}
+.bp-row{position:relative;display:grid;grid-template-columns:1fr 44px 1fr;gap:8px;align-items:center;padding:4px 0}
+.bp-row::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:4px;transform:translateX(-50%);background:#1e293b;border-radius:4px}
+.bp-row.open::before{background:linear-gradient(#22d3ee,#a78bfa);box-shadow:0 0 10px rgba(34,211,238,.5)}
+.bp-n{position:relative;z-index:2;width:34px;height:34px;margin:auto;border-radius:50%;display:flex;align-items:center;justify-content:center;
+ font-size:11px;font-weight:900;color:#64748b;background:#0f172a;border:2px solid #263148}
+.bp-row.open .bp-n{color:#04121f;background:linear-gradient(135deg,#67e8f9,#a78bfa);border-color:#fff;box-shadow:0 0 14px rgba(34,211,238,.7)}
+.bp-row.cur .bp-n{color:#fde68a;border-color:#fbbf24;animation:bpPulse 1.4s infinite}
+.bp-row.ms .bp-n{width:40px;height:40px;font-size:12px}
+
+.bp-c{position:relative;display:flex;align-items:center;gap:8px;width:100%;min-height:54px;padding:6px 8px;border-radius:14px;text-align:left;color:#fff;
+ border:1px solid rgba(148,163,184,.18);background:rgba(15,23,42,.72)}
+.bp-c.p{border-color:rgba(251,191,36,.35);background:linear-gradient(135deg,rgba(120,80,10,.30),rgba(15,23,42,.82))}
+.bp-row.ms .bp-c{border-color:rgba(167,139,250,.55)}
+.bp-row.ms .bp-c.p{border-color:rgba(251,191,36,.7)}
+.bp-c.lk{opacity:.5}
+.bp-c.dn{opacity:.5}
+.bp-c.av{border-color:#22d3ee;box-shadow:0 0 16px -4px rgba(34,211,238,.8)}
+.bp-c.p.av{border-color:#fbbf24;animation:bpGlow 2s infinite}
+.bp-i{width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px}
+.bp-t{min-width:0;display:flex;flex-direction:column;gap:1px}
+.bp-t b{font-size:10px;font-weight:900;color:#fde68a}
+.bp-t span{font-size:8px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bp-s{position:absolute;top:3px;right:5px;font-style:normal;font-size:9px;font-weight:900}
+.bp-s.go{top:auto;bottom:3px;padding:1px 6px;border-radius:999px;color:#04121f;background:#22d3ee;font-size:7.5px}
+.bp-c.p .bp-s.go{background:#fbbf24}
+
+/* ---- квести ---- */
+.bp-q{display:flex;align-items:center;gap:10px;padding:10px;border-radius:16px;background:rgba(15,23,42,.65);border:1px solid rgba(148,163,184,.16)}
+.bp-q.ok{border-color:#fbbf24;box-shadow:0 0 18px -6px rgba(251,191,36,.7)}
+.bp-q.dn{opacity:.55}
+.bp-qi{width:40px;height:40px;border-radius:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;
+ background:linear-gradient(135deg,rgba(34,211,238,.2),rgba(167,139,250,.2));border:1px solid rgba(255,255,255,.1)}
+.bp-chip{font-size:9px;font-weight:900;padding:2px 7px;border-radius:999px;white-space:nowrap}
+.bp-chip.xp{color:#c4b5fd;background:rgba(139,92,246,.2);border:1px solid rgba(167,139,250,.55)}
+.bp-chip.st{color:#fde68a;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.4)}
+.bp-qb{flex-shrink:0;width:64px;padding:9px 0;border-radius:12px;font-size:9px;font-weight:900}
+.bp-resp{width:100%;padding:10px;border-radius:14px;font-size:10px;font-weight:900;background:rgba(239,68,68,.14);border:1px solid rgba(239,68,68,.5);color:#fecaca}
+`;
+const st=document.createElement('style');st.id='bp13';st.textContent=css;document.head.appendChild(st);
+
+/* ---------------------------------------------------------------
+   2. НАГОРОДИ НА 100 РІВНІВ
+   Змінюй формули тут, якщо хочеш більше/менше ⭐
+---------------------------------------------------------------- */
+const BPB=['meme','autumn','dragon','cyber','love','neon','vip','royal','ton','diamond'];      /* кейси Premium від дешевих до дорогих */
+const BPFC=['meme','meme','autumn','dragon','cyber','love','neon','vip','royal','ton'];        /* кейси Free кожні 10 рівнів */
+const EXC={40:'x20',70:'x30',90:'x50',100:'x67'};                                              /* ексклюзивні NFT (Premium) */
+const okI=id=>id&&ITEMS[id]?id:null;
+const bpF2=l=>{const t=l%10===0;return{s:100+l*30+(t?l*30:0),i:t?okI('k_'+BPFC[l/10-1]):null}};
+const bpP2=l=>{
+  const t=l%10===0;let i=null;
+  if(EXC[l])i=EXC[l];else if(l%5===0)i='k_'+BPB[Math.min(9,Math.floor((l/5-1)/2))];
+  return{s:200+l*80+(t?l*40:0),i:okI(i)};
+};
+const LV=()=>{bpRoll();return Math.min(MAXL,Math.floor((S.bp.xp||0)/XP_LV))};
+function lvToast(b,a){if(a>b)setTimeout(()=>{toast('🎫 BATTLE PASS · РІВЕНЬ '+a+'!');confetti(25)},1300)}
+function bpAdd(n){const b=LV();S.bp.xp=(S.bp.xp||0)+n;lvToast(b,LV())}
+
+/* будь-який XP гри теж іде в пас + тост про новий рівень паса */
+const _ax13=addXP;
+addXP=function(n){const b=LV();_ax13(n);lvToast(b,LV())};
+
+/* ---------------------------------------------------------------
+   3. BATTLE PASS (екран)
+---------------------------------------------------------------- */
+const BPS={need:true};
+bpHTML=function(){
+  bpRoll();S.bp.fr=S.bp.fr||{};S.bp.pr=S.bp.pr||{};
+  const xp=S.bp.xp|0,lv=LV(),prem=!!S.bp.prem,into=lv>=MAXL?XP_LV:xp-lv*XP_LV,p=lv>=MAXL?100:into/XP_LV*100;
+  const C=2*Math.PI*44,dash=(C*p/100).toFixed(1);
+  const d=new Date(),left=Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1)-Date.now(),dl=Math.floor(left/864e5),hl=Math.floor(left%864e5/36e5);
+  let nx=0;for(let l=lv+1;l<=MAXL;l++){if(prem?bpP2(l).i:bpF2(l).i){nx=l;break}}
+  let avN=0;for(let l=1;l<=lv;l++){if(!S.bp.fr[l])avN++;if(prem&&!S.bp.pr[l])avN++}
+  const cur=Math.min(MAXL,lv+1);
+
+  const hero=`<div class="bp-hero"><div class="flex items-center gap-4">
+    <div class="bp-ring"><svg viewBox="0 0 100 100"><defs><linearGradient id="bpg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".5" stop-color="#a78bfa"/><stop offset="1" stop-color="#fbbf24"/></linearGradient></defs>
+      <circle cx="50" cy="50" r="44" fill="none" stroke="#1e293b" stroke-width="8"/>
+      <circle cx="50" cy="50" r="44" fill="none" stroke="url(#bpg)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${dash} ${C.toFixed(1)}"/></svg>
+      <div class="bp-lv"><b>${lv}</b><span>/ ${MAXL}</span></div></div>
+    <div class="min-w-0 flex-1 space-y-1.5">
+      <div class="bp-title">BATTLE PASS</div>
+      <div class="text-[10px] text-slate-400 font-bold">Сезон ${seasonNow()} · лишилось ${dl} д ${hl} год</div>
+      <div class="bp-bar"><i style="width:${p}%"></i></div>
+      <div class="flex justify-between text-[10px] font-black"><span class="text-cyan-300">${lv>=MAXL?'MAX':into+' / '+XP_LV+' XP'}</span><span class="text-slate-400">Всього ${fmt(xp)} XP</span></div>
+      <div class="text-[9px] text-slate-400 font-bold">${nx?`🎁 ${prem?'Наступний приз':'Наступний кейс'} — рівень ${nx}`:'Усі призи відкрито'} · 1 рівень = ${XP_LV} XP</div>
+    </div></div></div>`;
+
+  const premH=prem?`<div class="bp-prem on">👑 PREMIUM АКТИВНИЙ</div>`:
+   `<div class="bp-prem"><div class="flex items-center gap-3"><div class="text-4xl">👑</div><div>
+    <div class="text-sm font-black text-amber-200" style="font-family:Unbounded,Inter,sans-serif">PREMIUM</div>
+    <div class="text-[10px] text-slate-300 font-bold leading-snug">Друга доріжка нагород: більше ⭐, кейс кожні 5 рівнів і ексклюзивні NFT на рівнях 40, 70, 90 та 100.</div></div></div>
+    <button onclick="bpPrem()" class="bp-btnp mt-3">👑 КУПИТИ PREMIUM ЗА ⭐ ${fmt(PREM)}</button></div>`;
+
+  const cell=(r,t,l)=>{
+    const open=lv>=l,done=!!S.bp[t][l],lock=t==='pr'&&!prem,av=open&&!done&&!lock;
+    const it=r.i?ITEMS[r.i]:null;
+    const cls='bp-c '+(t==='pr'?'p ':'')+(done?'dn':av?'av':'lk');
+    const tag=done?'<i class="bp-s">✅</i>':lock?'<i class="bp-s">🔒</i>':av?'<i class="bp-s go">ЗАБРАТИ</i>':'';
+    return `<button ${av?'':'disabled'} onclick="bpClaim(${l},'${t}')" class="${cls}"><div class="bp-i">${it?art(it):'⭐'}</div>
+      <div class="bp-t"><b>⭐ ${fmt(r.s)}</b>${it?`<span class="${RC[it.rarity].t}">${esc(it.name)}</span>`:''}</div>${tag}</button>`;
+  };
+  let rows='';
+  for(let l=1;l<=MAXL;l++){
+    const ms=l%10===0||!!EXC[l];
+    rows+=`<div class="bp-row${lv>=l?' open':''}${l===cur?' cur':''}${ms?' ms':''}"${l===cur?' id="bp-cur"':''}>${cell(bpF2(l),'fr',l)}<div class="bp-n">${l}</div>${cell(bpP2(l),'pr',l)}</div>`;
+  }
+  const track=`<div class="glass rounded-3xl p-3 space-y-2">
+    <button onclick="bpClaimAll()" ${avN?'':'disabled'} class="bp-all">🎁 ЗАБРАТИ ВСЕ ДОСТУПНЕ${avN?' ('+avN+')':''}</button>
+    <div id="bpsc" class="bp-sc"><div class="bp-head"><span class="text-cyan-300">FREE</span><span class="text-slate-500">LV</span><span class="text-amber-300">👑 PREMIUM</span></div>${rows}</div></div>`;
+
+  const L=[...ON.sx].sort((a,b)=>b.xp-a.xp).slice(0,10),prev=seasonPrev();
+  const top=`<div class="glass rounded-3xl p-4 space-y-2"><h2 class="text-sm font-black tracking-widest text-center text-red-300">🏆 СЕЗОННИЙ ТОП</h2>
+    <p class="text-[10px] text-slate-400 text-center">Призи за сезон: 🥇 ⭐50 000 · 🥈 ⭐25 000 · 🥉 ⭐10 000</p>
+    ${L.length?L.map((x,i)=>`<div class="flex justify-between text-[11px] font-black bg-slate-800/50 rounded-xl px-3 py-1.5 ${x.uid===ON.uid?'border border-cyan-500/40':''}"><span>${['🥇','🥈','🥉'][i]||'#'+(i+1)} ${esc(x.name||'Гравець')}</span><span class="text-amber-300">${fmt(x.xp)} XP</span></div>`).join(''):'<div class="text-center text-[10px] text-slate-500">Поки порожньо</div>'}
+    <button onclick="sClaim()" class="w-full py-2 rounded-xl bg-slate-800 border border-slate-700 text-[10px] font-extrabold">🎁 ЗАБРАТИ ПРИЗ ЗА МИНУЛИЙ СЕЗОН (${prev})</button></div>`;
+
+  return `<div class="space-y-3">${hero}${premH}${track}${top}</div>`;
+};
+
+bpClaim=function(l,t){
+  bpRoll();S.bp[t]=S.bp[t]||{};
+  if(l>LV()||S.bp[t][l])return;
+  if(t==='pr'&&!S.bp.prem)return toast('🔒 Потрібен PREMIUM');
+  const r=t==='pr'?bpP2(l):bpF2(l);
+  S.bp[t][l]=1;S.stars+=r.s;if(r.i)S.inv.push({id:r.i,uid:nid(S)});
+  save();confetti(20);toast('🎫 +⭐ '+fmt(r.s)+(r.i?' + '+ITEMS[r.i].name:''));mRender();
+};
+window.bpClaimAll=function(){
+  bpRoll();const lv=LV();S.bp.fr=S.bp.fr||{};S.bp.pr=S.bp.pr||{};
+  let sum=0,items=0,n=0;
+  for(let l=1;l<=lv;l++){
+    if(!S.bp.fr[l]){const r=bpF2(l);S.bp.fr[l]=1;sum+=r.s;n++;if(r.i){S.inv.push({id:r.i,uid:nid(S)});items++}}
+    if(S.bp.prem&&!S.bp.pr[l]){const r=bpP2(l);S.bp.pr[l]=1;sum+=r.s;n++;if(r.i){S.inv.push({id:r.i,uid:nid(S)});items++}}
+  }
+  if(!n)return;
+  S.stars+=sum;save();confetti(50);toast('🎫 +⭐ '+fmt(sum)+(items?' · 🎁 предметів: '+items:''));mRender();
+};
+bpPrem=function(){
+  bpRoll();if(S.bp.prem)return;
+  if(S.stars<PREM)return toast('❌ Недостатньо Stars');
+  if(!confirm('Купити PREMIUM за ⭐ '+fmt(PREM)+'?'))return;
+  S.stars-=PREM;S.bp.prem=true;save();confetti(60);toast('👑 PREMIUM активовано');mRender();
+};
+
+/* ---------------------------------------------------------------
+   4. КВЕСТИ: XP + випадковий набір + респавн
+   [id, текст, тип, потрібно, ⭐, XP]
+---------------------------------------------------------------- */
+const QD2=[
+ ['dq1','Відкрий 5 кейсів','open',5,1000,250],['dq2','Відкрий 15 кейсів','open',15,2500,500],
+ ['dq3','Зроби 1 апгрейд','upg',1,800,200],['dq4','Зроби 3 апгрейди','upg',3,1800,400],
+ ['dq5','Зіграй 3 рази в ігри','game',3,600,200],['dq6','Зіграй 8 ігор','game',8,1500,400],
+ ['dq7','Продай 2 предмети','sell',2,400,150],['dq8','Продай 6 предметів','sell',6,1100,300],
+ ['dq9','Крутни колесо','wheel',1,500,150],
+ ['dq10','Виграй 1 батл','battle',1,900,250],['dq11','Зіграй 3 батли','battle',3,1800,450],
+ ['dq12','Уклади контракт','ct',1,1000,300]
+];
+const QW2=[
+ ['wq1','Відкрий 50 кейсів','open',50,10000,1500],['wq2','Відкрий 100 кейсів','open',100,22000,2800],
+ ['wq3','Зроби 10 апгрейдів','upg',10,6000,1200],['wq4','Зроби 20 апгрейдів','upg',20,14000,2400],
+ ['wq5','Зіграй 5 батлів','battle',5,5000,1000],['wq6','Зіграй 15 батлів','battle',15,13000,2200],
+ ['wq7','Зіграй 30 ігор','game',30,8000,1500],['wq8','Зіграй 60 ігор','game',60,17000,2800],
+ ['wq9','Виконай 3 контракти','ct',3,6000,1200],['wq10','Виконай 6 контрактів','ct',6,13000,2300],
+ ['wq11','Продай 20 предметів','sell',20,5000,1000],['wq12','Крутни колесо 5 разів','wheel',5,4000,800]
+];
+const QK={open:'📦',upg:'⚡',game:'🎮',sell:'💰',wheel:'🎡',battle:'⚔️',ct:'🔨'};
+
+/* вибір N квестів з різних типів; при респавні намагаємось дати інші */
+function qPick(pool,n,prev){
+  const pv=prev||[],by={};
+  pool.forEach(x=>{(by[x[2]]=by[x[2]]||[]).push(x)});
+  const pk=pv.map(id=>{const x=pool.find(y=>y[0]===id);return x&&x[2]}).filter(Boolean);
+  let ks=Object.keys(by).sort(()=>Math.random()-.5);
+  ks=ks.filter(k=>!pk.includes(k)).concat(ks.filter(k=>pk.includes(k)));
+  return ks.slice(0,n).map(k=>{
+    const v=by[k],fresh=v.filter(x=>!pv.includes(x[0])),a=fresh.length?fresh:v;
+    return a[Math.random()*a.length|0][0];
+  }).sort((a,b)=>pool.findIndex(x=>x[0]===a)-pool.findIndex(x=>x[0]===b));
+}
+
+qRoll=function(){
+  const q=S.q,day=new Date().toDateString(),wk=Math.floor((Date.now()/864e5-4)/7);
+  if(q.day!==day){q.day=day;q.d={};q.cd={};q.bd={};q.ds=null}
+  if(q.wk!==wk){q.wk=wk;q.w={};q.cw={};q.bw={};q.ws=null}
+  q.d=q.d||{};q.w=q.w||{};q.cd=q.cd||{};q.cw=q.cw||{};q.bd=q.bd||{};q.bw=q.bw||{};
+  if(!q.ds||!q.ds.length)q.ds=qPick(QD2,5);
+  if(!q.ws||!q.ws.length)q.ws=qPick(QW2,4);
+};
+
+function qSec(sc){
+  const d=sc==='d',L=d?QD2:QW2,ids=(d?S.q.ds:S.q.ws)||[],cl=S.q[d?'cd':'cw'],base=S.q[d?'bd':'bw'],cur=S.q[sc];
+  let tot=0,got=0;
+  const rows=ids.map(id=>L.find(x=>x[0]===id)).filter(Boolean).map(([id,l,k,n,stars,xp])=>{
+    const pr=Math.min(n,Math.max(0,(cur[k]||0)-(base[k]||0))),done=!!cl[id],ok=!done&&pr>=n;
+    tot+=xp;if(done)got+=xp;
+    return `<div class="bp-q${ok?' ok':''}${done?' dn':''}"><div class="bp-qi">${QK[k]||'🎯'}</div>
+      <div class="flex-1 min-w-0"><div class="flex justify-between gap-2"><span class="text-[11px] font-black">${l}</span><span class="text-[10px] text-slate-400 font-black shrink-0">${pr}/${n}</span></div>
+      <div class="bp-bar" style="height:6px;margin-top:5px"><i style="width:${pr/n*100}%"></i></div>
+      <div class="flex gap-1.5 mt-1.5"><span class="bp-chip xp">✨ +${fmt(xp)} XP</span><span class="bp-chip st">⭐ ${fmt(stars)}</span></div></div>
+      <button ${ok?'':'disabled'} onclick="claimQ('${id}','${sc}')" class="bp-qb ${done?'bg-slate-800 text-green-400':ok?'bg-amber-400 text-black':'bg-slate-800 text-slate-500'}">${done?'✅':ok?'ЗАБРАТИ':'🔒'}</button></div>`;
+  }).join('');
+  const nw=new Date(),left=d?(new Date(nw.getFullYear(),nw.getMonth(),nw.getDate()+1)-nw):(((S.q.wk+1)*7+4)*864e5-Date.now());
+  const tl=d?Math.floor(left/36e5)+' год '+Math.floor(left%36e5/6e4)+' хв':Math.floor(left/864e5)+' д '+Math.floor(left%864e5/36e5)+' год';
+  return `<div class="glass rounded-3xl p-4 space-y-2.5${d?'':' mt-3'}">
+    <div class="text-center"><h2 class="text-sm font-black tracking-widest ${d?'text-cyan-300':'text-fuchsia-300'}">${d?'🎯 ЩОДЕННІ КВЕСТИ':'🗓️ ТИЖНЕВІ КВЕСТИ'}</h2>
+    <p class="text-[10px] text-slate-400 font-bold">✨ XP до Battle Pass: <span class="text-violet-300">${fmt(got)} / ${fmt(tot)}</span> · оновлення через ${tl}</p></div>
+    ${rows}
+    <button onclick="qRespawn('${sc}')" class="bp-resp">🔄 ЗРЕСПАВНИТИ КВЕСТИ · ⭐ ${fmt(RESP)}</button></div>`;
+}
+qHTML=function(){qRoll();return qSec('d')+qSec('w')};
+
+claimQ=function(id,sc){
+  qRoll();const d=sc==='d',a=(d?QD2:QW2).find(x=>x[0]===id),ids=(d?S.q.ds:S.q.ws)||[],cl=S.q[d?'cd':'cw'];
+  if(!a||!ids.includes(id)||cl[id])return;
+  const pr=(S.q[sc][a[2]]||0)-(S.q[d?'bd':'bw'][a[2]]||0);
+  if(pr<a[3])return;
+  cl[id]=1;S.stars+=a[4];bpRoll();bpAdd(a[5]);
+  confetti(25);toast('🎯 +⭐ '+fmt(a[4])+' · ✨ +'+fmt(a[5])+' XP');
+  _ax5(d?30:100);          /* звичайний XP рівня гравця (без подвійного XP паса) */
+  mRender();
+};
+
+window.qRespawn=function(sc){
+  if(S.spin)return;qRoll();
+  if(S.stars<RESP)return toast('❌ Недостатньо Stars');
+  const d=sc==='d';
+  if(!confirm('Зареспавнити '+(d?'щоденні':'тижневі')+' квести за ⭐ '+fmt(RESP)+'? Прогрес по них обнулиться.'))return;
+  S.stars-=RESP;
+  if(d){S.q.ds=qPick(QD2,5,S.q.ds);S.q.cd={};S.q.bd=Object.assign({},S.q.d)}
+  else{S.q.ws=qPick(QW2,4,S.q.ws);S.q.cw={};S.q.bw=Object.assign({},S.q.w)}
+  save();toast('🔄 Нові квести!');mRender();
+};
+
+/* ---------------------------------------------------------------
+   5. АВТОСКРОЛ ДО ПОТОЧНОГО РІВНЯ (лише при вході у вкладку)
+---------------------------------------------------------------- */
+const _smt13=setMT;
+setMT=function(k){if(k==='bp')BPS.need=true;_smt13(k)};
+const _go13=go;
+go=function(v,p,keep){if(v==='more'&&!keep)BPS.need=true;_go13(v,p,keep)};
+const _mr13=mRender;
+mRender=function(){
+  _mr13();
+  if(MORE.t==='bp'&&BPS.need){
+    BPS.need=false;
+    const c=$('bpsc'),e=$('bp-cur');
+    if(c&&e)c.scrollTop=Math.max(0,e.offsetTop-90);
+  }
+};
+})();
+// ===================== END PATCH v13 =====================
+// ===================== PATCH v14: ЧУМНИЙ ЛІКАР (2 кейси внизу головної) =====================
+// ВСТАВ ПІСЛЯ останнього патча (v12 / v13) і ПЕРЕД блоком, що обнуляє coins / перед  /* ============ INIT ============ */
+// Кейси:
+//   ☠️ ЧУМНИЙ ЛІКАР  -- ⭐ 1 000 000, дроп до ⭐ 5 000 000
+//   😷 ЧОРНА СМЕРТЬ  -- ⭐ 3 000 000, маска Чумного Доктора: шанс 0.167%, ціна ⭐ 10 000 000
+(function(){
+
+/* ---------------------------------------------------------------
+   1. СТИЛІ
+---------------------------------------------------------------- */
+const css=`
+@keyframes pnewp{0%,100%{box-shadow:0 0 0 0 rgba(132,204,22,.6)}50%{box-shadow:0 0 0 7px rgba(132,204,22,0)}}
+.psec{position:relative;border-radius:28px;padding:14px;overflow:hidden;border:1px solid rgba(132,204,22,.28);
+ background:radial-gradient(90% 60% at 10% 0%,rgba(132,204,22,.16),transparent 70%),radial-gradient(90% 60% at 100% 100%,rgba(168,85,247,.18),transparent 70%),linear-gradient(170deg,#0d1410,#0a0c14);
+ box-shadow:0 24px 60px -30px rgba(132,204,22,.5)}
+.psec::after{content:"☠ ☠ ☠ ☠";position:absolute;right:-6px;top:6px;font-size:26px;letter-spacing:12px;opacity:.06;transform:rotate(-8deg);white-space:nowrap;pointer-events:none}
+.pt{font-family:'Unbounded',Inter,sans-serif;font-weight:800;font-size:13px;letter-spacing:.03em;
+ background:linear-gradient(90deg,#d9ff8a,#fff 50%,#c4b5fd);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pnew{flex-shrink:0;font-size:10px;font-weight:900;padding:4px 10px;border-radius:999px;color:#0b1a02;background:linear-gradient(135deg,#d9ff8a,#84cc16);animation:pnewp 1.8s infinite}
+.pcard .fart{height:150px}
+.pcard .fa{width:76px;height:76px}
+.pcard .fa-c{width:128px;height:128px}
+.pcard .fname{font-size:15px}
+.pnote{font-size:10px;font-weight:800;color:rgba(255,255,255,.75);margin-top:4px}
+`;
+const st=document.createElement('style');st.id='pd14';st.textContent=css;document.head.appendChild(st);
+
+/* ---------------------------------------------------------------
+   2. НОВІ МАЛЮНКИ: маска, капелюх, ворон, ліхтар, трави
+---------------------------------------------------------------- */
+Object.assign(K,{
+plague:(A,R,a,b,c)=>`<path d="M20,44C20,12 80,12 80,44C80,60 68,68 50,70C32,68 20,60 20,44Z" fill="${A}" stroke="${c}" stroke-width="2.5"/><path d="M36,58C38,70 44,84 50,98C56,84 62,70 64,58C58,54 42,54 36,58Z" fill="${R}" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/><path d="M50,58V96" stroke="${c}" stroke-width="2" opacity=".5"/><path d="M40,60C42,72 46,84 49,92" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none" opacity=".55"/><circle cx="41" cy="72" r="1.6" fill="${c}"/><circle cx="59" cy="72" r="1.6" fill="${c}"/><circle cx="36" cy="42" r="12" fill="#0b0f18" stroke="${b}" stroke-width="3"/><circle cx="64" cy="42" r="12" fill="#0b0f18" stroke="${b}" stroke-width="3"/><circle cx="36" cy="42" r="7" fill="${b}" opacity=".85"/><circle cx="64" cy="42" r="7" fill="${b}" opacity=".85"/><circle cx="33" cy="39" r="2.6" fill="#fff"/><circle cx="61" cy="39" r="2.6" fill="#fff"/><path d="M26,26C34,18 66,18 74,26" stroke="#fff" stroke-width="3.5" stroke-linecap="round" fill="none" opacity=".5"/><path d="M20,44H8M80,44H92" stroke="${c}" stroke-width="3" stroke-linecap="round"/>`,
+dochat:(A,R,a,b,c)=>`<ellipse cx="50" cy="70" rx="46" ry="13" fill="${A}" stroke="${c}" stroke-width="2.5"/><path d="M28,68C26,36 34,16 50,16S74,36 72,68C62,76 38,76 28,68Z" fill="${R}" stroke="${c}" stroke-width="2.5"/><path d="M28,62C40,70 60,70 72,62V52C60,60 40,60 28,52Z" fill="${c}" opacity=".7"/><rect x="43" y="52" width="14" height="12" rx="2" fill="none" stroke="${b}" stroke-width="2.5"/><path d="M36,28C38,22 42,19 48,18" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".5"/><path d="M8,72C20,82 80,82 92,72" stroke="#000" stroke-opacity=".25" stroke-width="3" fill="none"/>`,
+crow:(A,R,a,b,c)=>`<path d="M14,66L2,78 18,74Z" fill="${c}"/><ellipse cx="46" cy="60" rx="31" ry="22" fill="${R}" stroke="${c}" stroke-width="2.5"/><path d="M20,60C30,42 56,44 68,66C52,76 32,76 20,60Z" fill="${A}" stroke="${c}" stroke-width="1.5"/><circle cx="72" cy="38" r="15" fill="${R}" stroke="${c}" stroke-width="2.5"/><path d="M84,34L99,40 84,45Z" fill="#f59e0b" stroke="#78350f" stroke-width="1.5" stroke-linejoin="round"/><circle cx="76" cy="35" r="4" fill="#fff"/><circle cx="77" cy="35" r="2" fill="#111"/><path d="M40,80V92M52,80V92M34,92H44M46,92H56" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/><path d="M60,26C66,22 72,22 76,25" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none" opacity=".55"/>`,
+lantern:(A,R,a,b,c)=>`<circle cx="50" cy="52" r="34" fill="${b}" opacity=".22"/><path d="M36,24C36,6 64,6 64,24" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round"/><rect x="30" y="22" width="40" height="9" rx="3" fill="${A}" stroke="${c}" stroke-width="2"/><path d="M34,31H66L72,78H28Z" fill="#fff" fill-opacity=".14" stroke="${a}" stroke-width="2.5" stroke-linejoin="round"/><path d="M50,38C62,50 60,64 50,70C40,64 38,50 50,38Z" fill="#fde68a" stroke="${b}" stroke-width="1.5"/><path d="M50,50C55,57 54,64 50,66C46,64 45,57 50,50Z" fill="#fff"/><path d="M50,31V78M40,31L36,78M60,31L64,78" stroke="${c}" stroke-width="1.5" opacity=".5"/><rect x="24" y="76" width="52" height="10" rx="3" fill="${A}" stroke="${c}" stroke-width="2"/>`,
+herbs:(A,R,a,b,c)=>{let l='';[[26,34,-30],[40,22,-12],[50,16,0],[60,22,12],[74,34,30]].forEach(([x,y,r])=>l+=`<ellipse cx="${x}" cy="${y}" rx="8" ry="15" fill="${R}" stroke="${c}" stroke-width="2" transform="rotate(${r} ${x} ${y})"/><path d="M${x},${y+10}V${y-10}" stroke="${c}" stroke-width="1.2" opacity=".5" transform="rotate(${r} ${x} ${y})"/>`);
+ return `<path d="M50,92V60M50,74C40,68 32,58 28,46M50,70C60,64 68,56 72,46M50,64C46,52 46,42 44,34M50,64C54,52 54,42 56,34" stroke="${c}" stroke-width="3.2" stroke-linecap="round" fill="none"/>${l}<rect x="40" y="76" width="20" height="9" rx="3" fill="${b}" stroke="${c}" stroke-width="2"/><path d="M42,80H58" stroke="#fff" stroke-opacity=".5" stroke-width="2"/>`}
+});
+
+/* ---------------------------------------------------------------
+   3. ПАЛІТРИ
+---------------------------------------------------------------- */
+const P0=PAL.length;
+PAL.push(
+ ['#f6f0e0','#c2b79b','#4a4231'], // BONE
+ ['#d9ff8a','#84cc16','#1a3a05'], // TOX
+ ['#8a6a55','#4a352b','#140d0a'], // LEA
+ ['#ffd27a','#f97316','#7c2d12'], // EMB
+ ['#a5b4fc','#4f46e5','#1e1b4b'], // MID
+ ['#ff8a8a','#b91c1c','#450a0a'], // BLD
+ ['#fff1a8','#f59e0b','#78350f'], // GLDP
+ ['#e2e8f0','#94a3b8','#334155'], // SMK
+ ['#e9d5ff','#a855f7','#3b0764'], // VIO2
+ ['#f4ead2','#22d3ee','#3b2f1d']  // MASK (кістка + бірюзові лінзи)
+);
+const BONE=P0,TOX=P0+1,LEA=P0+2,EMB=P0+3,MID=P0+4,BLD=P0+5,GLDP=P0+6,SMK=P0+7,VIO2=P0+8,MASK=P0+9;
+
+/* ---------------------------------------------------------------
+   4. ПРЕДМЕТИ І КЕЙСИ
+   [kind, назва, палітра, рідкість, ціна предмета у частках від ціни кейса]
+---------------------------------------------------------------- */
+const PD=[
+ {id:'pd_plague',name:'ЧУМНИЙ ЛІКАР',price:1000000,badge:'ЧУМА ☠️',rgb:'132,204,22',tag:'Трави, ворони й еліксири проти чуми',l:[
+  ['herbs','Bitter Herbs',TOX,'common',.2],['potion','Vinegar Tonic',TOX,'common',.25],['lantern','Street Lantern',EMB,'common',.3],
+  ['crow','Carrion Crow',LEA,'rare',.6],['key','Quarantine Key',BONE,'rare',.75],['potion','Antidote Flask',MID,'rare',.9],
+  ['skull','Plague Skull',BONE,'epic',1.2],['orb','Miasma Orb',TOX,'epic',1.5],['dochat','Doctor Hat',LEA,'epic',1.8],
+  ['cup','Cup of Remedy',GLDP,'legendary',2.5],['ghost','Black Death Ghost',SMK,'legendary',3.2],
+  ['plague','Gilded Beak',GLDP,'mythic',5]]},
+ {id:'pd_black',name:'ЧОРНА СМЕРТЬ',price:3000000,badge:'MASK 😷',rgb:'168,85,247',mask:true,l:[
+  ['herbs','Grave Moss',VIO2,'common',.2],['lantern','Cold Lantern',MID,'common',.25],['potion','Miasma Vial',TOX,'common',.3],
+  ['crow','Midnight Raven',MID,'rare',.6],['key','Crypt Key',BONE,'rare',.75],['potion','Blood Tonic',BLD,'rare',.9],
+  ['skull','Cursed Skull',BLD,'epic',1.2],['dochat','Reaper Hat',15,'epic',1.5],['orb','Plague Orb',TOX,'epic',1.8],
+  ['ghost','Plague Reaper',15,'legendary',1.8],['ring','Ring of Pestilence',BLD,'legendary',2.2],
+  ['crow','Crow of Doom',VIO2,'mythic',2.8]]}
+];
+const def=(id,o)=>Object.defineProperty(ITEMS,id,{value:o,enumerable:false,writable:true,configurable:true});
+/* enumerable:false -> предмети не потрапляють у Колекцію та Апгрейд, але працюють в інвентарі, трейдах, маркеті */
+PD.forEach((d,ci)=>{
+  const ids=[];
+  d.l.forEach((x,i)=>{
+    const id='pd'+(ci+1)+'_'+i;
+    def(id,{id,kind:x[0],name:x[1].toUpperCase(),pal:x[2],rarity:x[3],val:Math.round(d.price*x[4]/1000)*1000,fz:1});
+    ids.push(id);
+  });
+  if(d.mask){
+    /* sw = вага шансу: 0.167 з ~100.167 => 0.167% */
+    def('pd_mask',{id:'pd_mask',kind:'plague',name:'PLAGUE DOCTOR MASK',pal:MASK,rarity:'mythic',val:10000000,sw:.167,fz:1});
+    ids.push('pd_mask');
+  }
+  CASES.push({id:d.id,name:d.name,cat:'PLAGUE',price:d.price,badge:d.badge,off:0,n:[0,0,0,0,0],items:ids,rgb:d.rgb,fi:ids[ids.length-1],tag:d.tag||''});
+});
+
+/* ---------------------------------------------------------------
+   5. РОЗДІЛ У САМОМУ НИЗУ ГОЛОВНОЇ
+---------------------------------------------------------------- */
+function plagueSection(){
+  const L=CASES.filter(c=>c.cat==='PLAGUE').sort((a,b)=>a.price-b.price);
+  if(!L.length)return '';
+  const card=c=>{
+    const it=c.items.map(i=>ITEMS[i]).sort((a,b)=>b.val-a.val),top=it[0],hasMask=c.items.includes('pd_mask');
+    return `<div onclick="go('case','${c.id}')" class="fcard fhero pcard rc" style="--rgb:${c.rgb};grid-column:span 2">
+      <span class="fbadge">${c.badge}</span>
+      <div class="fart"><div class="fa fa-l">${art(it[2])}</div><div class="fa fa-c fl">${art(top)}</div><div class="fa fa-r">${art(it[1])}</div></div>
+      <div class="fname">${c.name}</div>
+      <div class="pnote">${hasMask?'😷 Маска Чумного Доктора · шанс 0.167% · ⭐ '+fmt(top.val):esc(c.tag)}</div>
+      <div class="fmeta"><span class="fprice">⭐ ${fmt(c.price)}</span><span class="fmax">дроп до ⭐ ${fmt(top.val)}</span></div></div>`;
+  };
+  return `<div class="psec"><div class="fhead"><div><div class="pt">☠️ ЧУМНИЙ ЛІКАР</div><div class="fs">2 кейси · найрідкісніше: маска за ⭐ ${fmt(10000000)}</div></div><span class="pnew">NEW</span></div>
+  <div class="grid grid-cols-2 gap-3">${L.map(card).join('')}</div></div>`;
+}
+const _rh14=renderHome;
+renderHome=function(m){
+  _rh14(m);
+  const w=m.firstElementChild;
+  if(w)w.insertAdjacentHTML('beforeend',plagueSection());
+};
+})();
+// ===================== END PATCH v14 =====================
 /* ============ INIT ============ */
 hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
