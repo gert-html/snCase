@@ -3552,6 +3552,462 @@ renderHome=function(m){
 };
 })();
 // ===================== END PATCH v14 =====================
+// ===================== PATCH v15: ДЖЕКПОТ + PVP + ТИЖНЕВИЙ КЕЙС/ТОП + РЕАЛЬНА LIVE-СТРІЧКА =====================
+// ВСТАВ ПІСЛЯ "END PATCH v14" і ПЕРЕД блоком  /* ============ INIT ============ */
+(function(){
+const DBr=p=>firebase.database().ref(p);
+const ready=()=>!!(ON.ready&&ON.uid&&ME);
+const myName=()=>(users()[ME]||{}).n||'Player';
+const JP={off:0,all:{},wins:{},sel:[],amt:0,cl:{},busy:0,h:null,st:0,sub:0};
+const PV={list:[],c:'meme',r:1,busy:0,cl:{},sub:0};
+const WKS={w:0,top:[],ref:null,fn:null,t:0};
+window.JP=JP;window.PV=PV;
+const nowS=()=>Date.now()+(JP.off||0);
+const JH=36e5,jHr=()=>Math.floor(nowS()/JH);
+const fmtT=ms=>{ms=Math.max(0,ms);const s=Math.floor(ms/1000),m=Math.floor(s/60);return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+const fmtL=ms=>{ms=Math.max(0,ms);return Math.floor(ms/864e5)+' д '+Math.floor(ms%864e5/36e5)+' год'};
+const grant=ids=>{let n=nid(S);ids.forEach(id=>{if(ITEMS[id])S.inv.push({id,uid:n++})})};
+const feedAdd=o=>{if(ready())DBr('feed').push().set(Object.assign({ts:nowS()},o)).catch(()=>{})};
+const hue=s=>{let h=0;for(const ch of String(s))h=(h*31+ch.charCodeAt(0))%360;return h};
+const RCOL={common:'#94a3b8',rare:'#3b82f6',epic:'#a855f7',legendary:'#f59e0b',mythic:'#ef4444'};
+const WP={common:1,rare:2,epic:6,legendary:25,mythic:100};   /* очки тижневого топу за дроп */
+const WPRIZE=[30000,15000,7000];                              /* призи тижневого топу */
+
+/* ---------------- СТИЛІ ---------------- */
+const css=`
+@keyframes lvn{0%{transform:scale(.7);opacity:0;box-shadow:0 0 0 0 var(--c)}60%{transform:scale(1.06);opacity:1}100%{transform:scale(1);box-shadow:0 0 0 0 transparent}}
+@keyframes lvd{0%,100%{opacity:1}50%{opacity:.25}}
+.lvw{position:relative;border-radius:20px;padding:8px 10px;overflow:hidden;border:1px solid rgba(239,68,68,.28);background:linear-gradient(135deg,rgba(24,34,56,.85),rgba(10,15,28,.92))}
+.lvh{display:flex;align-items:center;justify-content:space-between;font-size:9px;font-weight:900;margin-bottom:7px}
+.lvd{display:inline-block;width:7px;height:7px;border-radius:50%;background:#ef4444;box-shadow:0 0 8px #ef4444;animation:lvd 1.2s infinite;margin-right:3px}
+.lvs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+.lvs::-webkit-scrollbar{display:none}
+.lvs.mq{overflow:hidden}
+.lvm{display:flex;gap:8px;width:max-content;animation:tk var(--d,40s) linear infinite}
+.lvc{flex:0 0 auto;display:flex;align-items:center;gap:7px;padding:5px 11px 5px 6px;border-radius:14px;border:1px solid var(--c);border:1px solid color-mix(in srgb,var(--c) 55%,transparent);background:linear-gradient(135deg,rgba(15,23,42,.9),rgba(8,12,22,.95))}
+.lvc.new{animation:lvn 1.2s}
+.lvi{width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px}
+.lvt{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.lvt b{font-size:9px;font-weight:900;color:#fff;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lvt span{font-size:8.5px;font-weight:800;color:var(--c);max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lvt em{font-style:normal;font-size:8.5px;font-weight:900;color:#fde68a}
+.lvE{font-size:10px;font-weight:800;color:#64748b;text-align:center;padding:10px 0}
+.evm{cursor:pointer;border-radius:18px;padding:10px 6px;text-align:center;border:1px solid var(--c);border:1px solid color-mix(in srgb,var(--c) 50%,transparent);
+ background:radial-gradient(120% 90% at 50% 0%,rgba(255,255,255,.07),transparent 70%),linear-gradient(180deg,#141d33,#0a0f1c)}
+.evt{font-family:'Unbounded',Inter,sans-serif;font-size:8.5px;font-weight:800;margin-top:3px}
+.evs{font-size:10px;font-weight:900;color:#fde68a;margin-top:3px}
+.jp-pot{font-family:'Unbounded',Inter,sans-serif;font-size:30px;font-weight:800;background:linear-gradient(#fff,#fde68a);-webkit-background-clip:text;background-clip:text;color:transparent}
+`;
+document.head.insertAdjacentHTML('beforeend','<style id="v15">'+css+'</style>');
+
+/* =====================================================================
+   1. ТИЖНЕВИЙ КЕЙС: унікальні NFT генеруються з номера тижня
+===================================================================== */
+const WK_NOW=()=>Math.floor((nowS()/864e5-4)/7);
+const WK0=Math.floor((Date.UTC(2026,9,12)/864e5-4)/7);      /* перший тиждень (понеділок 12.10.2026) */
+const THEMES=[['FROST',4],['EMBER',7],['NEON',9],['VOID',15],['SOLAR',6],['JADE',2],['STORM',12],['CRIMSON',13],['AURORA',19],['ROYAL',5]];
+const NOUN={gem:'Gem',star:'Star',heart:'Heart',cup:'Chalice',shield:'Aegis',orb:'Orb',ring:'Ring',sword:'Blade',crown:'Crown',mask:'Mask',rocket:'Rocket',cat:'Cat',skull:'Skull'};
+const WTIER=[['rare',250,['gem','star','heart']],['epic',900,['cup','shield','orb','ring']],['legendary',3500,['sword','crown','mask']],['mythic',25000,['crown','rocket','cat','skull']]];
+const WDEF={};
+function rng(w){let s=(w*2654435761)>>>0;return()=>{s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296}}
+function wkDefine(w){
+  if(WDEF[w])return WDEF[w];
+  const th=THEMES[(w-WK0)%THEMES.length],R_=rng(w),used=[],ids=[];
+  WTIER.forEach(([r,v,ks],i)=>{
+    let k,g=0;do{k=ks[Math.floor(R_()*ks.length)]}while(used.includes(k)&&++g<9);used.push(k);
+    const id='w'+w+'_'+i,pal=r==='mythic'?[14,19][w%2]:th[1];
+    /* enumerable:false -> не потрапляють у Колекцію/Апгрейд, але працюють в інвентарі, трейдах, маркеті */
+    Object.defineProperty(ITEMS,id,{value:{id,kind:k,name:(th[0]+' '+NOUN[k]+' W'+(w-WK0+1)).toUpperCase(),pal,rarity:r,val:v,wk:w},enumerable:false,writable:true,configurable:true});
+    ids.push(id);
+  });
+  return WDEF[w]=ids;
+}
+function wkEnsure(w){
+  w=Math.max(WK0,w);
+  for(let x=WK0;x<=w;x++)wkDefine(x);   /* усі минулі тижні лишаються в ITEMS, щоб інвентар не губився */
+  WKS.w=w;
+  const id='wk_'+w;
+  if(CASES.some(c=>c.id===id))return;
+  for(let i=CASES.length-1;i>=0;i--)if(CASES[i].cat==='WEEKLY')CASES.splice(i,1);
+  const u=wkDefine(w),th=THEMES[(w-WK0)%THEMES.length],cm=BYR.common,rr=BYR.rare,ep=BYR.epic;
+  const items=[cm[(w*3)%cm.length],cm[(w*3+1)%cm.length],cm[(w*3+2)%cm.length],rr[w%rr.length],u[0],ep[(w*2)%ep.length],u[1],u[2],u[3]];
+  CASES.push({id,name:'WEEKLY '+th[0],cat:'WEEKLY',price:500,badge:'WEEKLY ⏳',off:0,n:[0,0,0,0,0],items,rgb:'251,191,36',fi:u[3]});
+}
+wkEnsure(WK_NOW());   /* одразу при завантаженні, ДО входу в акаунт */
+XK.push('wk','wkc');
+S.wk=null;S.wkc={};
+
+/* очки тижневого топу */
+let wkT=0;
+function wkPush(){
+  clearTimeout(wkT);
+  wkT=setTimeout(()=>{if(!ready()||!S.wk)return;DBr('wtop/'+S.wk.w+'/'+ON.uid).set({name:myName(),p:S.wk.p,n:S.wk.n,ts:nowS()}).catch(()=>{})},1500);
+}
+function wkAdd(got){
+  const w=WKS.w;if(!S.wk||S.wk.w!==w)S.wk={w,p:0,n:0};
+  got.forEach(e=>{const it=ITEMS[e.id];if(it){S.wk.p+=WP[it.rarity]||1;S.wk.n++}});
+  save();wkPush();
+}
+const _wm15=winModal;
+winModal=function(got){_wm15(got);try{wkAdd(got)}catch(e){}};
+
+function wkSubscribe(){
+  if(!ready())return;
+  if(WKS.ref&&WKS.fn)WKS.ref.off('value',WKS.fn);
+  WKS.ref=DBr('wtop/'+WKS.w);
+  WKS.fn=s=>{const L=[];s.forEach(c=>{const v=c.val();if(v&&v.name)L.push(Object.assign({uid:c.key},v))});L.sort((a,b)=>(b.p-a.p)||(a.ts-b.ts));WKS.top=L;mLive('wk');evUpd()};
+  WKS.ref.on('value',WKS.fn,()=>{});
+}
+async function wkClaim(){
+  if(!ready())return;const prev=WKS.w-1;if(prev<WK0)return;
+  S.wkc=S.wkc||{};if(S.wkc[prev])return;
+  try{
+    const s=await DBr('wtop/'+prev).once('value'),L=[];
+    s.forEach(c=>{const v=c.val();if(v&&v.name)L.push(Object.assign({uid:c.key},v))});
+    L.sort((a,b)=>(b.p-a.p)||(a.ts-b.ts));
+    const i=L.findIndex(x=>x.uid===ON.uid);
+    if(i<0||i>2){S.wkc[prev]=1;save();return}
+    const t=await DBr('wclaims/'+prev+'/'+ON.uid).transaction(c=>c===null?{r:i+1,ts:nowS()}:undefined,undefined,false);
+    S.wkc[prev]=1;
+    if(t.committed){S.stars+=WPRIZE[i];save();confetti(60);toast('🏆 Тижневий топ: місце #'+(i+1)+' · +⭐ '+fmt(WPRIZE[i]))}else save();
+  }catch(e){}
+}
+function wkHTML(){
+  const c=CASES.find(x=>x.cat==='WEEKLY'),w=WKS.w,left=((WK_NOW()+1)*7+4)*864e5-nowS();
+  const my=S.wk&&S.wk.w===w?S.wk:{p:0,n:0};
+  const uniq=wkDefine(w).map(id=>ITEMS[id]);
+  const od=c?odds(c):[];
+  const L=WKS.top.slice(0,15),mi=WKS.top.findIndex(x=>x.uid===ON.uid);
+  const row=(x,i)=>`<div class="flex justify-between items-center text-[11px] font-black bg-slate-800/50 rounded-xl px-3 py-1.5 ${x.uid===ON.uid?'border border-cyan-500/40':''}"><span>${['🥇','🥈','🥉'][i]||'#'+(i+1)} ${esc(x.name)}</span><span class="text-amber-300">${fmt(x.p)} очк. <span class="text-slate-500 text-[9px]">· ${x.n|0} відкр.</span></span></div>`;
+  return `<div class="glass rounded-3xl p-4 space-y-3"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-amber-300">📅 ТИЖДЕНЬ W${w-WK0+1}</h2><p class="text-[10px] text-slate-400 font-bold">До оновлення кейса й топу: ${fmtL(left)}</p></div>
+  ${c?`<button onclick="go('case','${c.id}')" class="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-black text-xs uppercase">ВІДКРИТИ ${c.name} · ⭐ ${fmt(c.price)}</button>`:''}
+  <div class="text-[10px] font-black text-slate-400">УНІКАЛЬНІ NFT ЦЬОГО ТИЖНЯ (більше ніколи не випадуть)</div>
+  <div class="grid grid-cols-4 gap-1.5">${uniq.map(it=>{const o=od.find(x=>x.id===it.id),r=RC[it.rarity];return `<div class="rounded-xl p-1.5 border ${r.b} bg-gradient-to-b ${r.bg} flex flex-col items-center"><div class="w-12 h-12">${art(it)}</div><div class="text-[8px] font-black truncate w-full text-center">${esc(it.name)}</div><div class="text-[8px] text-amber-300 font-bold">⭐ ${fmt(it.val)}</div><div class="text-[8px] ${r.t} font-black">${o?o.chance.toFixed(2)+'%':''}</div></div>`}).join('')}</div></div>
+  <div class="glass rounded-3xl p-4 space-y-2 mt-3"><h2 class="text-sm font-black tracking-widest text-center text-red-300">🏆 ТОП ТИЖНЯ</h2>
+  <p class="text-[10px] text-slate-400 text-center">Очки: common 1 · rare 2 · epic 6 · legendary 25 · mythic 100 за кожен дроп з кейса.<br>Призи: 🥇 ⭐${fmt(WPRIZE[0])} · 🥈 ⭐${fmt(WPRIZE[1])} · 🥉 ⭐${fmt(WPRIZE[2])} (видаються автоматично наступного тижня)</p>
+  <div class="text-center text-[11px] font-black text-cyan-300">Ти: ${fmt(my.p)} очк. · ${my.n|0} відкриттів${mi>=0?' · місце #'+(mi+1):''}</div>
+  ${L.length?L.map(row).join('')+(mi>=15?row(WKS.top[mi],mi):''):'<div class="text-center text-[10px] text-slate-500 py-4">Поки порожньо — відкрий кейс і стань першим!</div>'}</div>`;
+}
+
+/* =====================================================================
+   2. ГОДИННИЙ ДЖЕКПОТ
+   jackpot/r{година}/bets/{id} = {uid,name,s,it[],v,ts}   jpopen/{година}=true
+   jackpot/r{година}/res = результат   jpwin/{uid}/r{година} = {amt,claimed}
+   Переможець рахується детерміновано (хеш від ставок) -- усі клієнти отримують однаковий результат
+===================================================================== */
+function jpSub(){
+  if(JP.sub||!ready())return;JP.sub=1;
+  DBr('.info/serverTimeOffset').on('value',s=>{JP.off=s.val()||0});
+  DBr('jackpot').orderByKey().limitToLast(5).on('value',s=>{JP.all=s.val()||{};mLive('jp');evUpd()},()=>{});
+  DBr('jpwin/'+ON.uid).on('value',s=>{JP.wins=s.val()||{};jpClaim()},()=>{});
+}
+function jpClaim(){
+  Object.entries(JP.wins||{}).forEach(([k,w])=>{
+    if(!w||w.claimed||JP.cl[k])return;JP.cl[k]=1;
+    DBr('jpwin/'+ON.uid+'/'+k).transaction(c=>(c&&!c.claimed)?Object.assign({},c,{claimed:true}):undefined,undefined,false)
+    .then(r=>{if(r.committed){S.stars+=w.amt|0;save();confetti(70);shake();toast('🎰 ДЖЕКПОТ! +⭐ '+fmt(w.amt))}})
+    .catch(()=>{delete JP.cl[k]});
+  });
+}
+async function settleRound(h){
+  const s=await DBr('jackpot/r'+h).once('value'),v=s.val()||{};
+  if(v.res||!v.bets){DBr('jpopen/'+h).remove().catch(()=>{});return}
+  const keys=Object.keys(v.bets).sort(),B=keys.map(k=>v.bets[k]).filter(b=>b&&b.uid&&b.v>0);
+  if(!B.length){DBr('jpopen/'+h).remove().catch(()=>{});return}
+  const users_=new Set(B.map(b=>b.uid)),tot=B.reduce((a,b)=>a+b.v,0);
+  const hx=cyrb('jp'+h+'|'+keys.join(',')).slice(0,8),x=parseInt(hx,16)/Math.pow(16,hx.length)*tot;
+  let acc=0,win=B[B.length-1];for(const b of B){acc+=b.v;if(x<acc){win=b;break}}
+  const mine=B.filter(b=>b.uid===win.uid).reduce((a,b)=>a+b.v,0);
+  const amt=users_.size>=2?Math.floor(tot*.95):tot;   /* 5% -- sink; якщо ставив один -- повернення */
+  const res={w:win.uid,name:win.name||'Гравець',amt,tot,n:users_.size,ch:Math.round(mine/tot*1000)/10,ts:nowS()};
+  const t=await DBr('jpwin/'+win.uid+'/r'+h).transaction(c=>c===null?{amt,h,claimed:false,ts:nowS()}:undefined,undefined,false);
+  await DBr('jackpot/r'+h+'/res').transaction(c=>c===null?res:undefined,undefined,false);
+  await DBr('jpopen/'+h).remove().catch(()=>{});
+  if(t.committed&&users_.size>=2)feedAdd({t:'jp',name:res.name,uid:win.uid,val:amt});
+}
+async function settleOld(){
+  if(!ready()||JP.st)return;JP.st=1;
+  try{
+    const s=await DBr('jpopen').once('value'),o=s.val()||{};
+    for(const k of Object.keys(o)){const h=+k;if(h<jHr())await settleRound(h)}
+  }catch(e){}
+  JP.st=0;
+}
+function jpAgg(){
+  const r=(JP.all||{})['r'+jHr()]||{},M={};
+  Object.values(r.bets||{}).forEach(b=>{if(!b||!b.uid)return;const m=M[b.uid]||(M[b.uid]={uid:b.uid,name:b.name,v:0});m.v+=b.v|0});
+  const L=Object.values(M).sort((a,b)=>b.v-a.v);return{L,tot:L.reduce((s,x)=>s+x.v,0)};
+}
+function jpHTML(){
+  if(!ready())return offl();
+  const {L,tot}=jpAgg(),rem=(jHr()+1)*JH-nowS(),my=L.find(x=>x.uid===ON.uid),closed=rem<20000;
+  JP.sel=JP.sel.filter(u=>S.inv.some(e=>e.uid===u));
+  const sel=S.inv.filter(e=>JP.sel.includes(e.uid)),selV=sel.reduce((s,e)=>s+ITEMS[e.id].val,0),amt=JP.amt||0;
+  const hist=Object.entries(JP.all||{}).filter(([k,v])=>v&&v.res).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,4).map(x=>x[1].res);
+  const inv=[...S.inv].sort((a,b)=>ITEMS[b.id].val-ITEMS[a.id].val);
+  return `<div class="glass rounded-3xl p-4 space-y-3"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-amber-300">🎰 ГОДИННИЙ ДЖЕКПОТ</h2><p class="text-[10px] text-slate-400 font-bold">Раз на годину один гравець забирає весь банк (−5%). Шанс = твоя частка. Предмети йдуть у банк за їх ціною.</p></div>
+  <div class="text-center"><div class="jp-pot">⭐ ${fmt(tot)}</div><div class="text-[11px] font-black text-cyan-300">${closed?'⏳ Приймання ставок закрито':'Розіграш через'} <span id="jp-t">${fmtT(rem)}</span> · гравців: ${L.length}</div></div>
+  ${tot?`<div style="display:flex;height:12px;border-radius:9px;overflow:hidden;gap:2px">${L.map(x=>`<i style="flex:${x.v};background:hsl(${hue(x.uid)},75%,55%)"></i>`).join('')}</div>
+  <div class="space-y-1">${L.slice(0,8).map(x=>`<div class="flex justify-between text-[10px] font-black ${x.uid===ON.uid?'text-cyan-300':''}"><span><b style="display:inline-block;width:8px;height:8px;border-radius:50%;background:hsl(${hue(x.uid)},75%,55%)"></b> ${esc(x.name||'Гравець')}${x.uid===ON.uid?' (ТИ)':''}</span><span>⭐ ${fmt(x.v)} · ${(x.v/tot*100).toFixed(1)}%</span></div>`).join('')}</div>`:'<div class="text-center text-[10px] text-slate-500">Поки ніхто не ставив — стань першим!</div>'}
+  ${my?`<div class="text-center text-[11px] font-black text-amber-300">Твоя ставка: ⭐ ${fmt(my.v)} · шанс ${(my.v/tot*100).toFixed(1)}%</div>`:''}
+  </div>
+  <div class="glass rounded-3xl p-4 space-y-2 mt-3"><div class="text-[10px] font-black text-slate-400">ТВОЯ СТАВКА</div>
+  <div class="flex gap-2"><input type="number" min="0" class="inp" placeholder="⭐ Stars" value="${amt||''}" oninput="JP.amt=Math.max(0,parseInt(this.value)||0);jpSum()"></div>
+  <div class="grid grid-cols-4 gap-1.5">${[100,1000,10000].map(n=>`<button onclick="jpAmt(${n})" class="py-1 rounded-lg bg-slate-800 text-[10px] font-black">${n}</button>`).join('')}<button onclick="jpAmt(S.stars)" class="py-1 rounded-lg bg-slate-800 text-[10px] font-black">MAX</button></div>
+  <div class="text-[10px] font-black text-slate-400">+ ПРЕДМЕТИ (до 8) · обрано ${sel.length}</div>
+  ${inv.length?`<div class="grid grid-cols-4 gap-1.5 max-h-44 overflow-y-auto nos">${inv.map(e=>tcard(ITEMS[e.id],JP.sel.includes(e.uid),`jpTg(${e.uid})`)).join('')}</div>`:'<div class="text-[10px] text-slate-500">Інвентар порожній</div>'}
+  <div id="jp-sum" class="text-center text-[11px] font-black text-amber-300">Ставка: ⭐ ${fmt(amt+selV)}</div>
+  <button onclick="jpBet()" ${closed?'disabled':''} class="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-black text-xs uppercase ${closed?'opacity-40':''}">🎰 ЗРОБИТИ СТАВКУ</button>
+  <p class="text-[9px] text-slate-500">Мінімум ⭐ 100. Якщо в раунді лише один гравець — ставка повертається повністю.</p></div>
+  <div class="glass rounded-3xl p-4 space-y-1.5 mt-3"><h2 class="text-xs font-black tracking-widest text-slate-300">🏆 ОСТАННІ ПЕРЕМОЖЦІ</h2>
+  ${hist.length?hist.map(r=>`<div class="flex justify-between text-[11px] font-black bg-slate-800/50 rounded-xl px-3 py-1.5 ${r.w===ON.uid?'border border-cyan-500/40':''}"><span>🏆 ${esc(r.name)} <span class="text-slate-500 text-[9px]">${r.ch}%</span></span><span class="text-amber-300">⭐ ${fmt(r.amt)}</span></div>`).join(''):'<div class="text-center text-[10px] text-slate-500 py-3">Ще не було розіграшів</div>'}</div>`;
+}
+window.jpSum=function(){
+  const e=$('jp-sum');if(!e)return;
+  const v=S.inv.filter(x=>JP.sel.includes(x.uid)).reduce((s,x)=>s+ITEMS[x.id].val,0);
+  e.textContent='Ставка: ⭐ '+fmt((JP.amt||0)+v);
+};
+window.jpAmt=function(n){JP.amt=Math.max(0,Math.min(n,S.stars));mRender()};
+window.jpTg=function(u){
+  const i=JP.sel.indexOf(u);
+  if(i>=0)JP.sel.splice(i,1);else{if(JP.sel.length>=8)return toast('Максимум 8 предметів');JP.sel.push(u)}
+  mRender();
+};
+window.jpBet=async function(){
+  if(!ready())return toast('🌐 Онлайн ще не готовий');
+  if(JP.busy||S.spin)return;
+  if((jHr()+1)*JH-nowS()<20000)return toast('⏳ Раунд завершується, зачекай наступного');
+  const amt=Math.max(0,Math.floor(JP.amt||0)),its=S.inv.filter(e=>JP.sel.includes(e.uid)),iv_=its.reduce((s,e)=>s+ITEMS[e.id].val,0);
+  if(amt+iv_<100)return toast('Мінімальна ставка ⭐ 100');
+  if(amt>S.stars)return toast('❌ Недостатньо Stars');
+  JP.busy=1;const h=jHr();
+  S.stars-=amt;S.inv=S.inv.filter(e=>!JP.sel.includes(e.uid));JP.sel=[];JP.amt=0;save();
+  try{
+    await DBr('jpopen/'+h).set(true);
+    await DBr('jackpot/r'+h+'/bets').push().set({uid:ON.uid,name:myName(),s:amt,it:its.map(e=>e.id),v:amt+iv_,ts:nowS()});
+    toast('🎰 Ставку прийнято: ⭐ '+fmt(amt+iv_));AU.tick();
+  }catch(e){S.stars+=amt;grant(its.map(x=>x.id));save();toast('❌ Не вдалося зробити ставку')}
+  JP.busy=0;mLive('jp');
+};
+
+/* =====================================================================
+   3. PVP-БАТЛИ МІЖ ГРАВЦЯМИ
+   battles/{id} = {c,r,p,cr,cn,st:'open'|'done'|'cancel',jn,jname,cd[],jd[],sc,sj,w,tj,claimC}
+   Створювач платить ставку і чекає. Той, хто приєднується, платить так само --
+   одним атомарним запитом закриває кімнату і записує дропи обох. Переможець забирає ВСІ предмети.
+===================================================================== */
+const pvCases=()=>CASES.filter(c=>c.price>0&&!c.nb&&c.cat!=='WEEKLY'&&c.items&&c.items.length).sort((a,b)=>a.price-b.price);
+function pvSub(){
+  if(PV.sub||!ready())return;PV.sub=1;
+  DBr('battles').orderByKey().limitToLast(60).on('value',s=>{
+    const L=[];s.forEach(c=>{L.push(Object.assign({id:c.key},c.val()))});
+    PV.list=L;pvClaims();mLive('pv');evUpd();
+  },()=>{});
+}
+const sumV=ids=>(ids||[]).reduce((s,id)=>s+(ITEMS[id]?ITEMS[id].val:0),0);
+window.pvCreate=async function(){
+  if(!ready())return toast('🌐 Онлайн ще не готовий');
+  if(PV.busy||S.spin)return;
+  const c=cs(PV.c);if(!c||c.price<=0)return;
+  const cost=c.price*PV.r;if(S.stars<cost)return toast('❌ Недостатньо Stars');
+  if(PV.list.filter(b=>b.cr===ON.uid&&b.st==='open').length>=2)return toast('❌ Не більше 2 відкритих батлів');
+  PV.busy=1;S.stars-=cost;save();
+  try{await DBr('battles').push().set({c:c.id,r:PV.r,p:c.price,cr:ON.uid,cn:myName(),st:'open',ts:nowS()});toast('⚔️ Батл створено — чекаємо суперника')}
+  catch(e){S.stars+=cost;save();toast('❌ Не вдалося створити')}
+  PV.busy=0;mLive('pv');
+};
+window.pvCancel=async function(id){
+  const b=PV.list.find(x=>x.id===id);if(!b||b.cr!==ON.uid||b.st!=='open')return;
+  try{
+    const t=await DBr('battles/'+id).transaction(c=>{if(c===null)return c;return c.st==='open'?Object.assign({},c,{st:'cancel'}):undefined},undefined,false);
+    if(t.committed&&t.snapshot.val()&&t.snapshot.val().st==='cancel'){S.stars+=b.p*b.r;save();toast('↩️ Батл скасовано, ⭐ повернуто')}
+    else toast('Батл уже недоступний');
+  }catch(e){toast('❌ Помилка')}
+};
+window.pvJoin=async function(id){
+  if(!ready())return;if(PV.busy||S.spin)return;
+  const b=PV.list.find(x=>x.id===id);if(!b||b.st!=='open'||b.cr===ON.uid)return;
+  const c=cs(b.c);if(!c)return toast('Цей кейс більше недоступний');
+  const cost=b.p*b.r;if(S.stars<cost)return toast('❌ Недостатньо Stars');
+  PV.busy=1;S.stars-=cost;save();
+  const cd=[],jd=[];for(let i=0;i<b.r;i++){cd.push(roll(c).id);jd.push(roll(c).id)}
+  const sc=sumV(cd),sj=sumV(jd),w=sc>sj?'c':sc<sj?'j':'d';
+  let res=null;
+  try{
+    const t=await DBr('battles/'+id).transaction(cur=>{
+      if(cur===null)return cur;if(cur.st!=='open')return;
+      return Object.assign({},cur,{st:'done',jn:ON.uid,jname:myName(),cd,jd,sc,sj,w,tj:nowS(),claimC:false});
+    },undefined,false);
+    const v=t.snapshot.val();if(t.committed&&v&&v.jn===ON.uid&&v.st==='done')res=Object.assign({id},v);
+  }catch(e){}
+  PV.busy=0;
+  if(!res){S.stars+=cost;save();toast('❌ Хтось випередив — Stars повернуто');return}
+  grant(w==='j'?cd.concat(jd):w==='d'?jd:[]);
+  S.opened+=b.r;qAdd('battle');save();addXP(20*b.r);
+  if(w!=='d')feedAdd({t:'pvp',name:w==='j'?myName():b.cn,uid:w==='j'?ON.uid:b.cr,id:cd.concat(jd).sort((x,y)=>ITEMS[y].val-ITEMS[x].val)[0],val:sc+sj});
+  pvShow(res);
+};
+function pvClaims(){
+  PV.list.forEach(b=>{
+    if(b.cr!==ON.uid||b.st!=='done'||b.claimC||PV.cl[b.id])return;PV.cl[b.id]=1;
+    DBr('battles/'+b.id+'/claimC').transaction(c=>c===true?undefined:true,undefined,false)
+    .then(t=>{
+      if(!t.committed)return;
+      grant(b.w==='c'?b.cd.concat(b.jd):b.w==='d'?b.cd:[]);
+      S.opened+=b.r;qAdd('battle');save();addXP(20*b.r);
+      if(nowS()-(b.tj||0)<120000&&!S.spin)pvShow(b);
+      else toast(b.w==='c'?'⚔️ Батл виграно! Предмети в інвентарі':b.w==='d'?'⚔️ Батл: нічия':'⚔️ Батл програно');
+    }).catch(()=>{delete PV.cl[b.id]});
+  });
+}
+window.closePv=function(){const e=$('pvov');if(e)e.remove()};
+function pvShow(b){
+  closePv();if(!b||!b.cd)return;
+  const meC=b.cr===ON.uid,c=cs(b.c);
+  const el=document.createElement('div');el.id='pvov';
+  el.className='fixed inset-0 z-[120] bg-black/85 backdrop-blur-md flex items-center justify-center p-4';
+  const col=(side,name)=>`<div class="flex-1 min-w-0"><div class="text-[10px] font-black text-center truncate ${(side==='c')===meC?'text-cyan-300':'text-slate-300'}">${esc(name||'Гравець')}${(side==='c')===meC?' (ТИ)':''}</div><div id="pv-${side}" class="space-y-1.5 mt-2" style="min-height:${b.r*54}px"></div><div id="pv-s${side}" class="text-center text-[11px] font-black text-amber-300 mt-1"></div></div>`;
+  el.innerHTML=`<div class="w-full max-w-sm bg-[#151c28] border border-[#232e42] rounded-3xl p-4"><div class="text-center text-xs font-black text-red-300 tracking-widest mb-3">⚔️ PVP · ${esc(c?c.name:'')}</div><div class="flex gap-3">${col('c',b.cn)}${col('j',b.jname)}</div><div id="pv-res" class="text-center text-sm font-black mt-3 min-h-[20px]"></div><button onclick="closePv()" class="w-full mt-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-extrabold">ЗАКРИТИ</button></div>`;
+  document.body.appendChild(el);
+  const card=id=>{const it=ITEMS[id];if(!it)return '';const r=RC[it.rarity];return `<div class="pop flex items-center gap-1.5 rounded-xl p-1 border ${r.b} bg-gradient-to-b ${r.bg}"><div class="w-9 h-9 shrink-0">${art(it)}</div><div class="overflow-hidden"><div class="text-[9px] font-black truncate">${esc(it.name)}</div><div class="text-[9px] text-amber-300 font-bold">⭐ ${fmt(it.val)}</div></div></div>`};
+  let i=0;
+  const tm=setInterval(()=>{
+    if(!$('pvov')){clearInterval(tm);return}
+    if(i<b.r){$('pv-c').insertAdjacentHTML('beforeend',card(b.cd[i]));$('pv-j').insertAdjacentHTML('beforeend',card(b.jd[i]));AU.tick();i++;return}
+    clearInterval(tm);
+    $('pv-sc').textContent='Σ ⭐ '+fmt(b.sc);$('pv-sj').textContent='Σ ⭐ '+fmt(b.sj);
+    const win=b.w==='d'?null:((b.w==='c')===meC),r=$('pv-res');
+    if(win===null){r.className+=' text-slate-300';r.textContent='🤝 НІЧИЯ — кожен забирає своє'}
+    else if(win){r.className+=' text-green-400';r.textContent='🏆 ПЕРЕМОГА! Ти забрав усе: ⭐ '+fmt(b.sc+b.sj);AU.win('epic');confetti(50)}
+    else{r.className+=' text-red-400';r.textContent='💥 ПРОГРАШ';AU.tone(110,0,.5,'square',.1)}
+  },900);
+}
+window.pvReplay=function(id){const b=PV.list.find(x=>x.id===id);if(b)pvShow(b)};
+function pvHTML(){
+  if(!ready())return offl();
+  const L=pvCases();if(!L.some(c=>c.id===PV.c))PV.c=(L[0]||{}).id;
+  const c=cs(PV.c),cost=c?c.price*PV.r:0,now=nowS();
+  const open=PV.list.filter(b=>b.st==='open'&&(now-b.ts<18e5||b.cr===ON.uid)).reverse();
+  const done=PV.list.filter(b=>b.st==='done').slice(-6).reverse();
+  const cardOpen=b=>{
+    const k=cs(b.c),own=b.cr===ON.uid,it=k?(ITEMS[k.fi]||ITEMS[k.items[0]]):null;
+    return `<div class="bg-slate-800/50 rounded-2xl p-3 flex items-center gap-3"><div class="w-12 h-12 shrink-0">${it?art(it):'📦'}</div>
+    <div class="min-w-0 flex-1"><div class="text-[11px] font-black truncate">${esc(b.cn||'Гравець')}${own?' (ТИ)':''}</div><div class="text-[9px] text-slate-400 font-bold truncate">${esc(k?k.name:b.c)} · ${b.r} р.</div><div class="text-[10px] text-amber-300 font-black">Ставка ⭐ ${fmt(b.p*b.r)}</div></div>
+    <button onclick="${own?`pvCancel('${b.id}')`:`pvJoin('${b.id}')`}" class="shrink-0 px-3 py-2 rounded-xl text-[10px] font-extrabold ${own?'bg-slate-800 border border-slate-700':'bg-red-500 text-black'}">${own?'СКАСУВАТИ':'⚔️ ПРИЄДНАТИСЬ'}</button></div>`;
+  };
+  return `<div class="glass rounded-3xl p-4 space-y-3"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-red-300">⚔️ PVP-БАТЛИ</h2><p class="text-[10px] text-slate-400 font-bold">Обидва відкривають однаковий кейс. Дорожчий дроп забирає ВСІ предмети. Нічия — кожен свої.</p></div>
+  <select class="inp" onchange="PV.c=this.value;mRender()">${L.map(x=>`<option value="${x.id}" ${x.id===PV.c?'selected':''}>${esc(x.name)} · ⭐${fmt(x.price)}</option>`).join('')}</select>
+  <div class="flex justify-center gap-2">${[1,2,3].map(n=>`<button onclick="PV.r=${n};mRender()" class="px-3 py-1 rounded-xl text-xs font-black ${PV.r===n?'bg-red-500 text-black':'bg-slate-800 text-slate-300'}">${n} раунд${n>1?'и':''}</button>`).join('')}</div>
+  <button onclick="pvCreate()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-red-500 to-orange-500 text-black font-black text-xs uppercase">СТВОРИТИ БАТЛ ЗА ⭐ ${fmt(cost)}</button></div>
+  <div class="glass rounded-3xl p-4 space-y-2 mt-3"><h2 class="text-xs font-black tracking-widest text-slate-300">ВІДКРИТІ БАТЛИ (${open.length})</h2>${open.length?open.map(cardOpen).join(''):'<div class="text-center text-[10px] text-slate-500 py-4">Відкритих батлів немає — створи свій!</div>'}</div>
+  <div class="glass rounded-3xl p-4 space-y-1.5 mt-3"><h2 class="text-xs font-black tracking-widest text-slate-300">ОСТАННІ БАТЛИ</h2>
+  ${done.length?done.map(b=>{const wn=b.w==='c'?b.cn:b.w==='j'?b.jname:'нічия',mine=b.cr===ON.uid||b.jn===ON.uid;return `<div class="flex justify-between items-center gap-2 text-[10px] font-black bg-slate-800/50 rounded-xl px-3 py-1.5"><span class="truncate">${esc(b.cn)} ⚔ ${esc(b.jname)}</span><span class="shrink-0 text-amber-300">${b.w==='d'?'🤝':'🏆 '+esc(wn)}</span>${mine?`<button onclick="pvReplay('${b.id}')" class="shrink-0 px-2 py-0.5 rounded-lg bg-slate-800 border border-slate-700 text-[9px]">▶</button>`:''}</div>`}).join(''):'<div class="text-center text-[10px] text-slate-500 py-3">Ще не було батлів</div>'}</div>`;
+}
+
+/* =====================================================================
+   4. РЕАЛЬНА LIVE-СТРІЧКА (тільки справжні дропи гравців, без вигаданих ніків)
+   feed/{id} = {t:'drop'|'jp'|'pvp', name, uid, id, val, c, ts}
+===================================================================== */
+ON.fd=[];ON.fdl=false;
+function feedCard(f,i){
+  const isNew=i===0&&nowS()-(f.ts||0)<10000;
+  if(f.t==='jp')return `<div class="lvc${isNew?' new':''}" style="--c:#fbbf24"><div class="lvi">🎰</div><div class="lvt"><b>${esc(f.name||'Гравець')}</b><span>виграв ДЖЕКПОТ</span><em>⭐ ${fmt(f.val)}</em></div></div>`;
+  const it=ITEMS[f.id];if(!it)return '';
+  const col=RCOL[it.rarity]||'#94a3b8',tag=f.t==='pvp'?'⚔️ PvP: ':'';
+  return `<div class="lvc${isNew?' new':''}" style="--c:${col}"><div class="lvi">${art(it)}</div><div class="lvt"><b>${esc(f.name||'Гравець')}</b><span>${tag}${esc(it.name)}</span><em>⭐ ${fmt(it.val)}</em></div></div>`;
+}
+ticker=function(){
+  const L=(ON.fd||[]).slice().reverse().map(feedCard).filter(Boolean),n=L.length;
+  let body;
+  if(!ON.ready)body='<div class="lvE">Підключення до онлайну…</div>';
+  else if(!ON.fdl)body='<div class="lvE">Завантаження…</div>';
+  else if(!n)body='<div class="lvE">Поки тихо — відкрий кейс, і твій дроп першим з’явиться тут 🔥</div>';
+  else if(n<6)body=`<div class="lvs">${L.join('')}</div>`;
+  else body=`<div class="lvs mq"><div class="lvm" style="--d:${Math.max(25,n*5)}s">${L.join('')}${L.join('')}</div></div>`;
+  return `<div id="lvf" class="lvw"><div class="lvh"><span class="text-red-400"><i class="lvd"></i>LIVE</span><span class="text-slate-500">реальні дропи гравців · ${n}</span></div>${body}</div>`;
+};
+let lvT=0;
+function lvRedraw(){const e=$('lvf');if(e&&S.tab==='home'&&!S.spin)e.outerHTML=ticker()}
+function feedSub(){
+  DBr('feed').orderByKey().limitToLast(40).on('value',s=>{
+    const L=[];s.forEach(c=>{const v=c.val();if(v)L.push(v)});
+    ON.fd=L;ON.fdl=true;clearTimeout(lvT);lvT=setTimeout(lvRedraw,700);
+  },()=>{ON.fdl=true});
+}
+/* переписуємо запис у стрічку: тепер пишуть усі дропи rare і вище, з uid і назвою кейса */
+feedPush=function(got){
+  if(!ready())return;const cn=(cs(S.cur)||{}).name||'';
+  got.forEach(e=>{const i=ITEMS[e.id];if(i&&RAR.indexOf(i.rarity)>=1)feedAdd({t:'drop',name:myName(),uid:ON.uid,id:i.id,val:i.val,c:cn})});
+};
+
+/* =====================================================================
+   5. ГОЛОВНА: блок "ПОДІЇ" + вкладки у ЩЕ
+===================================================================== */
+function eventsSection(){
+  const c=CASES.find(x=>x.cat==='WEEKLY');let hero='';
+  if(c){
+    const it=c.items.map(i=>ITEMS[i]).sort((a,b)=>b.val-a.val);
+    hero=`<div onclick="go('case','${c.id}')" class="fcard fhero rc" style="--rgb:${c.rgb};margin-bottom:10px"><span class="fbadge">${c.badge}</span>
+    <div class="fart"><div class="fa fa-l">${art(it[1])}</div><div class="fa fa-c fl">${art(it[0])}</div><div class="fa fa-r">${art(it[2])}</div></div>
+    <div class="fname">${c.name}</div><div class="pnote" style="font-size:10px;font-weight:800;color:rgba(255,255,255,.75);margin-top:4px">4 унікальні NFT · більше ніколи не випадуть</div>
+    <div class="fmeta"><span class="fprice">⭐ ${fmt(c.price)}</span><span class="fmax">⏳ <b id="ev-wk"></b></span></div></div>`;
+  }
+  const tile=(k,e,t,a,col)=>`<div onclick="openMore('${k}')" class="evm rc" style="--c:${col}"><div class="text-2xl">${e}</div><div class="evt">${t}</div>${a}</div>`;
+  return `<div class="fsec"><div class="fhead"><div><div class="ft">🔥 ПОДІЇ</div><div class="fs">джекпот · PvP · тижневий кейс і топ</div></div><span class="fnew">LIVE</span></div>${hero}
+  <div class="grid grid-cols-3 gap-2">${tile('jp','🎰','ДЖЕКПОТ','<div class="evs" id="ev-jp"></div><div class="evs" id="ev-jt" style="color:#67e8f9"></div>','#fbbf24')}${tile('pv','⚔️','PVP','<div class="evs" id="ev-pv"></div>','#ef4444')}${tile('wk','📅','ТОП ТИЖНЯ','<div class="evs" id="ev-tp"></div>','#a855f7')}</div></div>`;
+}
+function evUpd(){
+  const a=$('ev-jp');if(a)a.textContent='⭐ '+fmt(jpAgg().tot);
+  const b=$('ev-jt');if(b)b.textContent=fmtT((jHr()+1)*JH-nowS());
+  const c=$('ev-pv');if(c)c.textContent=PV.list.filter(x=>x.st==='open'&&nowS()-x.ts<18e5).length+' відкрито';
+  const d=$('ev-wk');if(d)d.textContent=fmtL(((WK_NOW()+1)*7+4)*864e5-nowS());
+  const e=$('ev-tp');if(e){const i=WKS.top.findIndex(x=>x.uid===ON.uid);e.textContent=i>=0?'місце #'+(i+1):(S.wk&&S.wk.w===WKS.w?fmt(S.wk.p)+' очк.':'взяти участь')}
+}
+const _rh15=renderHome;
+renderHome=function(m){
+  _rh15(m);
+  const w=m.firstElementChild;if(!w)return;
+  const first=w.firstElementChild,h=eventsSection();
+  if(first)first.insertAdjacentHTML('afterend',h);else w.insertAdjacentHTML('afterbegin',h);
+  setTimeout(evUpd,0);
+};
+window.openMore=function(k){if(S.spin)return;MORE.t=k;go('more')};
+MT.unshift(['jp','🎰','ДЖЕКПОТ'],['pv','⚔️','PVP'],['wk','📅','ТИЖДЕНЬ']);
+const _mr15=mRender;
+mRender=function(){
+  const t=MORE.t;
+  if(t==='jp'||t==='pv'||t==='wk'){const b=$('mbody');if(b)b.innerHTML=({jp:jpHTML,pv:pvHTML,wk:wkHTML})[t]();return}
+  _mr15();
+};
+
+/* =====================================================================
+   6. ПІДКЛЮЧЕННЯ + ТАЙМЕР
+===================================================================== */
+const _en15=enter;
+enter=function(k){S.wk=null;S.wkc={};_en15(k)};
+const _ob15=onlineBoot;
+onlineBoot=async function(){
+  const r=await _ob15();
+  if(r&&!ON.s15){
+    ON.s15=1;
+    try{
+      jpSub();pvSub();feedSub();
+      wkEnsure(WK_NOW());wkSubscribe();wkClaim();settleOld();
+    }catch(e){console.error(e)}
+  }
+  return r;
+};
+setInterval(()=>{
+  if(!ready())return;
+  const h=jHr();
+  if(JP.h!==h){JP.h=h;settleOld();if(S.tab==='more'&&MORE.t==='jp'&&!S.spin)mRender()}
+  const t=$('jp-t');if(t)t.textContent=fmtT((h+1)*JH-nowS());
+  const w=Math.max(WK0,WK_NOW());
+  if(w!==WKS.w){wkEnsure(w);wkSubscribe();wkClaim();if(S.tab==='home'&&!S.spin)go('home',null,true);else mLive('wk')}
+  evUpd();
+},1000);
+})();
+// ===================== END PATCH v15 =====================
 /* ============ INIT ============ */
 hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
