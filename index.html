@@ -4952,7 +4952,97 @@ addEventListener('scroll',()=>document.body.classList.toggle('scrolled',window.s
 
 })();
 // ===================== END PATCH v18 =====================
+// ===================== PATCH v19: ШВИДКОДІЯ =====================
+// ВСТАВ ПІСЛЯ "END PATCH v18" і ПЕРЕД блоком  /* ============ INIT ============ */
+// Що робить (логіка гри не змінюється):
+//  1. LITE-режим: вмикається сам на слабких пристроях (<=4 ядра, <=2 ГБ RAM, економія трафіку)
+//     і вручну кнопкою ⚡ LITE у вкладці ІНВЕНТАР. Прибирає blur, фонові шари, свічення-фільтри, частинки й безкінечні анімації
+//  2. Під час відкриття кейса / гри (S.spin) декор на паузі -- уся потужність іде на анімацію
+//  3. Прихована вкладка: усі анімації на паузі
+//  4. Анімації карток поза екраном ставляться на паузу (IntersectionObserver)
+//  5. will-change лишається лише на картці під курсором (економія відеопамʼяті)
+(function(){
+const root=document.documentElement,nav=navigator,conn=nav.connection||{};
+let lite=LSget('sn_lite',null);
+if(lite===null)lite=!!((nav.deviceMemory&&nav.deviceMemory<=2)||(nav.hardwareConcurrency&&nav.hardwareConcurrency<=4)||conn.saveData);
+let SP=false;
+const sync=()=>{root.classList.toggle('lite',!!lite);window.PT18_OFF=!!lite||SP};
 
+const css=`
+/* пауза: прихована вкладка / спін / поза екраном */
+body.hid19 *,body.hid19 *::before,body.hid19 *::after,
+body.spin19 header.glass::after,body.spin19 .logo,body.spin19 .hero18::before,body.spin19 .h18-o1,body.spin19 .h18-o2,
+body.spin19 .fcard::after,body.spin19 .fbadge,body.spin19 .fnew,body.spin19 .pnew,body.spin19 .lvm,body.spin19 .tkr,
+body.spin19 main .bg-gradient-to-b.border-red-500::before,body.spin19 main .bg-gradient-to-b.border-amber-500::after,
+.off19,.off19 *,.off19::before,.off19::after,.off19 *::before,.off19 *::after{animation-play-state:paused!important}
+body.spin19 #pt18{visibility:hidden}
+
+/* will-change лише при наведенні */
+.fcard,.fcard::after{will-change:auto!important}
+.fcard:hover{will-change:transform!important}
+
+/* ---- LITE ---- */
+html.lite #pt18{display:none}
+html.lite body::before,html.lite body::after{display:none}
+html.lite header.glass,html.lite nav.glass{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:#0d1424!important}
+html.lite header.glass::after,html.lite .logo,html.lite .hero18::before,html.lite .h18-o1,html.lite .h18-o2,
+html.lite .fcard::after,html.lite .tw,html.lite .fl,html.lite .fnew,html.lite .pnew,html.lite .fbadge,
+html.lite button[class*="bg-gradient-to-r"]::after,html.lite .h18-b.rdy,html.lite .h18-b.rdy::after,
+html.lite body .bg-gradient-to-b.border-amber-500::after,html.lite body .bg-gradient-to-b.border-red-500::before,
+html.lite #mc .rays,html.lite #mc::before{animation:none!important}
+html.lite .h18-o1,html.lite .h18-o2,html.lite #mc .rays,html.lite body .bg-gradient-to-b.border-amber-500::after{display:none!important}
+html.lite body .bg-gradient-to-b.border-red-500::before{background:linear-gradient(135deg,#ef4444,#fbbf24,#d946ef)!important}
+html.lite main svg[style*="drop-shadow"],html.lite .rcard svg{filter:none!important}
+html.lite .fcard,html.lite main [onclick^="go('case'"]:not(.fcard){transform:none!important;transition:none!important}
+html.lite .fcard::before,html.lite main [onclick^="go('case'"]:not(.fcard)::before{display:none}
+html.lite main .glass,html.lite .fcard,html.lite .hero18{box-shadow:none!important}
+`;
+const st=document.createElement('style');st.id='opt19';st.textContent=css;document.head.appendChild(st);
+
+/* картка ⚡ LITE у вкладці ІНВЕНТАР */
+const LG19=LSget('sn_lang','en')||'en';
+const T19={
+  d:{uk:'Менше ефектів — більше FPS. Допомагає на слабких телефонах.',en:'Fewer effects, higher FPS. Helps on weak phones.',ru:'Меньше эффектов — больше FPS. Помогает на слабых телефонах.',pl:'Mniej efektów, więcej FPS. Pomaga na słabych telefonach.'},
+  on:{uk:'УВІМК.',en:'ON',ru:'ВКЛ.',pl:'WŁ.'},
+  off:{uk:'ВИМК.',en:'OFF',ru:'ВЫКЛ.',pl:'WYŁ.'}
+};
+const t19=k=>T19[k][LG19]||T19[k].en;
+function liteCard(){
+  return `<div id="litc" class="glass p-3 rounded-2xl flex items-center justify-between gap-3"><div class="min-w-0"><div class="text-xs font-black" style="color:${lite?'#fde68a':'#e2e8f0'}">⚡ LITE MODE</div><div class="text-[10px] text-slate-400 font-bold leading-snug">${t19('d')}</div></div>
+  <button id="litb" onclick="toggleLite()" class="shrink-0 px-3 py-1.5 rounded-xl text-[11px] font-black ${lite?'bg-amber-400 text-black':'bg-slate-800 border border-slate-700 text-slate-300'}">${lite?t19('on'):t19('off')}</button></div>`;
+}
+const _rp19=renderProfile;
+renderProfile=function(m){
+  _rp19(m);
+  const w=m.firstElementChild;
+  if(w&&!document.getElementById('litc'))w.insertAdjacentHTML('afterbegin',liteCard());
+};
+window.toggleLite=function(){
+  lite=!lite;LSset('sn_lite',lite);sync();
+  const c=document.getElementById('litc');if(c)c.outerHTML=liteCard();
+  toast(lite?'⚡ Lite ON':'✨ Lite OFF');
+};
+
+/* стан: спін / прихована вкладка */
+setInterval(()=>{
+  const s=!!S.spin;
+  if(s!==SP){SP=s;document.body.classList.toggle('spin19',s);window.PT18_OFF=!!lite||SP}
+},300);
+document.addEventListener('visibilitychange',()=>document.body.classList.toggle('hid19',document.hidden));
+
+/* пауза анімацій карток поза екраном */
+if('IntersectionObserver' in window){
+  const io=new IntersectionObserver(es=>es.forEach(e=>e.target.classList.toggle('off19',!e.isIntersecting)),{rootMargin:'120px'});
+  const Q='#main .fcard,#main .hero18,#main .lvw,#main .fsec,#main .psec,#main [onclick^="go(\'case\'"]';
+  let q=0;
+  const scan=()=>{q=0;document.querySelectorAll(Q).forEach(e=>io.observe(e))};
+  const m=document.getElementById('main');
+  if(m)new MutationObserver(()=>{if(!q)q=requestAnimationFrame(scan)}).observe(m,{childList:true});
+  scan();
+}
+sync();
+})();
+// ===================== END PATCH v19 =====================
 /* ============ INIT ============ */
 hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
