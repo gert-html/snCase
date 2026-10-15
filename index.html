@@ -4110,6 +4110,701 @@ art=function(it){
 window.nftNo=id=>{if(!IDX[id])rebuild();return IDX[id]?IDX[id].g+1:0};   /* № предмета: nftNo('c0') */
 })();
 // ===================== END PATCH v16 =====================
+// ===================== PATCH v17: ПОВНИЙ ПЕРЕКЛАД + ШВИДКА СТРІЧКА + ВІКНО АДМІНІВ =====================
+(function(){
+
+/* ---------------------------------------------------------------
+   1. ПОВНИЙ СЛОВНИК: [українська, English, Русский, Polski]
+---------------------------------------------------------------- */
+const D17=[
+['КЕЙСИ','CASES','КЕЙСЫ','SKRZYNIE'],['СПІН','SPIN','СПИН','SPIN'],['ВІДЮХИ','GPUS','ВИДЮХИ','GPU'],
+['ТРЕЙД','TRADE','ТРЕЙД','WYMIANA'],['БОНУСИ','BONUS','БОНУСЫ','BONUSY'],['ІНВЕНТАР','INVENTORY','ИНВЕНТАРЬ','EKWIPUNEK'],
+['ЩЕ','MORE','ЕЩЁ','WIĘCEJ'],['ЧАТ','CHAT','ЧАТ','CZAT'],['ПРОФІЛЬ','PROFILE','ПРОФИЛЬ','PROFIL'],['РЕФ','REFS','РЕФ','POLEC.'],
+['НОВИНИ','NEWS','НОВОСТИ','NEWSY'],['ПРЕФІКСИ','PREFIXES','ПРЕФИКСЫ','PREFIKSY'],['ДЖЕКПОТ','JACKPOT','ДЖЕКПОТ','JACKPOT'],
+['ПАС','PASS','ПАСС','PASS'],['МАРКЕТ','MARKET','МАРКЕТ','RYNEK'],['БАТЛ','BATTLE','БАТЛ','BITWA'],['ІГРИ','GAMES','ИГРЫ','GRY'],
+['КОЛЕКЦІЯ','COLLECTION','КОЛЛЕКЦИЯ','KOLEKCJA'],['КВЕСТИ','QUESTS','КВЕСТЫ','QUESTY'],
+['ПОДІЯ','EVENT','СОБЫТИЕ','WYDARZENIE'],['ПОДІЯ #','EVENT #','СОБЫТИЕ #','WYDARZENIE #'],
+['ФРУКТИ & ОВОЧІ','FRUITS & VEGGIES','ФРУКТЫ И ОВОЩИ','OWOCE I WARZYWA'],
+['БЕЗКОШТОВНИЙ','FREE','БЕСПЛАТНЫЙ','DARMOWA'],['БЕЗКОШТОВНО','FREE','БЕСПЛАТНО','ZA DARMO'],
+['ЗА ДРУГА','FOR A FRIEND','ЗА ДРУГА','ZA ZNAJOMEGO'],['РЕФЕРАЛ','REFERRAL','РЕФЕРАЛ','POLECENIE'],
+['ОСІННІЙ','AUTUMN','ОСЕННИЙ','JESIENNA'],['КЕЙС У КЕЙСІ','CASE IN CASE','КЕЙС В КЕЙСЕ','SKRZYNIA W SKRZYNI'],
+['ЧУМНИЙ ЛІКАР','PLAGUE DOCTOR','ЧУМНОЙ ДОКТОР','LEKARZ DŻUMY'],['ЧОРНА СМЕРТЬ','BLACK DEATH','ЧЁРНАЯ СМЕРТЬ','CZARNA ŚMIERĆ'],
+['ФРУКТОВИЙ САД','FRUIT ORCHARD','ФРУКТОВЫЙ САД','SAD OWOCOWY'],['ОВОЧЕВА ГРЯДКА','VEGGIE BED','ОВОЩНАЯ ГРЯДКА','GRZĄDKA WARZYW'],
+['ТРОПІЧНИЙ МІКС','TROPICAL MIX','ТРОПИЧЕСКИЙ МИКС','TROPIKALNY MIX'],['ЯГІДНИЙ ВИБУХ','BERRY BLAST','ЯГОДНЫЙ ВЗРЫВ','WYBUCH JAGÓD'],
+['ЗОЛОТИЙ УРОЖАЙ','GOLDEN HARVEST','ЗОЛОТОЙ УРОЖАЙ','ZŁOTE ŻNIWA'],
+['← До кейсів','← Back to cases','← К кейсам','← Do skrzyń'],['МНОЖНИК:','MULTIPLIER:','МНОЖИТЕЛЬ:','MNOŻNIK:'],
+['ВІДКРИТИ З ІНВЕНТАРЯ','OPEN FROM INVENTORY','ОТКРЫТЬ ИЗ ИНВЕНТАРЯ','OTWÓRZ Z EKWIPUNKU'],
+['ВІДКРИТИ ЗАРАЗ','OPEN NOW','ОТКРЫТЬ СЕЙЧАС','OTWÓRZ TERAZ'],['ВІДКРИТИ ЗА','OPEN FOR','ОТКРЫТЬ ЗА','OTWÓRZ ZA'],
+['ВІДКРИТИ','OPEN','ОТКРЫТЬ','OTWÓRZ'],['МОЖЛИВИЙ ДРОП','POSSIBLE DROP','ВОЗМОЖНЫЙ ДРОП','MOŻLIWY DROP'],
+['дроп до','drop up to','дроп до','drop do'],
+['ВИТАЄМО! ВИ ВИБИЛИ:','CONGRATS! YOU GOT:','ПОЗДРАВЛЯЕМ! ВЫ ВЫБИЛИ:','GRATULACJE! WYLOSOWAŁEŚ:'],
+['Цінність:','Value:','Ценность:','Wartość:'],['В ІНВЕНТАР','TO INVENTORY','В ИНВЕНТАРЬ','DO EKWIPUNKU'],
+['ПРОДАТИ ВСЕ','SELL ALL','ПРОДАТЬ ВСЁ','SPRZEDAJ WSZYSTKO'],['ПРОДАТИ ЗА','SELL FOR','ПРОДАТЬ ЗА','SPRZEDAJ ZA'],
+['Продано все за','Sold everything for','Продано всё за','Sprzedano wszystko za'],['Продано за','Sold for','Продано за','Sprzedano za'],
+['Продано:','Sold:','Продано:','Sprzedano:'],['Куплено:','Bought:','Куплено:','Kupiono:'],
+['Недостатньо Stars','Not enough Stars','Недостаточно Stars','Za mało Stars'],
+['Зачекайте','Wait','Подождите','Poczekaj'],['хвилин','minutes','минут','minut'],['хв','min','мин','min'],
+['год','h','ч','godz.'],['дн.','d.','дн.','d.'],['дн','d','дн','d'],['д','d','д','d'],
+['Інвентар порожній. Відкривайте кейси!','Inventory is empty. Open some cases!','Инвентарь пуст. Открывайте кейсы!','Ekwipunek jest pusty. Otwieraj skrzynie!'],
+['Інвентар порожній','Inventory is empty','Инвентарь пуст','Ekwipunek jest pusty'],
+['Відкрито кейсів:','Cases opened:','Открыто кейсов:','Otwarte skrzynie:'],['Кейсів:','Cases:','Кейсов:','Skrzynie:'],
+['Кейсів','Cases','Кейсов','Skrzyń'],
+['ВИЙТИ','LOG OUT','ВЫЙТИ','WYLOGUJ'],['СКИДАННЯ','RESET','СБРОС','RESET'],
+['Загальна цінність:','Total value:','Общая ценность:','Łączna wartość:'],['Дані скинуто!','Data reset!','Данные сброшены!','Dane zresetowane!'],
+['РІВЕНЬ','LEVEL','УРОВЕНЬ','POZIOM'],['рівень','level','уровень','poziom'],['нагорода','reward','награда','nagroda'],
+['Серія','Streak','Серия','Seria'],['ІНВЕНТАР','INVENTORY','ИНВЕНТАРЬ','EKWIPUNEK'],
+['🖥️ Відюхи нафармили','🖥️ GPUs farmed','🖥️ Видюхи нафармили','🖥️ GPU wyfarmowały'],
+['Відюха-гівняшка','Junk GPU','Хлам-видюха','Złomowe GPU'],
+/* авторизація */
+['ВХІД','LOGIN','ВХОД','LOGOWANIE'],['РЕЄСТРАЦІЯ','SIGN UP','РЕГИСТРАЦИЯ','REJESTRACJA'],['УВІЙТИ','LOG IN','ВОЙТИ','ZALOGUJ'],
+['СТВОРИТИ АКАУНТ','CREATE ACCOUNT','СОЗДАТЬ АККАУНТ','UTWÓRZ KONTO'],
+['Імʼя користувача','Username','Имя пользователя','Nazwa użytkownika'],
+['Повторіть пароль','Repeat password','Повторите пароль','Powtórz hasło'],['Пароль','Password','Пароль','Hasło'],
+['Невірне імʼя або пароль','Wrong username or password','Неверное имя или пароль','Zła nazwa lub hasło'],
+['Таке імʼя вже зайняте','This username is taken','Такое имя уже занято','Ta nazwa jest zajęta'],
+['Паролі не збігаються','Passwords do not match','Пароли не совпадают','Hasła nie pasują'],
+['Імʼя: 3–16 символів (літери, цифри, _)','Username: 3–16 characters (letters, digits, _)','Имя: 3–16 символов (буквы, цифры, _)','Nazwa: 3–16 znaków (litery, cyfry, _)'],
+['Пароль має бути не коротший за 4 символи','Password must be at least 4 characters','Пароль должен быть не короче 4 символов','Hasło musi mieć co najmniej 4 znaki'],
+['Цей акаунт створено в захищеному режимі -- відкрийте гру через https','This account was created in secure mode -- open the game via https','Этот аккаунт создан в защищённом режиме -- откройте игру через https','To konto utworzono w trybie bezpiecznym -- otwórz grę przez https'],
+['Вхід зберігається в цьому браузері, а прогрес, топ і трейди синхронізуються онлайн між реальними гравцями. Імʼя: 3–16 символів, пароль: від 4.',
+ 'Login is stored in this browser; progress, leaderboard and trades sync online between real players. Username: 3–16 chars, password: 4+.',
+ 'Вход сохраняется в этом браузере, а прогресс, топ и трейды синхронизируются онлайн между реальными игроками. Имя: 3–16 символов, пароль: от 4.',
+ 'Logowanie zapisuje się w tej przeglądarce, a postęp, ranking i wymiany synchronizują się online. Nazwa: 3–16 znaków, hasło: min. 4.'],
+/* бонуси, досягнення */
+['ПРОМОКОД','PROMO CODE','ПРОМОКОД','KOD PROMOCYJNY'],['Введи промокод','Enter promo code','Введи промокод','Wpisz kod'],
+['Кожен промокод діє один раз на акаунт · від ⭐ 1000 до ⭐ 5000','Each code works once per account · from ⭐ 1000 to ⭐ 5000','Каждый промокод действует один раз на аккаунт · от ⭐ 1000 до ⭐ 5000','Każdy kod działa raz na konto · od ⭐ 1000 do ⭐ 5000'],
+['Невірний промокод','Invalid promo code','Неверный промокод','Zły kod'],
+['Цей промокод уже використано','This code was already used','Этот промокод уже использован','Kod już użyty'],
+['Промокод активовано:','Promo code activated:','Промокод активирован:','Kod aktywowany:'],
+['бонус отримано!','bonus claimed!','бонус получен!','bonus odebrany!'],
+['ЩОДЕННІ БОНУСИ','DAILY BONUSES','ЕЖЕДНЕВНЫЕ БОНУСЫ','CODZIENNE BONUSY'],
+['Кожен бонус можна забрати раз на 24 години','Each bonus can be claimed once every 24 hours','Каждый бонус можно забрать раз в 24 часа','Każdy bonus raz na 24 godziny'],
+['ДЕНЬ','DAY','ДЕНЬ','DZIEŃ'],['ОТРИМАТИ','CLAIM','ПОЛУЧИТЬ','ODBIERZ'],['ЗАБРАТИ','CLAIM','ЗАБРАТЬ','ODBIERZ'],
+['ДОСЯГНЕННЯ','ACHIEVEMENTS','ДОСТИЖЕНИЯ','OSIĄGNIĘCIA'],
+['🎁 Перший кейс','🎁 First case','🎁 Первый кейс','🎁 Pierwsza skrzynia'],['📦 10 кейсів','📦 10 cases','📦 10 кейсов','📦 10 skrzyń'],
+['🏭 100 кейсів','🏭 100 cases','🏭 100 кейсов','🏭 100 skrzyń'],['🟡 Легендарка в інвентарі','🟡 Legendary in inventory','🟡 Легендарка в инвентаре','🟡 Legendarna w ekwipunku'],
+['🔴 Міфік в інвентарі','🔴 Mythic in inventory','🔴 Мифик в инвентаре','🔴 Mityk w ekwipunku'],['🆙 Рівень 5','🆙 Level 5','🆙 Уровень 5','🆙 Poziom 5'],
+['💰 Інвентар на 10 000 ⭐','💰 Inventory worth 10 000 ⭐','💰 Инвентарь на 10 000 ⭐','💰 Ekwipunek za 10 000 ⭐'],
+['🔥 Серія 7 днів','🔥 7-day streak','🔥 Серия 7 дней','🔥 Seria 7 dni'],
+['Вже перевірено','Already checked','Уже проверено','Już sprawdzono'],
+['У минулому сезоні ти не в топ-3','You were not in the top 3 last season','В прошлом сезоне ты не в топ-3','W poprzednim sezonie nie byłeś w top 3'],
+['Місце','Place','Место','Miejsce'],
+/* колесо, апгрейд, контракт, монетка, гри */
+['Безкоштовний спін раз на 200 хвилин!','Free spin every 200 minutes!','Бесплатный спин раз в 200 минут!','Darmowy spin co 200 minut!'],
+['КРУТИТИ','SPIN','КРУТИТЬ','KRĘĆ'],['Наступний спін через','Next spin in','Следующий спин через','Następny spin za'],
+['Ви виграли','You won','Вы выиграли','Wygrałeś'],['Крутни колесо','Spin the wheel','Крутани колесо','Zakręć kołem'],
+['Крутни колесо 5 разів','Spin the wheel 5 times','Крутани колесо 5 раз','Zakręć kołem 5 razy'],
+['АПГРЕЙД','UPGRADE','АПГРЕЙД','ULEPSZENIE'],
+['Виграєш -- отримаєш дорожчий предмет, програєш -- згорить','Win -- get a pricier item, lose -- it burns','Выиграешь -- получишь более дорогой предмет, проиграешь -- сгорит','Wygrasz -- dostaniesz droższy przedmiot, przegrasz -- spłonie'],
+['РИЗИКНУТИ','RISK IT','РИСКНУТЬ','RYZYKUJ'],['ОБЕРИ ПРЕДМЕТ','PICK AN ITEM','ВЫБЕРИ ПРЕДМЕТ','WYBIERZ PRZEDMIOT'],
+['ВИСОКИЙ ШАНС','HIGH CHANCE','ВЫСОКИЙ ШАНС','WYSOKA SZANSA'],['СЕРЕДНІЙ ШАНС','MEDIUM CHANCE','СРЕДНИЙ ШАНС','ŚREDNIA SZANSA'],
+['НИЗЬКИЙ ШАНС','LOW CHANCE','НИЗКИЙ ШАНС','NISKA SZANSA'],
+['Відкрий кейс -- і повертайся сюди','Open a case -- and come back','Открой кейс -- и возвращайся','Otwórz skrzynię i wróć'],
+['ДОЛЯ РІШАЄТЬСЯ…','FATE DECIDES…','СУДЬБА РЕШАЕТСЯ…','LOS DECYDUJE…'],
+['УСПІХ!','SUCCESS!','УСПЕХ!','SUKCES!'],
+['Не пощастило -- предмет згорів','Unlucky -- the item burned','Не повезло -- предмет сгорел','Pech -- przedmiot spłonął'],
+['КОНТРАКТ','CONTRACT','КОНТРАКТ','KONTRAKT'],
+['5 предметів однієї рідкості → 1 предмет рідкості вище','5 items of one rarity → 1 item of higher rarity','5 предметов одной редкости → 1 предмет редкостью выше','5 przedmiotów jednej rzadkości → 1 wyższej'],
+['УКЛАСТИ КОНТРАКТ','SIGN CONTRACT','ЗАКЛЮЧИТЬ КОНТРАКТ','ZAWRZYJ KONTRAKT'],
+['Обери 5 предметів','Pick 5 items','Выбери 5 предметов','Wybierz 5 przedmiotów'],
+['Обрано','Selected','Выбрано','Wybrano'],['Максимум 5 предметів','Maximum 5 items','Максимум 5 предметов','Maksymalnie 5 przedmiotów'],
+['Потрібна однакова рідкість','Same rarity required','Нужна одинаковая редкость','Wymagana ta sama rzadkość'],
+['Потрібно рівно 5 предметів','Exactly 5 items required','Нужно ровно 5 предметов','Wymagane dokładnie 5 przedmiotów'],
+['Немає предметів','No items','Нет предметов','Brak przedmiotów'],
+['Контракт:','Contract:','Контракт:','Kontrakt:'],['Батл','Battle','Батл','Bitwa'],
+['МОНЕТКА','COIN FLIP','МОНЕТКА','RZUT MONETĄ'],['Шанс 48% · виграш x2','Chance 48% · win x2','Шанс 48% · выигрыш x2','Szansa 48% · wygrana x2'],
+['КИНУТИ','FLIP','БРОСИТЬ','RZUĆ'],
+['🎉 +⭐','🎉 +⭐','🎉 +⭐','🎉 +⭐'],
+['МІНЕР','MINES','САПЁР','SAPER'],
+['Відкривай 💎, уникай 💣. Множник росте з кожним кроком.','Open 💎, avoid 💣. The multiplier grows with each step.','Открывай 💎, избегай 💣. Множитель растёт с каждым шагом.','Otwieraj 💎, unikaj 💣. Mnożnik rośnie z każdym krokiem.'],
+['Міна!','Mine!','Мина!','Mina!'],['Забрано','Cashed out','Забрано','Wypłacono'],
+['КРАШ','CRASH','КРАШ','CRASH'],['Множник росте — встигни забрати до краху.','The multiplier grows — cash out before the crash.','Множитель растёт — успей забрать до краха.','Mnożnik rośnie — zdąż wypłacić przed krachem.'],
+['КРАШ на','CRASH at','КРАШ на','CRASH przy'],['авто x','auto x','авто x','auto x'],
+['Мінімум ⭐ 100','Minimum ⭐ 100','Минимум ⭐ 100','Minimum ⭐ 100'],
+['СТАРТ','START','СТАРТ','START'],
+['ЗАГАЛЬНИЙ ЧАТ','GLOBAL CHAT','ОБЩИЙ ЧАТ','CZAT OGÓLNY'],
+['Повідомлення всім...','Message to everyone...','Сообщение всем...','Wiadomość do wszystkich...'],
+['Повідомлення...','Message...','Сообщение...','Wiadomość...'],
+['Напиши першим 👋','Be the first to write 👋','Напиши первым 👋','Napisz pierwszy 👋'],
+['Не вдалося завантажити чат (перевір правила Firestore)','Could not load chat (check Firestore rules)','Не удалось загрузить чат (проверь правила Firestore)','Nie udało się wczytać czatu (sprawdź reguły Firestore)'],
+['❌ Не надіслано','❌ Not sent','❌ Не отправлено','❌ Nie wysłano'],
+/* відюхи */
+['ЦЕНТР ВІДЕОКАРТ','GPU CENTER','ЦЕНТР ВИДЕОКАРТ','CENTRUM GPU'],
+['Відюхи фармлять ⭐ навіть коли тебе нема (до 24 год)','GPUs farm ⭐ even when you are away (up to 24 h)','Видюхи фармят ⭐ даже когда тебя нет (до 24 ч)','GPU farmią ⭐ nawet gdy cię nie ma (do 24 godz.)'],
+['КОНВЕРТЕР · 1 VD = 1 000 ⭐','CONVERTER · 1 VD = 1 000 ⭐','КОНВЕРТЕР · 1 VD = 1 000 ⭐','KONWERTER · 1 VD = 1 000 ⭐'],
+['КОНВЕРТЕР','CONVERTER','КОНВЕРТЕР','KONWERTER'],
+['Кількість VD','VD amount','Количество VD','Ilość VD'],['Є:','Owned:','Есть:','Masz:'],
+['Введи кількість VD','Enter VD amount','Введи количество VD','Wpisz ilość VD'],['Введи кількість VD','Enter VD amount','Введи количество VD','Wpisz ilość VD'],
+['❌ Недостатньо VD','❌ Not enough VD','❌ Недостаточно VD','❌ Za mało VD'],
+['Введи кількість','Enter amount','Введи количество','Wpisz ilość'],
+/* трейди */
+['ТРЕЙДИ 🌐 ОНЛАЙН','TRADES 🌐 ONLINE','ТРЕЙДЫ 🌐 ОНЛАЙН','WYMIANY 🌐 ONLINE'],
+['ТРЕЙДИ ТІЛЬКИ МІЖ РЕАЛЬНИМИ ГРАВЦЯМИ','TRADES ONLY BETWEEN REAL PLAYERS','ТРЕЙДЫ ТОЛЬКО МЕЖДУ РЕАЛЬНЫМИ ИГРОКАМИ','WYMIANY TYLKO MIĘDZY PRAWDZIWYMI GRACZAMI'],
+['Онлайн-зʼєднання ще не готове. Зачекай кілька секунд або перезавантаж сторінку.','Online connection is not ready yet. Wait a few seconds or reload the page.','Онлайн-соединение ещё не готово. Подожди несколько секунд или перезагрузи страницу.','Połączenie online nie jest jeszcze gotowe. Poczekaj kilka sekund lub odśwież stronę.'],
+['Онлайн-зʼєднання ще не готове. Зачекай кілька секунд або перезавантаж сторінку.','Online connection is not ready yet. Wait a few seconds or reload the page.','Онлайн-соединение ещё не готово. Подожди несколько секунд или перезагрузи страницу.','Połączenie online nie jest jeszcze gotowe. Poczekaj kilka sekund lub odśwież stronę.'],
+['Онлайн ще не готовий','Online is not ready yet','Онлайн ещё не готов','Online jeszcze nie jest gotowy'],
+['🌐 Онлайн ще не готовий','🌐 Online is not ready yet','🌐 Онлайн ещё не готов','🌐 Online jeszcze nie jest gotowy'],
+['ВХІДНІ','INCOMING','ВХОДЯЩИЕ','PRZYCHODZĄCE'],['ВИХІДНІ','OUTGOING','ИСХОДЯЩИЕ','WYCHODZĄCE'],
+['СТВОРИТИ','CREATE','СОЗДАТЬ','UTWÓRZ'],['ІСТОРІЯ','HISTORY','ИСТОРИЯ','HISTORIA'],
+['КОМУ · гравців:','TO · players:','КОМУ · игроков:','DO · graczy:'],['онлайн:','online:','онлайн:','online:'],
+['-- обери гравця --','-- pick a player --','-- выбери игрока --','-- wybierz gracza --'],
+['Обери гравця','Pick a player','Выбери игрока','Wybierz gracza'],
+['❌ Обери гравця','❌ Pick a player','❌ Выбери игрока','❌ Wybierz gracza'],
+['Спочатку обери гравця','Pick a player first','Сначала выбери игрока','Najpierw wybierz gracza'],
+['В гравця немає предметів','The player has no items','У игрока нет предметов','Gracz nie ma przedmiotów'],
+['ТИ ВІДДАЄШ','YOU GIVE','ТЫ ОТДАЁШЬ','DAJESZ'],['ТИ ПРОСИШ','YOU ASK','ТЫ ПРОСИШЬ','PROSISZ'],
+['ТОБІ ВІДДАЮТЬ','YOU RECEIVE','ТЕБЕ ОТДАЮТ','OTRZYMUJESZ'],['ВІД ТЕБЕ ХОЧУТЬ','THEY WANT FROM YOU','ОТ ТЕБЯ ХОТЯТ','CHCĄ OD CIEBIE'],
+['ДОДАТИ','ADD','ДОБАВИТЬ','DODAJ'],['ПРОСИШ','ASK','ПРОСИШЬ','PROSISZ'],
+['Віддаєш:','Give:','Отдаёшь:','Dajesz:'],['Просиш:','Ask:','Просишь:','Prosisz:'],
+['НАДІСЛАТИ ОФЕР','SEND OFFER','ОТПРАВИТЬ ОФФЕР','WYŚLIJ OFERTĘ'],
+['ПРИЙНЯТИ','ACCEPT','ПРИНЯТЬ','PRZYJMIJ'],['ВІДХИЛИТИ','DECLINE','ОТКЛОНИТЬ','ODRZUĆ'],
+['ЗУСТРІЧНИЙ','COUNTER','ВСТРЕЧНЫЙ','KONTRA'],['СКАСУВАТИ','CANCEL','ОТМЕНИТЬ','ANULUJ'],
+['нічого','nothing','ничего','nic'],['ПРИЙНЯТО','ACCEPTED','ПРИНЯТО','PRZYJĘTO'],
+['ВІДХИЛЕНО','DECLINED','ОТКЛОНЕНО','ODRZUCONO'],['СКАСОВАНО','CANCELLED','ОТМЕНЕНО','ANULOWANO'],
+['ОЧІКУЄ','PENDING','ОЖИДАЕТ','OCZEKUJE'],
+['Вхідних оферів немає','No incoming offers','Входящих офферов нет','Brak przychodzących ofert'],
+['Активних вихідних оферів немає','No active outgoing offers','Активных исходящих офферов нет','Brak aktywnych wychodzących ofert'],
+['Історія порожня','History is empty','История пуста','Historia jest pusta'],
+['Офер надіслано','Offer sent','Оффер отправлен','Oferta wysłana'],
+['Офер уже недоступний','Offer no longer available','Оффер уже недоступен','Oferta już niedostępna'],
+['Скасовано','Cancelled','Отменено','Anulowano'],['Відхилено','Declined','Отклонено','Odrzucono'],
+['Обмін виконано','Trade completed','Обмен выполнен','Wymiana zakończona'],
+['❌ Бракує предметів або Stars -- офер відхилено','❌ Missing items or Stars -- offer declined','❌ Не хватает предметов или Stars -- оффер отклонён','❌ Brak przedmiotów lub Stars -- oferta odrzucona'],
+['❌ Помилка мережі','❌ Network error','❌ Ошибка сети','❌ Błąd sieci'],
+['⏳ Спробуй ще раз за мить','⏳ Try again in a moment','⏳ Попробуй ещё раз через мгновение','⏳ Spróbuj ponownie za chwilę'],
+['Не більше 10 активних оферів','No more than 10 active offers','Не больше 10 активных офферов','Maksymalnie 10 aktywnych ofert'],
+['❌ Запропонуй щось у обмін','❌ Offer something in exchange','❌ Предложи что-нибудь в обмен','❌ Zaproponuj coś w zamian'],
+['❌ Не вдалося надіслати','❌ Could not send','❌ Не удалось отправить','❌ Nie udało się wysłać'],
+['🔄 Склади зустрічний офер (його предмети повернуться до нього)','🔄 Make a counter-offer (his items go back to him)','🔄 Составь встречный оффер (его предметы вернутся к нему)','🔄 Złóż ofertę w zamian (jego przedmioty wrócą do niego)'],
+['Твої предмети й Stars із офера блокуються до відповіді. Гравець може прийняти, відхилити або запропонувати зустрічний офер, а домовитись можна в чаті.',
+ 'Your items and Stars in the offer are locked until a reply. The player can accept, decline or counter-offer, and you can agree in chat.',
+ 'Твои предметы и Stars из оффера блокируются до ответа. Игрок может принять, отклонить или предложить встречный оффер, а договориться можно в чате.',
+ 'Twoje przedmioty i Stars w ofercie są zablokowane do odpowiedzi. Gracz może przyjąć, odrzucić lub złożyć ofertę w zamian, a ustalić szczegóły można na czacie.'],
+['Гравець','Player','Игрок','Gracz'],['Гравця не знайдено','Player not found','Игрок не найден','Nie znaleziono gracza'],
+['❌ Гравця не знайдено','❌ Player not found','❌ Игрок не найден','❌ Nie znaleziono gracza'],
+['❌ Це твій код','❌ This is your code','❌ Это твой код','❌ To twój kod'],
+/* топ / лідерборд */
+['ТАБЛИЦЯ ЛІДЕРІВ','LEADERBOARD','ТАБЛИЦА ЛИДЕРОВ','RANKING'],['гравців:','players:','игроков:','graczy:'],
+['тапни гравця для профілю','tap a player for profile','нажми на игрока для профиля','dotknij gracza, by zobaczyć profil'],
+['БАЛАНС','BALANCE','БАЛАНС','SALDO'],['баланс','balance','баланс','saldo'],['інвентар','inventory','инвентарь','ekwipunek'],
+['ОНЛАЙН','ONLINE','ОНЛАЙН','ONLINE'],['онлайн','online','онлайн','online'],['офлайн','offline','офлайн','offline'],
+['був(ла)','seen','был(а)','widz.'],['тому','ago','назад','temu'],
+['Поки немає гравців','No players yet','Пока нет игроков','Jeszcze brak graczy'],
+['(ТИ)','(YOU)','(ТЫ)','(TY)'],['ТИ','YOU','ТЫ','TY'],['БОТ','BOT','БОТ','BOT'],
+['Кейсів','Cases','Кейсов','Skrzyń'],['ІНВЕНТАР','INVENTORY','ИНВЕНТАРЬ','EKWIPUNEK'],
+['🛠 АДМІНИ','🛠 ADMINS','🛠 АДМИНЫ','🛠 ADMINI'],
+['🛠 АДМІНІСТРАТОРИ','🛠 ADMINISTRATORS','🛠 АДМИНИСТРАТОРЫ','🛠 ADMINISTRATORZY'],
+['Адміністраторів немає','No administrators','Администраторов нет','Brak administratorów'],
+['Гравці','Players','Игроки','Gracze'],
+/* профіль */
+['МІЙ ПРОФІЛЬ','MY PROFILE','МОЙ ПРОФИЛЬ','MÓJ PROFIL'],['ТИТУЛ','TITLE','ТИТУЛ','TYTUŁ'],['ВІТРИНА','SHOWCASE','ВИТРИНА','WITRYNA'],
+['РАМКА (за рівень)','FRAME (by level)','РАМКА (по уровню)','RAMKA (wg poziomu)'],
+['АВАТАР (будь-який знайдений NFT)','AVATAR (any NFT you found)','АВАТАР (любой найденный NFT)','AWATAR (dowolny znaleziony NFT)'],
+['Відкрий кейс, щоб обрати аватар','Open a case to choose an avatar','Открой кейс, чтобы выбрать аватар','Otwórz skrzynię, aby wybrać awatar'],
+['ВІТРИНА (до 3 предметів з інвентаря) · обрано','SHOWCASE (up to 3 items from inventory) · selected','ВИТРИНА (до 3 предметов из инвентаря) · выбрано','WITRYNA (do 3 przedmiotów z ekwipunku) · wybrano'],
+['Новачок','Newbie','Новичок','Nowicjusz'],['Колекціонер','Collector','Коллекционер','Kolekcjoner'],
+['Мисливець','Hunter','Охотник','Łowca'],['Магнат','Tycoon','Магнат','Magnat'],['Легенда','Legend','Легенда','Legenda'],
+['Міфік-мисливець','Mythic hunter','Мифик-охотник','Łowca mitów'],['Бог кейсів','God of cases','Бог кейсов','Bóg skrzyń'],
+['Сталь','Steel','Сталь','Stal'],['Смарагд','Emerald','Изумруд','Szmaragd'],['Сапфір','Sapphire','Сапфир','Szafir'],
+['Аметист','Amethyst','Аметист','Ametyst'],['Золото','Gold','Золото','Złoto'],['Рубін','Ruby','Рубин','Rubin'],
+['Префіксів поки немає','No prefixes yet','Префиксов пока нет','Brak prefiksów'],
+['Telegram-акаунт не підключено.','Telegram account not connected.','Telegram-аккаунт не подключён.','Konto Telegram nie jest połączone.'],
+['Відкрий гру через бота в Telegram, і тут зʼявиться твій профіль.','Open the game through the Telegram bot and your profile will appear here.','Открой игру через бота в Telegram, и здесь появится твой профиль.','Otwórz grę przez bota w Telegramie, a tutaj pojawi się twój profil.'],
+['без username','no username','без username','bez nazwy użytkownika'],['✈️ ВІДКРИТИ','✈️ OPEN','✈️ ОТКРЫТЬ','✈️ OTWÓRZ'],
+['ЗАКРИТИ','CLOSE','ЗАКРЫТЬ','ZAMKNIJ'],
+['ЗАПРОШУЙ ДРУЗІВ','INVITE FRIENDS','ПРИГЛАШАЙ ДРУЗЕЙ','ZAPRAŚ ZNAJOMYCH'],
+['Ти:','You:','Ты:','Ty:'],['Друг:','Friend:','Друг:','Znajomy:'],
+['за кожного друга','per friend','за каждого друга','za każdego znajomego'],
+['Запрошено друзів:','Friends invited:','Приглашено друзей:','Zaproszono znajomych:'],
+['Друзів:','Friends:','Друзей:','Znajomych:'],
+['Код друга','Friend code','Код друга','Kod znajomego'],
+['✅ Ти вже використав код друга','✅ You have already used a friend code','✅ Ты уже использовал код друга','✅ Już użyłeś kodu znajomego'],
+['КОПІЮВАТИ ПОСИЛАННЯ','COPY LINK','КОПИРОВАТЬ ССЫЛКУ','KOPIUJ LINK'],['📋 Скопійовано','📋 Copied','📋 Скопировано','📋 Skopiowano'],
+['❌ Код не знайдено','❌ Code not found','❌ Код не найден','❌ Nie znaleziono kodu'],
+['🎉 +⭐ 2 000 і 📦 ОСІННІЙ','🎉 +⭐ 2 000 and 📦 AUTUMN','🎉 +⭐ 2 000 и 📦 ОСЕННИЙ','🎉 +⭐ 2 000 i 📦 JESIENNA'],
+[' і 📦 ',' and 📦 ',' и 📦 ',' i 📦 '],
+['👥 Друзів:','👥 Friends:','👥 Друзей:','👥 Znajomych:'],
+['❌ Помилка (можливо, код вже використано)','❌ Error (the code may already be used)','❌ Ошибка (возможно, код уже использован)','❌ Błąd (kod mógł być już użyty)'],
+['⚠️ Ти вже використав код','⚠️ You have already used a code','⚠️ Ты уже использовал код','⚠️ Już użyłeś kodu'],
+/* магазин */
+['МАГАЗИН','SHOP','МАГАЗИН','SKLEP'],
+['ДЕМО-режим: реальної оплати немає','DEMO mode: no real payment','ДЕМО-режим: реальной оплаты нет','Tryb DEMO: brak prawdziwych płatności'],
+['Оплата через платіжний провайдер','Payment via payment provider','Оплата через платёжного провайдера','Płatność przez dostawcę płatności'],
+['перша покупка +25% бонус!','first purchase +25% bonus!','первая покупка +25% бонус!','pierwszy zakup +25% bonusu!'],
+['Стартовий','Starter','Стартовый','Startowy'],['Малий','Small','Малый','Mały'],['Середній','Medium','Средний','Średni'],
+['Великий','Large','Большой','Duży'],['Мега','Mega','Мега','Mega'],
+['Підключи оплату в payHook()','Connect payment in payHook()','Подключи оплату в payHook()','Podłącz płatność w payHook()'],
+['ДЕМО: реальної оплати немає.','DEMO: no real payment.','ДЕМО: реальной оплаты нет.','DEMO: brak prawdziwej płatności.'],
+['Нарахувати','Credit','Начислить','Przyznać'],
+['безкоштовно для тесту?','free for testing?','бесплатно для теста?','za darmo do testów?'],
+/* префікси */
+['ПРЕФІКСИ В ПРОДАЖІ','PREFIXES FOR SALE','ПРЕФИКСЫ В ПРОДАЖЕ','PREFIKSY NA SPRZEDAŻ'],
+['Тег біля твого ніка. Купуй на маркеті або отримуй від адміна.','A tag next to your nickname. Buy it on the market or get it from an admin.','Тег рядом с твоим ником. Покупай на маркете или получай от админа.','Tag obok twojego nicku. Kup na rynku lub dostań od admina.'],
+['МОЇ ПРЕФІКСИ','MY PREFIXES','МОИ ПРЕФИКСЫ','MOJE PREFIKSY'],
+['ЗНЯТИ ПРЕФІКС','UNEQUIP PREFIX','СНЯТЬ ПРЕФИКС','ZDEJMIJ PREFIKS'],
+['ТІЛЬКИ ДЛЯ АДМІНІВ','ADMINS ONLY','ТОЛЬКО ДЛЯ АДМИНОВ','TYLKO DLA ADMINÓW'],
+['СТВОРИТИ ПРЕФІКС','CREATE PREFIX','СОЗДАТЬ ПРЕФИКС','UTWÓRZ PREFIKS'],
+['Назва (напр. VIP)','Name (e.g. VIP)','Название (напр. VIP)','Nazwa (np. VIP)'],
+['Ціна в ⭐ на маркеті (0 = не продавати)','Price in ⭐ on market (0 = not for sale)','Цена в ⭐ на маркете (0 = не продавать)','Cena w ⭐ na rynku (0 = nie sprzedawaj)'],
+['СПИСОК','LIST','СПИСОК','LISTA'],['не продається','not for sale','не продаётся','niedostępny'],
+['ВИДАТИ ГРАВЦЮ БЕЗ ЗАПИТУ','GIVE TO A PLAYER (NO REQUEST)','ВЫДАТЬ ИГРОКУ БЕЗ ЗАПРОСА','DAJ GRACZOWI (BEZ PROŚBY)'],
+['ВИДАТИ','GIVE','ВЫДАТЬ','DAJ'],['ЗАБРАТИ ПРЕФІКС','TAKE BACK','ЗАБРАТЬ ПРЕФИКС','ZABIERZ'],
+['Вже є','Owned','Уже есть','Masz już'],['КУПИТИ','BUY','КУПИТЬ','KUP'],
+['Префікс одягнено','Prefix equipped','Префикс надет','Prefiks założony'],
+['Префікс знято','Prefix removed','Префикс снят','Prefiks zdjęty'],
+['Префікс куплено','Prefix purchased','Префикс куплен','Prefiks kupiony'],
+['Префікс видано','Prefix given','Префикс выдан','Prefiks przyznany'],
+['Префікс забрано','Prefix taken back','Префикс забран','Prefiks odebrany'],
+['Тобі видали префікс','You received a prefix','Тебе выдали префикс','Dostałeś prefiks'],
+['🎁 Тобі видали префікс','🎁 You received a prefix','🎁 Тебе выдали префикс','🎁 Dostałeś prefiks'],
+['🎁 Префікс видано','🎁 Prefix given','🎁 Префикс выдан','🎁 Prefiks przyznany'],
+['Обери гравця і префікс','Pick a player and a prefix','Выбери игрока и префикс','Wybierz gracza i prefiks'],
+['Введи назву','Enter a name','Введи название','Wpisz nazwę'],
+['✅ Префікс створено','✅ Prefix created','✅ Префикс создан','✅ Prefiks utworzony'],
+['Нова ціна ⭐ (0 = не продавати)','New price ⭐ (0 = not for sale)','Новая цена ⭐ (0 = не продавать)','Nowa cena ⭐ (0 = nie sprzedawaj)'],
+['✅ Ціну змінено','✅ Price changed','✅ Цена изменена','✅ Cena zmieniona'],
+['Видалити цей префікс?','Delete this prefix?','Удалить этот префикс?','Usunąć ten prefiks?'],
+['🗑 Видалено','🗑 Deleted','🗑 Удалено','🗑 Usunięto'],
+['↩️ Префікс знято','↩️ Prefix removed','↩️ Префикс снят','↩️ Prefiks zdjęty'],
+/* адмін-панель */
+['АДМІН-ПАНЕЛЬ','ADMIN PANEL','АДМИН-ПАНЕЛЬ','PANEL ADMINA'],['ВИЙТИ З АДМІНКИ','EXIT ADMIN','ВЫЙТИ ИЗ АДМИНКИ','WYJDŹ Z ADMINA'],
+['Гравців:','Players:','Игроков:','Graczy:'],['🚫 забанено:','🚫 banned:','🚫 забанено:','🚫 zbanowanych:'],
+['🙈 прихованo:','🙈 hidden:','🙈 скрыто:','🙈 ukrytych:'],
+['Пошук гравця (нік / uid)','Search player (nick / uid)','Поиск игрока (ник / uid)','Szukaj gracza (nick / uid)'],
+['Нікого не знайдено','No one found','Никого не найдено','Nikogo nie znaleziono'],
+['ЗАБАНИТИ','BAN','ЗАБАНИТЬ','ZBANUJ'],['РОЗБАНИТИ','UNBAN','РАЗБАНИТЬ','ODBANUJ'],
+['ПРИБРАТИ З ТОПУ','HIDE FROM TOP','УБРАТЬ ИЗ ТОПА','UKRYJ W RANKINGU'],
+['ПОКАЗАТИ В ТОПІ','SHOW IN TOP','ПОКАЗАТЬ В ТОПЕ','POKAŻ W RANKINGU'],
+['ЗІРКИ','STARS','ЗВЁЗДЫ','GWIAZDY'],['Кількість','Amount','Количество','Ilość'],
+['ВИДАТИ ПРЕДМЕТ','GIVE ITEM','ВЫДАТЬ ПРЕДМЕТ','DAJ PRZEDMIOT'],
+['Пошук (назва / рідкість)','Search (name / rarity)','Поиск (название / редкость)','Szukaj (nazwa / rzadkość)'],
+['тапни, щоб забрати','tap to take','нажми, чтобы забрать','dotknij, aby zabrać'],
+['ЗАБРАТИ ВСЕ','TAKE ALL','ЗАБРАТЬ ВСЁ','ZABIERZ WSZYSTKO'],
+['ОБНУЛИТИ АКАУНТ','RESET ACCOUNT','ОБНУЛИТЬ АККАУНТ','WYZERUJ KONTO'],
+['Обери гравця зі списку','Pick a player from the list','Выбери игрока из списка','Wybierz gracza z listy'],
+['Обери предмет','Pick an item','Выбери предмет','Wybierz przedmiot'],
+['Видано','Given','Выдано','Przyznano'],['Забрано','Taken','Забрано','Odebrano'],
+['Предмет забрано','Item taken','Предмет забран','Przedmiot odebrany'],
+['предмет вилучено','item removed','предмет изъят','przedmiot usunięty'],
+['інвентар очищено','inventory cleared','инвентарь очищен','ekwipunek wyczyszczony'],
+['акаунт обнулено','account reset','аккаунт обнулён','konto wyzerowane'],
+['Забрати ВЕСЬ інвентар?','Take the WHOLE inventory?','Забрать ВЕСЬ инвентарь?','Zabrać CAŁY ekwipunek?'],
+['Обнулити акаунт (⭐ і інвентар)?','Reset the account (⭐ and inventory)?','Обнулить аккаунт (⭐ и инвентарь)?','Wyzerować konto (⭐ i ekwipunek)?'],
+['Себе банити не можна','You cannot ban yourself','Себя банить нельзя','Nie możesz zbanować siebie'],
+['Застосовано','Applied','Применено','Zastosowano'],['Знято','Removed','Снято','Usunięto'],
+['Помилка (перевір правила бази)','Error (check database rules)','Ошибка (проверь правила базы)','Błąd (sprawdź reguły bazy)'],
+['застосовано одразу','applied immediately','применено сразу','zastosowano od razu'],
+['у черзі, застосується при вході гравця','queued, applied when the player logs in','в очереди, применится при входе игрока','w kolejce, zastosuje się po zalogowaniu gracza'],
+['застосується, коли гравець онлайн','applied when the player is online','применится, когда игрок онлайн','zastosuje się, gdy gracz będzie online'],
+['Адмін:','Admin:','Админ:','Admin:'],['🛠 Адмін-панель відкрито','🛠 Admin panel opened','🛠 Админ-панель открыта','🛠 Panel admina otwarty'],
+['АКАУНТ ЗАБЛОКОВАНО','ACCOUNT BANNED','АККАУНТ ЗАБЛОКИРОВАН','KONTO ZABLOKOWANE'],
+['Адміністратор заблокував доступ до гри.','An administrator blocked access to the game.','Администратор заблокировал доступ к игре.','Administrator zablokował dostęp do gry.'],
+['Видано ','Given ','Выдано ','Przyznano '],['Забрано ','Taken ','Забрано ','Odebrano '],
+/* новини */
+['Оголошення від адміністрації','Announcements from administration','Объявления от администрации','Ogłoszenia od administracji'],
+['Новин поки немає','No news yet','Новостей пока нет','Brak newsów'],
+['ТІЛЬКИ ДЛЯ АДМІНІВ','ADMINS ONLY','ТОЛЬКО ДЛЯ АДМИНОВ','TYLKO DLA ADMINÓW'],
+['Заголовок','Title','Заголовок','Tytuł'],['Текст новини...','News text...','Текст новости...','Treść newsa...'],
+['ОПУБЛІКУВАТИ','PUBLISH','ОПУБЛИКОВАТЬ','OPUBLIKUJ'],
+['📢 Новину опубліковано','📢 News published','📢 Новость опубликована','📢 News opublikowany'],
+['Введи текст новини','Enter the news text','Введи текст новости','Wpisz treść newsa'],
+['Видалити цю новину?','Delete this news?','Удалить эту новость?','Usunąć ten news?'],
+['🗑 Видалено','🗑 Deleted','🗑 Удалено','🗑 Usunięto'],
+['Новина','News','Новость','News'],['Адмін','Admin','Админ','Admin'],
+['📰 Нова новина','📰 New news','📰 Новая новость','📰 Nowy news'],
+['Помилка (перевір правила бази для news)','Error (check database rules for news)','Ошибка (проверь правила базы для news)','Błąd (sprawdź reguły bazy dla news)'],
+/* батл з ботом */
+['БАТЛ З БОТОМ','BOT BATTLE','БАТЛ С БОТОМ','BITWA Z BOTEM'],
+['Обидва відкривають однаковий кейс. Дорожчий дроп забирає ВСЕ. Нічия — свої предмети лишаються тобі.','Both open the same case. The more expensive drop takes EVERYTHING. A draw -- your items stay with you.','Оба открывают одинаковый кейс. Более дорогой дроп забирает ВСЁ. Ничья -- свои предметы остаются у тебя.','Oboje otwierają tę samą skrzynię. Droższy drop zabiera WSZYSTKO. Remis -- twoje przedmioty zostają przy tobie.'],
+['раунд','round','раунд','runda'],['раунди','rounds','раунда','rundy'],
+['ПОЧАТИ БАТЛ ЗА','START BATTLE FOR','НАЧАТЬ БАТЛ ЗА','ROZPOCZNIJ BITWĘ ZA'],
+['ПЕРЕМОГА! Забираєш усе','VICTORY! You take everything','ПОБЕДА! Ты забираешь всё','ZWYCIĘSTWO! Zabierasz wszystko'],
+['НІЧИЯ — свої предмети твої','DRAW -- your items are yours','НИЧЬЯ -- свои предметы твои','REMIS -- twoje przedmioty są twoje'],
+['ПРОГРАШ','DEFEAT','ПРОИГРЫШ','PORAŻKA'],
+/* PvP */
+['PVP-БАТЛИ','PVP BATTLES','PVP-БАТЛЫ','BITWY PVP'],
+['Обидва відкривають однаковий кейс. Дорожчий дроп забирає ВСІ предмети. Нічия — кожен свої.','Both open the same case. The more expensive drop takes ALL items. A draw -- everyone keeps their own.','Оба открывают одинаковый кейс. Более дорогой дроп забирает ВСЕ предметы. Ничья -- каждый свои.','Oboje otwierają tę samą skrzynię. Droższy drop zabiera WSZYSTKIE przedmioty. Remis -- każdy zachowuje swoje.'],
+['СТВОРИТИ БАТЛ ЗА','CREATE BATTLE FOR','СОЗДАТЬ БАТЛ ЗА','UTWÓRZ BITWĘ ZA'],
+['Не більше 2 відкритих батлів','No more than 2 open battles','Не больше 2 открытых батлов','Maksymalnie 2 otwarte bitwy'],
+['⚔️ Батл створено — чекаємо суперника','⚔️ Battle created -- waiting for an opponent','⚔️ Батл создан -- ждём соперника','⚔️ Bitwa utworzona -- czekamy na przeciwnika'],
+['❌ Не вдалося створити','❌ Could not create','❌ Не удалось создать','❌ Nie udało się utworzyć'],
+['↩️ Батл скасовано, ⭐ повернуто','↩️ Battle cancelled, ⭐ returned','↩️ Батл отменён, ⭐ возвращены','↩️ Bitwa anulowana, ⭐ zwrócone'],
+['Батл уже недоступний','Battle no longer available','Батл уже недоступен','Bitwa już niedostępna'],
+['Цей кейс більше недоступний','This case is no longer available','Этот кейс больше недоступен','Ta skrzynia jest już niedostępna'],
+['❌ Хтось випередив — Stars повернуто','❌ Someone was faster -- Stars returned','❌ Кто-то опередил -- Stars возвращены','❌ Ktoś był szybszy -- Stars zwrócone'],
+['⚔️ Батл виграно! Предмети в інвентарі','⚔️ Battle won! Items are in your inventory','⚔️ Батл выигран! Предметы в инвентаре','⚔️ Wygrana bitwa! Przedmioty w ekwipunku'],
+['⚔️ Батл: нічия','⚔️ Battle: draw','⚔️ Батл: ничья','⚔️ Bitwa: remis'],
+['⚔️ Батл програно','⚔️ Battle lost','⚔️ Батл проигран','⚔️ Bitwa przegrana'],
+['ВІДКРИТІ БАТЛИ','OPEN BATTLES','ОТКРЫТЫЕ БАТЛЫ','OTWARTE BITWY'],
+['Відкритих батлів немає — створи свій!','No open battles -- create your own!','Открытых батлов нет -- создай свой!','Brak otwartych bitew -- stwórz własną!'],
+['⚔️ ПРИЄДНАТИСЬ','⚔️ JOIN','⚔️ ПРИСОЕДИНИТЬСЯ','⚔️ DOŁĄCZ'],
+['ОСТАННІ БАТЛИ','RECENT BATTLES','ПОСЛЕДНИЕ БАТЛЫ','OSTATNIE BITWY'],
+['Ще не було батлів','No battles yet','Батлов ещё не было','Nie było jeszcze bitew'],
+['🏆 ПЕРЕМОГА! Ти забрав усе','🏆 VICTORY! You took everything','🏆 ПОБЕДА! Ты забрал всё','🏆 ZWYCIĘSTWO! Zabrałeś wszystko'],
+['🤝 НІЧИЯ — кожен забирає своє','🤝 DRAW -- everyone takes their own','🤝 НИЧЬЯ -- каждый забирает своё','🤝 REMIS -- każdy bierze swoje'],
+['💥 ПРОГРАШ','💥 DEFEAT','💥 ПРОИГРЫШ','💥 PORAŻKA'],
+['Ставка','Bet','Ставка','Stawka'],
+/* джекпот */
+['ГОДИННИЙ ДЖЕКПОТ','HOURLY JACKPOT','ЧАСОВОЙ ДЖЕКПОТ','GODZINNY JACKPOT'],
+['Раз на годину один гравець забирає весь банк (−5%). Шанс = твоя частка. Предмети йдуть у банк за їх ціною.','Once an hour one player takes the whole pot (−5%). Chance = your share. Items go into the pot at their price.','Раз в час один игрок забирает весь банк (−5%). Шанс = твоя доля. Предметы идут в банк по их цене.','Raz na godzinę jeden gracz zabiera całą pulę (−5%). Szansa = twój udział. Przedmioty trafiają do puli za swoją cenę.'],
+['Приймання ставок закрито','Bets are closed','Приём ставок закрыт','Przyjmowanie stawek zamknięte'],
+['Розіграш через','Draw in','Розыгрыш через','Losowanie za'],
+['Твоя ставка:','Your bet:','Твоя ставка:','Twoja stawka:'],['шанс','chance','шанс','szansa'],
+['ТВОЯ СТАВКА','YOUR BET','ТВОЯ СТАВКА','TWOJA STAWKA'],
+['+ ПРЕДМЕТИ (до 8) · обрано','+ ITEMS (up to 8) · selected','+ ПРЕДМЕТЫ (до 8) · выбрано','+ PRZEDMIOTY (do 8) · wybrano'],
+['ЗРОБИТИ СТАВКУ','PLACE BET','СДЕЛАТЬ СТАВКУ','POSTAW ZAKŁAD'],
+['Мінімум ⭐ 100. Якщо в раунді лише один гравець — ставка повертається повністю.','Minimum ⭐ 100. If only one player is in the round, the bet is fully returned.','Минимум ⭐ 100. Если в раунде только один игрок -- ставка возвращается полностью.','Minimum ⭐ 100. Jeśli w rundzie jest tylko jeden gracz, stawka wraca w całości.'],
+['ОСТАННІ ПЕРЕМОЖЦІ','RECENT WINNERS','ПОСЛЕДНИЕ ПОБЕДИТЕЛИ','OSTATNI ZWYCIĘZCY'],
+['Ще не було розіграшів','No draws yet','Розыгрышей ещё не было','Nie było jeszcze losowań'],
+['Ставку прийнято:','Bet accepted:','Ставка принята:','Zakład przyjęty:'],
+['Раунд завершується, зачекай наступного','The round is ending, wait for the next one','Раунд завершается, подожди следующего','Runda się kończy, poczekaj na następną'],
+['Поки ніхто не ставив — стань першим!','No one has bet yet -- be the first!','Пока никто не ставил -- стань первым!','Nikt jeszcze nie postawił -- bądź pierwszy!'],
+['Максимум 8 предметів','Maximum 8 items','Максимум 8 предметов','Maksymalnie 8 przedmiotów'],
+['Мінімальна ставка','Minimum bet','Минимальная ставка','Minimalny zakład'],
+['🎰 ДЖЕКПОТ!','🎰 JACKPOT!','🎰 ДЖЕКПОТ!','🎰 JACKPOT!'],
+['Ставка:','Bet:','Ставка:','Zakład:'],
+['Ставка','Bet','Ставка','Zakład'],
+/* тиждень/подія */
+['До оновлення кейса й топу:','Until the case and top refresh:','До обновления кейса и топа:','Do odnowienia skrzyni i rankingu:'],
+['УНІКАЛЬНІ NFT ЦІЄЇ ПОДІЇ (більше ніколи не випадуть)','UNIQUE NFTs OF THIS EVENT (will never drop again)','УНИКАЛЬНЫЕ NFT ЭТОГО СОБЫТИЯ (больше не выпадут)','UNIKALNE NFT TEGO WYDARZENIA (nigdy więcej nie wypadną)'],
+['ТОП ПОДІЇ','EVENT TOP','ТОП СОБЫТИЯ','RANKING WYDARZENIA'],
+['Топ події:','Event top:','Топ события:','Ranking wydarzenia:'],
+['🏆 Топ події: місце #','🏆 Event top: place #','🏆 Топ события: место #','🏆 Ranking wydarzenia: miejsce #'],
+['Очки:','Points:','Очки:','Punkty:'],['Призи:','Prizes:','Призы:','Nagrody:'],
+['Ти:','You:','Ты:','Ty:'],['очк.','pts.','очк.','pkt.'],['відкриттів','openings','открытий','otwarć'],
+['видаються автоматично після завершення події','awarded automatically after the event ends','выдаются автоматически после окончания события','przyznawane automatycznie po zakończeniu wydarzenia'],
+['Поки порожньо — відкрий кейс і стань першим!','Empty so far -- open a case and be the first!','Пока пусто -- открой кейс и стань первым!','Na razie pusto -- otwórz skrzynię i bądź pierwszy!'],
+['джекпот · PvP · кейс події і топ','jackpot · PvP · event case & top','джекпот · PvP · кейс события и топ','jackpot · PvP · skrzynia wydarzenia i ranking'],
+['🔥 ПОДІЇ','🔥 EVENTS','🔥 СОБЫТИЯ','🔥 WYDARZENIA'],
+['ЩОДЕННІ КВЕСТИ','DAILY QUESTS','ЕЖЕДНЕВНЫЕ КВЕСТЫ','CODZIENNE QUESTY'],
+['ТИЖНЕВІ КВЕСТИ','WEEKLY QUESTS','НЕДЕЛЬНЫЕ КВЕСТЫ','TYGODNIOWE QUESTY'],
+['XP до Battle Pass:','XP to Battle Pass:','XP до Battle Pass:','XP do Battle Pass:'],
+['оновлення через','refresh in','обновление через','odświeżenie za'],
+['ЗРЕСПАВНИТИ КВЕСТИ','RESPAWN QUESTS','ЗРЕСПАВНИТЬ КВЕСТЫ','ODNÓW ZADANIA'],
+['щоденні','daily','ежедневные','codzienne'],['тижневі','weekly','недельные','tygodniowe'],
+['Прогрес по них обнулиться.','Their progress will be reset.','Прогресс по ним обнулится.','Postęp zostanie wyzerowany.'],
+['🔄 Нові квести!','🔄 New quests!','🔄 Новые квесты!','🔄 Nowe zadania!'],
+['Відкрий 15 кейсів','Open 15 cases','Открой 15 кейсов','Otwórz 15 skrzyń'],
+['Зроби 3 апгрейди','Do 3 upgrades','Сделай 3 апгрейда','Zrób 3 ulepszenia'],
+['Зіграй 8 ігор','Play 8 games','Сыграй 8 игр','Zagraj 8 gier'],
+['Продай 6 предметів','Sell 6 items','Продай 6 предметов','Sprzedaj 6 przedmiotów'],
+['Виграй 1 батл','Win 1 battle','Выиграй 1 батл','Wygraj 1 bitwę'],
+['Зіграй 3 батли','Play 3 battles','Сыграй 3 батла','Zagraj 3 bitwy'],
+['Уклади контракт','Sign a contract','Заключи контракт','Zawrzyj kontrakt'],
+['Відкрий 50 кейсів','Open 50 cases','Открой 50 кейсов','Otwórz 50 skrzyń'],
+['Відкрий 100 кейсів','Open 100 cases','Открой 100 кейсов','Otwórz 100 skrzyń'],
+['Зроби 10 апгрейдів','Do 10 upgrades','Сделай 10 апгрейдов','Zrób 10 ulepszeń'],
+['Зроби 20 апгрейдів','Do 20 upgrades','Сделай 20 апгрейдов','Zrób 20 ulepszeń'],
+['Зіграй 5 батлів','Play 5 battles','Сыграй 5 батлов','Zagraj 5 bitew'],
+['Зіграй 15 батлів','Play 15 battles','Сыграй 15 батлов','Zagraj 15 bitew'],
+['Зіграй 30 ігор','Play 30 games','Сыграй 30 игр','Zagraj 30 gier'],
+['Зіграй 60 ігор','Play 60 games','Сыграй 60 игр','Zagraj 60 gier'],
+['Виконай 3 контракти','Complete 3 contracts','Выполни 3 контракта','Wykonaj 3 kontrakty'],
+['Виконай 6 контрактів','Complete 6 contracts','Выполни 6 контрактов','Wykonaj 6 kontraktów'],
+['Продай 20 предметів','Sell 20 items','Продай 20 предметов','Sprzedaj 20 przedmiotów'],
+['Продай 2 предмети','Sell 2 items','Продай 2 предмета','Sprzedaj 2 przedmioty'],
+['Відкрий 5 кейсів','Open 5 cases','Открой 5 кейсов','Otwórz 5 skrzyń'],
+['Зроби 1 апгрейд','Do 1 upgrade','Сделай 1 апгрейд','Zrób 1 ulepszenie'],
+['Зіграй 3 рази в ігри','Play games 3 times','Сыграй 3 раза в игры','Zagraj 3 razy'],
+['ОТРИМАНО','CLAIMED','ПОЛУЧЕНО','ODEBRANO'],
+['✅ ОТРИМАНО','✅ CLAIMED','✅ ПОЛУЧЕНО','✅ ODEBRANO'],
+['КОЛЕКЦІЯ NFT','NFT COLLECTION','КОЛЛЕКЦИЯ NFT','KOLEKCJA NFT'],
+['Знайдено','Found','Найдено','Znaleziono'],
+['за повну рідкість — нагорода','full rarity -- reward','за полную редкость — награда','za pełną rzadkość — nagroda'],
+['ПРЕМІУМ АКТИВНИЙ','PREMIUM ACTIVE','ПРЕМИУМ АКТИВЕН','PREMIUM AKTYWNE'],
+['PREMIUM АКТИВНИЙ','PREMIUM ACTIVE','PREMIUM АКТИВЕН','PREMIUM AKTYWNE'],
+['КУПИТИ PREMIUM ЗА','BUY PREMIUM FOR','КУПИТЬ PREMIUM ЗА','KUP PREMIUM ZA'],
+['Купити PREMIUM за','Buy PREMIUM for','Купить PREMIUM за','Kupić PREMIUM za'],
+['PREMIUM активовано','PREMIUM activated','PREMIUM активирован','PREMIUM aktywowane'],
+['Потрібен PREMIUM','PREMIUM required','Нужен PREMIUM','Wymagane PREMIUM'],
+['Друга доріжка нагород: більше ⭐, кейс кожні 5 рівнів і ексклюзивні NFT на рівнях 40, 70, 90 та 100.','Second reward track: more ⭐, a case every 5 levels and exclusive NFTs at levels 40, 70, 90 and 100.','Вторая дорожка наград: больше ⭐, кейс каждые 5 уровней и эксклюзивные NFT на уровнях 40, 70, 90 и 100.','Druga ścieżka nagród: więcej ⭐, skrzynia co 5 poziomów i ekskluzywne NFT na poziomach 40, 70, 90 i 100.'],
+['Наступний кейс','Next case','Следующий кейс','Następna skrzynia'],['Наступний приз','Next prize','Следующий приз','Następna nagroda'],
+['Усі призи відкрито','All prizes unlocked','Все призы открыты','Wszystkie nagrody odblokowane'],
+['ЗАБРАТИ ВСЕ ДОСТУПНЕ','CLAIM ALL AVAILABLE','ЗАБРАТЬ ВСЁ ДОСТУПНОЕ','ODBIERZ WSZYSTKO DOSTĘPNE'],
+['Сезон','Season','Сезон','Sezon'],['лишилось','left','осталось','zostało'],
+['Всього','Total','Всего','Razem'],
+['СЕЗОННИЙ ТОП','SEASON TOP','СЕЗОННЫЙ ТОП','RANKING SEZONU'],
+['Призи за сезон:','Season prizes:','Призы за сезон:','Nagrody za sezon:'],
+['Поки порожньо','Empty so far','Пока пусто','Na razie pusto'],
+['ЗАБРАТИ ПРИЗ ЗА МИНУЛИЙ СЕЗОН','CLAIM PRIZE FOR LAST SEASON','ЗАБРАТЬ ПРИЗ ЗА ПРОШЛЫЙ СЕЗОН','ODBIERZ NAGRODĘ ZA POPRZEDNI SEZON'],
+['🎁 ЗАБРАТИ ПРИЗ','🎁 CLAIM PRIZE','🎁 ЗАБРАТЬ ПРИЗ','🎁 ODBIERZ NAGRODĘ'],
+['Вже отримано','Already claimed','Уже получено','Już odebrano'],
+['Недостатньо','Not enough','Недостаточно','Za mało'],
+['Призи','Prizes','Призы','Nagrody'],
+['місце','place','место','miejsce'],
+['🏆 Місце','🏆 Place','🏆 Место','🏆 Miejsce'],
+/* маркет */
+['ЛОТИ','LOTS','ЛОТЫ','OFERTY'],['ЗНЯТИ','REMOVE','СНЯТЬ','ZDEJMIJ'],
+['Лотів поки немає','No lots yet','Лотов пока нет','Brak ofert'],
+['Лот недоступний','Lot unavailable','Лот недоступен','Oferta niedostępna'],
+['Лот уже недоступний','Lot no longer available','Лот уже недоступен','Oferta już niedostępna'],
+['Виставлено','Listed','Выставлено','Wystawiono'],
+['Тапни предмет → введи ціну. Комісія 5% з продажу.','Tap an item → enter a price. 5% fee on sales.','Нажми предмет → введи цену. Комиссия 5% с продажи.','Dotknij przedmiotu → wpisz cenę. Prowizja 5% od sprzedaży.'],
+['Ціна в ⭐ для ','Price in ⭐ for ','Цена в ⭐ для ','Cena w ⭐ za '],
+[' (оцінка ≈ ',' (estimate ≈ ',' (оценка ≈ ',' (wycena ≈ '],
+['комісія','fee','комиссия','prowizja'],
+['Максимум 20 лотів','Maximum 20 lots','Максимум 20 лотов','Maksymalnie 20 ofert'],
+['❌ Не вдалося виставити','❌ Could not list','❌ Не удалось выставить','❌ Nie udało się wystawić'],
+['↩️ Лот знято','↩️ Lot removed','↩️ Лот снят','↩️ Oferta zdjęta'],
+['↩️ Предмет повернуто','↩️ Item returned','↩️ Предмет возвращён','↩️ Przedmiot zwrócony'],
+['💰 Продано:','💰 Sold:','💰 Продано:','💰 Sprzedano:'],
+['✅ Куплено:','✅ Bought:','✅ Куплено:','✅ Kupiono:'],
+['Тобі','You','Тебе','Ty'],
+/* прочее UI */
+['Гравець','Player','Игрок','Gracz'],
+['⏳ ','⏳ ','⏳ ','⏳ '],
+['Недостатньо Stars ⭐','Not enough Stars ⭐','Недостаточно Stars ⭐','Za mało Stars ⭐'],
+['❌ Недостатньо Stars ⭐','❌ Not enough Stars ⭐','❌ Недостаточно Stars ⭐','❌ Za mało Stars ⭐'],
+['Тіло','Body','Тело','Ciało'],
+['ОСТАННІ','RECENT','ПОСЛЕДНИЕ','OSTATNIE'],
+['Офлайн','Offline','Офлайн','Offline'],
+['ЛІМІТ','LIMIT','ЛИМИТ','LIMIT'],
+['НАЙРІДКІСНІШЕ','RAREST','САМОЕ РЕДКОЕ','NAJRZADSZE'],
+['Очікування','Waiting','Ожидание','Oczekiwanie'],
+['Наступний','Next','Следующий','Następny'],
+];
+
+const IX17={en:1,ru:2,pl:3};
+const M17={};D17.forEach(r=>{if(r&&r[0]&&r[0]!==r[1]||r[0]===r[1])M17[r[0]]=r});
+const K17=Object.keys(M17).sort((a,b)=>b.length-a.length);
+const L17=LSget('sn_lang','en')||'en';
+const esc17=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const RX17=new RegExp('(?<![\\u0400-\\u04FF\\u02BC])(?:'+K17.map(esc17).join('|')+')(?![\\u0400-\\u04FF\\u02BC])','g');
+const tr17=s=>{
+  if(L17==='uk'||!IX17[L17])return s;
+  return String(s).replace(RX17,m=>{const r=M17[m];return (r&&r[IX17[L17]])||m});
+};
+
+/* переклад вузлів, плейсхолдерів і title */
+const SKIP17=/^(SCRIPT|STYLE|TEXTAREA|INPUT)$/;
+function fixText(n){
+  const v=n.nodeValue;if(!v||!/[\u0400-\u04FF]/.test(v))return;
+  const p=n.parentNode;if(!p||SKIP17.test(p.nodeName))return;
+  if(v.indexOf('\u2063')>=0)return;                         /* префікси гравців не чіпаємо */
+  if(p.closest&&p.closest('[data-nt],[style*="user-select:text"]'))return; /* чат і новини гравців */
+  const o=tr17(v);if(o!==v)n.nodeValue=o;
+}
+function fixAttrs(e){
+  ['placeholder','title'].forEach(a=>{
+    const v=e.getAttribute(a);if(v==null)return;
+    const k='o17'+(a==='title'?'T':'P');
+    if(/[\u0400-\u04FF]/.test(v))e.dataset[k]=v;
+    const src=e.dataset[k];if(!src)return;
+    const out=tr17(src);if(out!==v)e.setAttribute(a,out);
+  });
+}
+function walk17(root){
+  if(root.nodeType===3){fixText(root);return}
+  if(root.nodeType!==1)return;
+  if(root.hasAttribute&&(root.hasAttribute('placeholder')||root.hasAttribute('title')))fixAttrs(root);
+  root.querySelectorAll('[placeholder],[title]').forEach(fixAttrs);
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;const L=[];
+  while((n=w.nextNode()))L.push(n);
+  L.forEach(fixText);
+}
+if(L17!=='uk'){
+  new MutationObserver(ms=>{
+    for(const m of ms){
+      if(m.type==='characterData')fixText(m.target);
+      else m.addedNodes.forEach(walk17);
+    }
+  }).observe(document.body,{childList:true,subtree:true,characterData:true});
+  walk17(document.body);
+}
+
+/* зміна мови: перезавантаження, щоб переклад був з чистого тексту */
+const _sl17=window.setLang;
+window.setLang=function(c){
+  const was=L17;
+  if(_sl17)_sl17(c);
+  if(c!==was)setTimeout(()=>location.reload(),80);
+};
+const _cf17=window.confirm,_pr17=window.prompt;
+window.confirm=m=>_cf17(tr17(m));
+window.prompt=(m,d)=>_pr17(tr17(m),d);
+
+/* ---------------------------------------------------------------
+   2. ШВИДКА LIVE-СТРІЧКА
+---------------------------------------------------------------- */
+const _tk17=ticker;
+ticker=function(){
+  let h=_tk17();
+  if(h.indexOf('lvs mq')>=0){
+    const n=(h.match(/class="lvc/g)||[]).length/2;
+    h=h.replace(/--d:[\d.]+s/,'--d:'+Math.max(8,n*1.1).toFixed(1)+'s');   /* ~1.1 с на картку (було 5 с) */
+  }
+  return h;
+};
+let fdSig='',fdOn=0;
+function fastFeed(){
+  if(fdOn)return;fdOn=1;
+  firebase.database().ref('feed').orderByKey().limitToLast(40).on('value',s=>{
+    const L=[];s.forEach(c=>{const v=c.val();if(v)L.push(v)});
+    ON.fd=L;ON.fdl=true;
+    const sig=L.length+'|'+(L.length?(L[L.length-1].ts||0):0);
+    if(sig===fdSig)return;fdSig=sig;
+    const e=$('lvf');if(e&&S.tab==='home'&&!S.spin)e.outerHTML=ticker();
+  },()=>{ON.fdl=true});
+}
+
+/* ---------------------------------------------------------------
+   3. РЕЄСТР АДМІНІВ + ВІКНО В ТАБЛИЦІ ЛІДЕРІВ
+---------------------------------------------------------------- */
+const ADMC17='ADMIN4444';
+const isA17=()=>!!(ME&&LSget('sn_adm',{})[ME]);
+ON.adm=ON.adm||{};
+function admReg17(){
+  if(!ON.ready||!ON.uid||!isA17())return;
+  firebase.database().ref('admins/'+ON.uid).set({name:(users()[ME]||{}).n||'Admin',ts:Date.now()}).catch(()=>{});
+}
+const _rd17=redeem;
+redeem=function(){
+  const c=(($('pc')||{}).value||'').trim().toUpperCase();
+  _rd17();
+  if(c===ADMC17)setTimeout(admReg17,400);
+};
+const _ao17=window.admOff;
+window.admOff=function(){
+  if(ON.ready&&ON.uid)firebase.database().ref('admins/'+ON.uid).remove().catch(()=>{});
+  _ao17();
+};
+window.admWin17=function(){
+  const L=Object.entries(ON.adm||{}).filter(([k,v])=>v&&v.name);
+  mc.innerHTML=`<div class="space-y-2"><div class="text-xs font-black tracking-widest text-red-300">🛠 АДМІНІСТРАТОРИ</div>
+  ${L.length?L.map(([k,v])=>`<div class="flex items-center justify-between gap-2 bg-slate-800/50 rounded-xl px-3 py-2"><span class="text-[11px] font-black truncate">${dot(k)} ${esc(v.name)}${k===ON.uid?' (ТИ)':''}</span><span class="text-[9px] text-slate-400 shrink-0">${lastSeen(k)}</span></div>`).join(''):'<div class="text-[10px] text-slate-500 py-4">Адміністраторів немає</div>'}
+  <button onclick="closeModal()" class="w-full py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-extrabold mt-2">ЗАКРИТИ</button></div>`;
+  ov.style.display='flex';setTimeout(()=>mc.classList.remove('scale-95','opacity-0'),10);
+};
+const _rt17=renderTop;
+renderTop=function(m){
+  _rt17(m);
+  if(!ON.ready)return;
+  const w=m.firstElementChild;if(!w)return;
+  const n=Object.keys(ON.adm||{}).length;
+  w.insertAdjacentHTML('afterbegin',`<button onclick="admWin17()" class="w-full py-2.5 rounded-2xl bg-red-500/15 border border-red-500/40 text-red-200 text-[11px] font-black">🛠 АДМІНИ · ${n} · натисни, щоб переглянути</button>`);
+};
+
+/* ---------------------------------------------------------------
+   4. ПІДКЛЮЧЕННЯ
+---------------------------------------------------------------- */
+const _ob17=onlineBoot;
+onlineBoot=async function(){
+  const r=await _ob17();
+  if(r&&!ON.s17){
+    ON.s17=1;
+    firebase.database().ref('admins').on('value',s=>{
+      ON.adm=s.val()||{};
+      if(S.tab==='top'&&!S.spin)go('top',null,true);
+    },()=>{});
+    fastFeed();
+    admReg17();
+  }
+  return r;
+};
+})();
+// ===================== END PATCH v17 =====================
+// ===================== PATCH v18: LIVE-СТРІЧКА БЕЗ ПОВТОРІВ, МОЖЕ ЗУПИНЯТИСЬ =====================
+(function(){
+
+/* Стрічка більше не дублюється. Вона прокручується один раз (від правого краю до лівого),
+   показує кожен дроп одним разом і зупиняється, коли прокрутку закінчено.
+   Нові дропи додаються на початок і проїжджають один раз. */
+
+const css18=`
+.lvs2{position:relative;overflow:hidden;height:72px}
+.lvs2 .lvrow{display:flex;gap:8px;width:max-content;position:absolute;left:0;top:0;height:100%;align-items:center;
+  transform:translate3d(var(--x,0px),0,0);will-change:transform}
+.lvs2.run .lvrow{transition:transform var(--d,6s) linear}
+`;
+const st18=document.createElement('style');st18.id='lv18';st18.textContent=css18;document.head.appendChild(st18);
+
+/* стан стрічки: id уже показаних дропів (щоб не дублювати) */
+const LV18={seen:new Set(),queue:[],busy:false,x:0,wid:0,timer:0,first:true};
+
+function keyOf(f){return (f.ts||0)+'|'+(f.uid||'')+'|'+(f.id||'')+'|'+(f.t||'')}
+
+/* малюємо один рядок-картку через feedCard з попереднього патча */
+function cardOf(f,isNew){
+  return typeof feedCard==='function'?feedCard(f,isNew?0:1):'';
+}
+
+/* будуємо стрічку: один прохід, без копій; якщо елементів мало, просто стоїть */
+function ticker(){
+  const L=(ON.fd||[]).slice().reverse();          /* від найновіших до старих */
+  const n=L.length;
+  let body;
+  if(!ON.ready)body='<div class="lvE">Підключення до онлайну…</div>';
+  else if(!ON.fdl)body='<div class="lvE">Завантаження…</div>';
+  else if(!n)body='<div class="lvE">Поки тихо — відкрий кейс, і твій дроп першим з’явиться тут 🔥</div>';
+  else{
+    const cards=L.map((f,i)=>cardOf(f,i===0&&nowS18()-(f.ts||0)<10000)).filter(Boolean).join('');
+    /* прокрутка лише коли контент ширший за вікно; інакше стоїть нерухомо */
+    body=`<div class="lvs2" id="lvs2"><div class="lvrow" id="lvrow">${cards}</div></div>`;
+  }
+  return `<div id="lvf" class="lvw"><div class="lvh"><span class="text-red-400"><i class="lvd"></i>LIVE</span><span class="text-slate-500">реальні дропи · ${n}</span></div>${body}</div>`;
+}
+function nowS18(){return Date.now()+(typeof JP!=='undefined'&&JP.off?JP.off:0)}
+
+/* після вставки в DOM: запускаємо одноразову прокрутку, тільки для нових дропів */
+function runOnce(){
+  const box=document.getElementById('lvs2'),row=document.getElementById('lvrow');
+  if(!box||!row)return;
+  const W=box.clientWidth,C=row.scrollWidth;
+  if(C<=W){row.style.transform='translate3d(0,0,0)';return}      /* мало елементів: стоїть */
+  const fresh=(ON.fd||[]).length&&nowS18()-((ON.fd[ON.fd.length-1]||{}).ts||0)<12000;
+  const dist=C-W;
+  const dur=Math.min(14,Math.max(5,dist/90));                     /* ~90 px/с, від 5 до 14 с */
+  box.classList.remove('run');void box.offsetWidth;
+  row.style.setProperty('--x','0px');
+  box.classList.add('run');
+  row.style.setProperty('--d',dur+'s');
+  row.style.transform='translate3d(-'+dist+'px,0,0)';             /* один прохід зліва направо */
+  clearTimeout(LV18.timer);
+  LV18.timer=setTimeout(()=>{if(box.isConnected)box.classList.remove('run')},dur*1000+200);
+}
+
+/* перерисовка тільки коли прийшло щось нове (порівнюємо ключі дропів) */
+let sig18='';
+function redraw18(){
+  if(!$('lvf')||S.tab!=='home'||S.spin)return;
+  const L=(ON.fd||[]);
+  const s=L.map(keyOf).join(';');
+  if(s===sig18)return;
+  sig18=s;
+  $('lvf').outerHTML=ticker();
+  requestAnimationFrame(runOnce);
+}
+
+/* підключаємо: заміна глобальних функцій, які викликає решта коду */
+ticker=ticker;
+const _fs18=typeof fastFeed==='function'?fastFeed:null;
+window.lvRedraw18=redraw18;
+const origSub=function(){
+  if(!ON.ready||!firebase||!firebase.database)return;
+  if(ON._lv18)return;ON._lv18=1;
+  firebase.database().ref('feed').orderByKey().limitToLast(40).on('value',s=>{
+    const L=[];s.forEach(c=>{const v=c.val();if(v)L.push(v)});
+    ON.fd=L;ON.fdl=true;
+    redraw18();
+  },()=>{ON.fdl=true});
+};
+const _ob18=onlineBoot;
+onlineBoot=async function(){
+  const r=await _ob18();
+  if(r)setTimeout(origSub,0);
+  return r;
+};
+
+/* коли відкриваєш головну, стрічка малюється заново і проходить один раз */
+const _rh18=renderHome;
+renderHome=function(m){
+  sig18='';
+  _rh18(m);
+  requestAnimationFrame(runOnce);
+};
+
+})();
+// ===================== END PATCH v18 =====================
 /* ============ INIT ============ */
 hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
