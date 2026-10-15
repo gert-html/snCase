@@ -4008,6 +4008,108 @@ setInterval(()=>{
 },1000);
 })();
 // ===================== END PATCH v15 =====================
+// ===================== PATCH v16: КОЖЕН NFT УНІКАЛЬНИЙ =====================
+// ВСТАВ ПІСЛЯ "END PATCH v15" і ПЕРЕД блоком  /* ============ INIT ============ */
+// Що робить (без змін у даних, інвентарях, трейдах чи базі -- змінюється лише малюнок):
+//  1. Предмети з однаковою формою і палітрою (напр. всі gem/pal 0) отримують різний відтінок (golden-angle hue shift).
+//  2. Кожен такий предмет отримує свою емблему в куті (зірка, кільце, ромб, трикутник, блискавка, місяць, хрест, крапки)
+//     з однією з 3 позицій -- комбінація унікальна в межах групи.
+//  3. Кожен предмет має власну "сигілу" 5x5 (як identicon) у правому нижньому куті. Вона будується з порядкового
+//     номера предмета (перетворення бієктивне, тому 2 предмети НІКОЛИ не матимуть однакову сигілу).
+//  Порядок номерів = порядок створення предметів у коді, тож нові предмети (в кінець) не змінюють вигляд старих.
+(function(){
+
+/* ---------- кольори ---------- */
+const hx=c=>{const n=parseInt(String(c).slice(1),16);return[n>>16&255,n>>8&255,n&255]};
+function rgb2hsl(r,g,b){
+  r/=255;g/=255;b/=255;const M=Math.max(r,g,b),m=Math.min(r,g,b),l=(M+m)/2;let h=0,s=0;
+  if(M!==m){const d=M-m;s=l>.5?d/(2-M-m):d/(M+m);h=M===r?(g-b)/d+(g<b?6:0):M===g?(b-r)/d+2:(r-g)/d+4;h*=60}
+  return[h,s,l];
+}
+function hsl2hex(h,s,l){
+  h=((h%360)+360)%360;const a=s*Math.min(l,1-l),f=n=>{const k=(n+h/30)%12;return l-a*Math.max(-1,Math.min(k-3,9-k,1))};
+  const t=x=>Math.round(x*255).toString(16).padStart(2,'0');return'#'+t(f(0))+t(f(8))+t(f(4));
+}
+function shiftCol(c,deg){
+  const [r,g,b]=hx(c),[h,s,l]=rgb2hsl(r,g,b);
+  if(l>.93||l<.06)return c;                 /* майже білий/чорний лишаємо */
+  return hsl2hex(h+deg,s<.2?.45:s,l);       /* сірі колір трохи "підфарбовуємо", щоб зсув було видно */
+}
+
+/* ---------- реєстр: порядковий номер і номер у групі (форма+палітра) ---------- */
+let IDX={},GCNT={};
+function rebuild(){
+  IDX={};GCNT={};let g=0;
+  Object.getOwnPropertyNames(ITEMS).forEach(id=>{
+    const it=ITEMS[id];if(!it||!it.id)return;
+    const key=it.kind+'|'+it.pal,v=GCNT[key]||0;GCNT[key]=v+1;
+    IDX[id]={g:g++,v};
+  });
+}
+
+/* ---------- емблеми (центр у 0,0, розмір ~7) ---------- */
+function star(){let p='';for(let i=0;i<10;i++){const r=i%2?3:7,a=(-90+36*i)*Math.PI/180;p+=(r*Math.cos(a)).toFixed(1)+','+(r*Math.sin(a)).toFixed(1)+' '}return`<polygon points="${p}"/>`}
+const EMB=[
+  null,
+  star,
+  ()=>'<circle r="5.2" fill="none" stroke-width="2.6" stroke="inherit"/>',
+  ()=>'<polygon points="0,-7 6,0 0,7 -6,0"/>',
+  ()=>'<polygon points="0,-7 7,5.5 -7,5.5"/>',
+  ()=>'<polygon points="2,-8 -4,1 0,1 -2,8 5,-2 1,-2"/>',
+  ()=>'<path d="M1,-7A7,7 0 1 0 6,4A5.4,5.4 0 1 1 1,-7Z"/>',
+  ()=>'<rect x="-6" y="-2" width="12" height="4" rx="1"/><rect x="-2" y="-6" width="4" height="12" rx="1"/>',
+  ()=>'<circle cx="0" cy="-4" r="2.6"/><circle cx="-4" cy="3" r="2.6"/><circle cx="4" cy="3" r="2.6"/>'
+];
+const POS=[[13,13],[87,13],[13,87]];
+
+/* ---------- сигіла 5x5 з порядкового номера ---------- */
+function sigil(g,col){
+  const x=(((g+1)*12345)&32767),cell=3.4;let s=`<g transform="translate(77 77)"><rect width="21" height="21" rx="3" fill="#050810" fill-opacity=".62" stroke="${col}" stroke-opacity=".55" stroke-width=".8"/>`;
+  for(let r=0;r<5;r++)for(let c=0;c<3;c++){
+    if(!((x>>(r*3+c))&1))continue;
+    s+=`<rect x="${(2+c*cell).toFixed(1)}" y="${(2+r*cell).toFixed(1)}" width="${cell-.3}" height="${cell-.3}" fill="${col}"/>`;
+    if(c<2)s+=`<rect x="${(2+(4-c)*cell).toFixed(1)}" y="${(2+r*cell).toFixed(1)}" width="${cell-.3}" height="${cell-.3}" fill="${col}"/>`;
+  }
+  return s+'</g>';
+}
+
+/* ---------- побудова унікального вигляду ---------- */
+const U16={};
+function build(id){
+  let info=IDX[id];
+  if(!info){rebuild();info=IDX[id]}
+  const base=ITEMS[id];if(!base||!info)return null;
+  const v=info.v;let pal=base.pal;
+  if(v>0){
+    const deg=(v*137.508)%360,p=PAL[base.pal]||PAL[0];
+    PAL.push([shiftCol(p[0],deg),shiftCol(p[1],deg),shiftCol(p[2],deg)]);
+    pal=PAL.length-1;
+  }
+  const p2=PAL[pal],light=p2[0];
+  let extra='';
+  const emb=EMB[v%9];
+  if(emb){
+    const pos=POS[Math.floor(v/9)%3];
+    extra+=`<g transform="translate(${pos[0]} ${pos[1]})" fill="${light}" stroke="${light}" stroke-width="1.4" stroke-opacity=".0"><g stroke="#000" stroke-opacity=".55" stroke-width="1.2" stroke-linejoin="round">${emb()}</g></g>`;
+  }
+  extra+=sigil(info.g,light);
+  return{it2:Object.assign({},base,{pal}),extra};
+}
+
+const _art16=art;
+art=function(it){
+  const id=it&&it.id;
+  if(!id||!ITEMS[id])return _art16(it);
+  let u=U16[id];
+  if(u===undefined){u=U16[id]=build(id)||null}
+  if(!u)return _art16(it);
+  const s=_art16(u.it2);
+  const i=s.lastIndexOf('</svg>');
+  return i<0?s:s.slice(0,i)+u.extra+'</svg>';
+};
+window.nftNo=id=>{if(!IDX[id])rebuild();return IDX[id]?IDX[id].g+1:0};   /* № предмета: nftNo('c0') */
+})();
+// ===================== END PATCH v16 =====================
 /* ============ INIT ============ */
 hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
