@@ -5043,6 +5043,112 @@ if('IntersectionObserver' in window){
 sync();
 })();
 // ===================== END PATCH v19 =====================
+// ===================== PATCH v20: МУЛЬТИ-АПГРЕЙД (кілька предметів за комісію) =====================
+// ВСТАВ ПІСЛЯ "END PATCH v19" і ПЕРЕД блоком  /* ============ INIT ============ */
+// Як працює:
+//  • Обираєш від 1 до UPMAX предметів. Сума їх цін × множник = стеля цілі.
+//  • 1 предмет -- безкоштовно (як раніше). 2+ предметів -- комісія в ⭐.
+//  • Комісія = 5% від суми цін обраних предметів, але не менше 100 ⭐ за кожен додатковий предмет.
+//  • Шанс залежить лише від множника (як і раніше). Виграш -- отримуєш ціль, програш -- ВСІ обрані предмети згорають.
+(function(){
+const UPMAX=10;      /* максимум предметів за раз */
+const UPFEE=.05;     /* 5% від суми цін */
+const UPMIN=100;     /* мінімум ⭐ за кожен додатковий предмет */
+
+UP.ms=[];
+
+const upItems=()=>{
+  UP.ms=UP.ms.filter(u=>S.inv.some(e=>e.uid===u));
+  return S.inv.filter(e=>UP.ms.includes(e.uid)&&ITEMS[e.id]&&!ITEMS[e.id].isCase);
+};
+const upSum=sel=>sel.reduce((s,e)=>s+ITEMS[e.id].val,0);
+const upFee=sel=>sel.length>1?Math.max(UPMIN*(sel.length-1),Math.round(upSum(sel)*UPFEE)):0;
+const upTgt=(sel)=>{
+  if(!sel.length)return null;
+  const sum=upSum(sel),t=upTarget(sum,UP.mult);
+  return (t&&t.val>sum)?t:null;      /* ціль має бути дорожчою за те, що ставиш */
+};
+
+/* ---------- вибір предметів ---------- */
+window.upTg=function(u){
+  if(UP.busy||S.spin)return;
+  const i=UP.ms.indexOf(u);
+  if(i>=0)UP.ms.splice(i,1);
+  else{
+    if(UP.ms.length>=UPMAX)return toast('Максимум '+UPMAX+' предметів');
+    UP.ms.push(u);
+  }
+  upRender();
+};
+window.upClear=function(){if(UP.busy)return;UP.ms=[];upRender()};
+window.upAll=function(){
+  if(UP.busy)return;
+  UP.ms=S.inv.filter(e=>ITEMS[e.id]&&!ITEMS[e.id].isCase).sort((a,b)=>ITEMS[a.id].val-ITEMS[b.id].val).slice(0,UPMAX).map(e=>e.uid);
+  upRender();
+};
+
+/* ---------- інтерфейс ---------- */
+upHTML=function(){
+  const inv=S.inv.filter(e=>ITEMS[e.id]&&!ITEMS[e.id].isCase).sort((a,b)=>ITEMS[a.id].val-ITEMS[b.id].val);
+  const sel=UP.busy?[]:upItems(),sum=upSum(sel),fee=upFee(sel),tgt=upTgt(sel),ch=upCh(UP.mult);
+  const col=ch>=60?'#a3e635':ch>=30?'#fbbf24':'#f87171',lbl=ch>=60?'ВИСОКИЙ ШАНС':ch>=30?'СЕРЕДНІЙ ШАНС':'НИЗЬКИЙ ШАНС';
+  const C=2*Math.PI*82,len=C*ch/100;
+  const base=sel[0]?ITEMS[sel[0].id]:null;
+  const gauge=`<div class="relative mx-auto" style="width:240px;height:240px"><svg viewBox="0 0 200 200" class="absolute inset-0 w-full h-full"><defs><linearGradient id="ugl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#facc15"/><stop offset="1" stop-color="#ef4444"/></linearGradient><linearGradient id="ugw" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bef264"/><stop offset="1" stop-color="#22c55e"/></linearGradient></defs>
+  <circle cx="100" cy="100" r="96" fill="none" stroke="#1f2937" stroke-width="2"/>
+  <circle cx="100" cy="100" r="82" fill="none" stroke="url(#ugl)" stroke-width="14" opacity=".5"/>
+  <circle cx="100" cy="100" r="82" fill="none" stroke="url(#ugw)" stroke-width="14" stroke-dasharray="${len} ${C}" transform="rotate(-90 100 100)" style="filter:drop-shadow(0 0 5px #84cc16)"/>
+  <circle cx="100" cy="100" r="66" fill="#10151f"/></svg>
+  <div id="uptr" class="absolute inset-0" style="transform:rotate(${UP.rot}deg)"><div style="position:absolute;top:2px;left:50%;transform:translateX(-50%);color:#facc15;font-size:22px;line-height:1;filter:drop-shadow(0 0 4px #facc15)">▼</div></div>
+  <div class="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+   ${sel.length&&tgt?`<div class="flex items-center gap-1"><div class="w-9 h-9 relative">${art(base)}${sel.length>1?`<b class="absolute -top-1 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-fuchsia-500 text-black text-[9px] flex items-center justify-center">×${sel.length}</b>`:''}</div><span class="text-xs">➜</span><div class="w-9 h-9">${art(tgt)}</div></div>`:`<div class="text-[10px] font-black text-slate-500 text-center px-6">${sel.length?'ЗАНАДТО ДОРОГО — ЗМЕНШ СУМУ':'ОБЕРИ ПРЕДМЕТИ'}</div>`}
+   <div class="text-2xl font-black" style="color:${col}">${ch}%</div><div class="text-[9px] font-bold" style="color:${col}">${lbl}</div></div></div>`;
+  const info=sel.length?`<div class="bg-slate-800/50 rounded-xl p-2.5 text-[11px] font-black space-y-1">
+   <div class="flex justify-between"><span class="text-slate-400">Обрано</span><span>${sel.length} / ${UPMAX}</span></div>
+   <div class="flex justify-between"><span class="text-slate-400">Сума цін</span><span class="text-amber-300">⭐ ${fmt(sum)}</span></div>
+   ${tgt?`<div class="flex justify-between"><span class="text-slate-400">Ціна цілі (${esc(tgt.name)})</span><span class="text-cyan-300">⭐ ${fmt(tgt.val)}</span></div>`:''}
+   <div class="flex justify-between"><span class="text-slate-400">Комісія за мульти-апгрейд</span><span class="${fee>S.stars?'text-red-400':'text-fuchsia-300'}">${fee?'⭐ '+fmt(fee):'безкоштовно'}</span></div></div>`:'';
+  return `<div id="up" class="glass p-4 rounded-3xl space-y-3 mt-4"><div class="text-center"><h2 class="text-sm font-black tracking-widest text-fuchsia-400">⚡ АПГРЕЙД</h2><p class="text-[10px] text-slate-400">Став кілька предметів разом (до ${UPMAX}). Виграєш -- отримаєш дорожчий, програєш -- згорять усі. 2+ предметів = комісія ${UPFEE*100}% (мін. ⭐ ${UPMIN} за кожен додатковий).</p></div>
+  <div class="flex justify-center gap-2">${[2,3,5,10].map(x=>`<button onclick="UP.mult=${x};upRender()" class="px-3 py-1 rounded-xl text-xs font-black ${UP.mult===x?'bg-fuchsia-500 text-black':'bg-slate-800 text-slate-300'}">X${x}</button>`).join('')}</div>
+  ${gauge}${info}
+  ${sel.length&&tgt?`<button id="upbtn" onclick="upGo()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-fuchsia-500 to-purple-600 text-black font-black text-xs uppercase active:scale-95 transition">РИЗИКНУТИ 🎲${fee?' · ⭐ '+fmt(fee):''}</button>`:''}
+  ${inv.length?`<div class="flex gap-2"><button onclick="upAll()" class="flex-1 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-[10px] font-extrabold">ОБРАТИ ${Math.min(UPMAX,inv.length)} НАЙДЕШЕВШИХ</button><button onclick="upClear()" class="flex-1 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-[10px] font-extrabold">СКИНУТИ</button></div>
+  <div class="grid grid-cols-4 gap-1.5 max-h-44 overflow-y-auto nos">${inv.map(e=>tcard(ITEMS[e.id],UP.ms.includes(e.uid),`upTg(${e.uid})`)).join('')}</div>`:'<div class="text-center text-[10px] text-slate-500">Відкрий кейс -- і повертайся сюди</div>'}</div>`;
+};
+upRender=function(){if(UP.busy)return;const e=$('up');if(e)e.outerHTML=upHTML()};
+
+/* ---------- сам апгрейд ---------- */
+upGo=function(){
+  if(UP.busy||S.spin)return;
+  const sel=upItems(),tgt=upTgt(sel);
+  if(!sel.length||!tgt)return;
+  const fee=upFee(sel);
+  if(S.stars<fee)return toast('❌ Недостатньо Stars для комісії ⭐ '+fmt(fee));
+  const ch=upCh(UP.mult),win=Math.random()*100<ch,za=ch*3.6,ang=win?4+Math.random()*(za-8):za+4+Math.random()*(352-za);
+  const ids=sel.map(e=>e.uid);
+  UP.busy=S.spin=true;
+  S.stars-=fee;S.inv=S.inv.filter(e=>!ids.includes(e.uid));UP.ms=[];
+  qAdd('upg');save();
+  const b=$('upbtn');if(b){b.disabled=true;b.classList.add('opacity-50')}
+  const p=$('uptr');UP.rot=UP.rot-UP.rot%360+1800+ang;
+  p.style.transition='transform 4.5s cubic-bezier(.12,.8,.15,1)';p.style.transform=`rotate(${UP.rot}deg)`;
+  AU.tone(220,0,1.2,'sawtooth',.05);
+  for(let i=1;i<=32;i++)setTimeout(()=>AU.tick(),4500*Math.pow(i/32,.55));
+  setTimeout(()=>{
+    UP.busy=S.spin=false;UP.sel=null;
+    if(win){
+      S.inv.push({id:tgt.id,uid:nid(S)});save();AU.win(tgt.rarity);confetti(60);
+      if(RAR.indexOf(tgt.rarity)>=3)shake();
+      toast('🔥 УСПІХ! '+tgt.name);addXP(40+10*(ids.length-1));
+    }else{
+      AU.tone(110,0,.6,'square',.1);shake();
+      toast('💥 Не пощастило -- згоріло предметів: '+ids.length);addXP(10);
+    }
+    upRender();
+  },4700);
+};
+})();
+// ===================== END PATCH v20 =====================
 /* ============ INIT ============ */
 hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
