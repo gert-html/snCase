@@ -5149,6 +5149,360 @@ upGo=function(){
 };
 })();
 // ===================== END PATCH v20 =====================
+// ===================== PATCH v21: ГЛОБАЛЬНЕ ОНОВЛЕННЯ 2.0 «НОВА ЕРА» =====================
+// ВСТАВ ПІСЛЯ "END PATCH v20" і ПЕРЕД блоком  /* ============ INIT ============ */
+(function(){
+/* ---- НАЛАШТУВАННЯ: які кейси прибрати з продажу (лишаються в інвентарях і відкриваються звідти) ---- */
+const RETIRE=['space','diamond','cyber','gold','shadow','dragon','ocean','neon','frozen','candy','thunder','forest','autumn','halloween','newyear','valentine','summer','pirate'];
+const S21={end:Date.UTC(2026,11,20),XL:400,MAX:60,PREM:15000};
+const PC=['nova','aurora','steam','samurai','atlantis','quantum'];
+const df=(id,o)=>Object.defineProperty(ITEMS,id,{value:o,enumerable:false,writable:true,configurable:true});
+const sd=()=>({xp:0,last:null,prem:false,fr:{},pr:{}});
+const LG=()=>LSget('sn_lang','en')||'en';
+XK.push('s21','pity','p21');S.s21=sd();S.pity=0;S.p21=0;
+
+/* ---- 1. ПРИБИРАЄМО СТАРЕ (cat ARCHIVE: не продається, але відкривається з інвентаря) ---- */
+RETIRE.forEach(id=>{const c=cs(id);if(c){c.cat='ARCHIVE';c.nb=1}});
+
+/* ---- 2. НОВІ КЕЙСИ ---- */
+const RM={c:.15,r:.5,e:1.3,l:3.5,m:9},RN={c:'common',r:'rare',e:'epic',l:'legendary',m:'mythic'};
+function mk(d){
+  const ids=[];
+  d.l.split(',').forEach((s,i)=>{
+    const [k,n,p,r]=s.split('|'),id='n21_'+d.id+'_'+i;
+    df(id,{id,kind:k,name:n.toUpperCase(),pal:+p,rarity:RN[r],val:Math.max(10,Math.round(d.price*RM[r]*(1+(i%3)*.12)/10)*10)});
+    ids.push(id);
+  });
+  CASES.push({id:d.id,name:d.name,cat:d.cat,price:d.price,badge:d.badge,off:0,n:[0,0,0,0,0],items:ids,rgb:d.rgb,fi:ids[ids.length-1],until:d.until});
+}
+[
+{id:'nova',name:'NOVA ERA',cat:'NOVA',price:400,badge:'NOVA 🌠',rgb:'34,211,238',l:'gem|Nova Shard|9|c,star|Pulse Star|4|c,bolt|Ion Bolt|9|c,orb|Plasma Core|5|r,rocket|Nova Rocket|19|r,key|Warp Key|4|r,shield|Aegis Prime|12|e,crown|Nova Crown|9|e,cat|Nova Cat|19|e,sword|Photon Blade|19|l,heart|Heart of Nova|4|l,gem|Nova Prism|14|m'},
+{id:'aurora',name:'AURORA',cat:'NOVA',price:650,badge:'AURORA 🌌',rgb:'167,139,250',l:'flower|Aurora Lily|18|c,potion|Polar Elixir|4|c,star|Northern Star|19|c,cat|Snow Lynx|0|r,ghost|Ice Spirit|4|r,orb|Aurora Orb|10|r,crown|Ice Crown|4|e,ring|Frost Ring|19|e,heart|Aurora Heart|18|e,skull|Crystal Skull|19|l,sword|Glacier Blade|4|l,star|Aurora Borealis|14|m'},
+{id:'steam',name:'STEAMPUNK',cat:'NOVA',price:900,badge:'STEAM ⚙️',rgb:'251,146,60',l:'key|Brass Key|1|c,shield|Gear Shield|1|c,cup|Copper Mug|7|c,bolt|Tesla Coil|6|r,mask|Goggle Mask|1|r,orb|Steam Core|7|r,rocket|Airship|1|e,sword|Clockwork Saber|8|e,crown|Cog Crown|6|e,ring|Chrono Ring|6|l,heart|Mechanical Heart|7|l,skull|Gold Automaton|6|m'},
+{id:'samurai',name:'SAMURAI',cat:'NOVA',price:1500,badge:'SAMURAI ⚔️',rgb:'239,68,68',l:'flower|Sakura|3|c,cup|Sake Cup|13|c,mask|Kabuki Mask|0|c,sword|Katana|8|r,shield|Ronin Shield|13|r,star|Shuriken|8|r,mask|Oni Mask|13|e,crown|Shogun Helm|7|e,cat|Maneki Neko|6|e,sword|Masamune|6|l,skull|Yurei Skull|15|l,crown|Emperor Kabuto|14|m'},
+{id:'atlantis',name:'ATLANTIS',cat:'NOVA',price:2500,badge:'ATLANTIS 🔱',rgb:'34,197,94',l:'gem|Sea Pearl|0|c,potion|Tide Elixir|9|c,orb|Bubble Orb|4|c,cup|Coral Cup|10|r,key|Trident Key|9|r,shield|Shell Shield|17|r,crown|Coral Crown|9|e,ring|Siren Ring|4|e,heart|Ocean Heart|4|e,sword|Poseidon Trident|19|l,gem|Atlantean Gem|9|l,crown|Crown of Atlantis|14|m'},
+{id:'quantum',name:'QUANTUM',cat:'NOVA',price:4000,badge:'QUANTUM ⚛️',rgb:'217,70,239',l:'orb|Qubit|15|c,bolt|Entangle Bolt|9|c,gem|Quark|10|c,rocket|Hyperdrive|19|r,key|Q-Key|14|r,star|Neutron Star|5|r,mask|Hologram Mask|9|e,ring|Event Horizon|15|e,cat|Schrodinger Cat|14|e,heart|Dark Matter Heart|15|l,crown|Singularity Crown|15|l,gem|Antimatter Diamond|14|m'},
+/* ЛІМІТКИ: зникають з продажу після дати (until) */
+{id:'bf21',name:'BLACK FRIDAY',cat:'LIMITED',price:1111,badge:'LIMITED 🖤 до 01.12',until:Date.UTC(2026,11,1),rgb:'100,116,139',l:'bolt|Discount Bolt|6|c,star|Sale Star|8|c,key|Black Key|8|c,gem|Obsidian|15|r,mask|Heist Mask|8|r,orb|Dark Orb|15|r,ring|Platinum Ring|0|e,crown|Black Crown|15|e,skull|Black Skull|8|e,sword|Shadow Blade|15|l,heart|Black Heart|15|l,gem|Black Diamond|14|m'},
+{id:'winter21',name:'WINTER WONDER',cat:'LIMITED',price:777,badge:'LIMITED ❄️ до 15.01',until:Date.UTC(2027,0,15),rgb:'147,197,253',l:'flower|Snowdrop|0|c,ghost|Snowman|0|c,potion|Cocoa Mug|7|c,heart|Candy Heart|3|r,star|Xmas Star|6|r,orb|Snow Globe|4|r,cat|Winter Cat|19|e,crown|Frost King|4|e,rocket|Sleigh Rocket|13|e,gem|Ice Diamond|19|l,key|Winter Key|4|l,crown|Crown of Winter|14|m'},
+{id:'santa21',name:'SANTA SACK',cat:'LIMITED',price:1225,badge:'LIMITED 🎅 до 07.01',until:Date.UTC(2027,0,7),rgb:'239,68,68',l:'ghost|Elf|2|c,cup|Eggnog|13|c,star|Tree Star|6|c,heart|Gift Heart|13|r,key|Sleigh Key|6|r,shield|Gingerbread Shield|1|r,mask|Santa Mask|13|e,crown|Santa Crown|13|e,cat|Reindeer Cat|1|e,sword|Candy Cane Blade|3|l,rocket|Santa Rocket|13|l,gem|Golden Present|6|m'}
+].forEach(mk);
+/* новий безкоштовний кейс раз на 3 год */
+{const ids=BYR.common.slice(0,5).concat(BYR.rare.slice(0,3),BYR.epic.slice(0,1));
+ CASES.push({id:'free3',name:'NOVA FREE',cat:'FREE',price:0,badge:'FREE 3H 🎁',off:0,n:[0,0,0,0,0],cd:10800,items:ids,fi:ids[ids.length-1]})}
+/* кейси-предмети (щоб можна було зберігати, дарувати, обмінювати) */
+CASES.filter(c=>c.price>0&&!ITEMS['k_'+c.id]).forEach(c=>{
+  const r=c.price<200?'rare':c.price<500?'epic':c.price<1000?'legendary':'mythic';
+  ITEMS['k_'+c.id]={id:'k_'+c.id,kind:'box',name:'📦 '+c.name,pal:{rare:4,epic:5,legendary:6,mythic:14}[r],rarity:r,val:Math.round(c.price*.85),isCase:true,caseId:c.id};
+});
+/* нові кейси дропаються з CASE INFINITY */
+{const inf=cs('inception');if(inf)PC.forEach(p=>{if(ITEMS['k_'+p])inf.items.push('k_'+p)})}
+/* ексклюзиви сезону */
+df('n21_blade',{id:'n21_blade',kind:'sword',name:'SEASON 21 BLADE',pal:14,rarity:'mythic',val:25000});
+df('n21_crown',{id:'n21_crown',kind:'crown',name:'NOVA ERA CROWN',pal:19,rarity:'mythic',val:60000});
+
+/* ---- 3. ЗАБОРОНА ПОКУПКИ АРХІВНИХ / ПРОСТРОЧЕНИХ + ГАРАНТІЯ (PITY) ---- */
+const PIT={on:0};
+const _roll=roll;
+roll=function(c){
+  let r=_roll(c);
+  if(!PIT.on||c.price<=0)return r;
+  if((S.pity|0)>=9&&RAR.indexOf(r.rarity)<1)for(let i=0;i<60&&RAR.indexOf(r.rarity)<1;i++)r=_roll(c);
+  S.pity=RAR.indexOf(r.rarity)>=1?0:(S.pity|0)+1;
+  return r;
+};
+const prune=()=>CASES.forEach(c=>{if(c.until&&Date.now()>c.until&&c.cat!=='ARCHIVE'){c.cat='ARCHIVE';c.nb=1}});
+const _sc=spinCase;
+spinCase=function(){
+  prune();const c=cs(S.cur);
+  if(c&&!tokOK()&&c.cat==='ARCHIVE')return toast('🗄 Кейс виведено з продажу — відкривається лише з інвентаря');
+  PIT.on=1;try{_sc()}finally{PIT.on=0}
+};
+const _rc=renderCase;
+renderCase=function(m,id){
+  _rc(m,id);const b=$('openBtn'),c=cs(id);if(!b||!c)return;
+  let h='';
+  if(c.price>0)h+='<div class="text-[10px] font-black text-lime-300 mt-1.5">🍀 Гарантія RARE+ через '+Math.max(1,10-(S.pity|0))+' відкр.</div>';
+  if(c.until)h+='<div class="text-[10px] font-black text-amber-300 mt-1">⏳ Доступний до '+new Date(c.until).toLocaleDateString()+'</div>';
+  if(c.cat==='ARCHIVE')h+='<div class="text-[10px] font-black text-slate-400 mt-1">🗄 АРХІВ — лише з інвентаря</div>';
+  b.insertAdjacentHTML('afterend',h);
+};
+
+/* ---- 4. СЕЗОН 21 + BATTLE PASS (60 рівнів; XP береться з усього, що дає XP у старому паcі) ---- */
+function s21Track(){
+  const s=S.s21=Object.assign(sd(),S.s21),x=(S.bp&&S.bp.xp)|0;
+  if(s.last==null||x<s.last){s.last=x;return}
+  if(x>s.last){s.xp+=x-s.last;s.last=x}
+}
+const _sv=save;save=function(){try{s21Track()}catch(e){}_sv()};
+const lv21=()=>Math.min(S21.MAX,Math.floor(((S.s21&&S.s21.xp)|0)/S21.XL));
+const okI=id=>id&&ITEMS[id]?id:null;
+const f21=l=>({s:150+l*35,i:okI(l%10===0?'k_'+PC[(l/10-1)%PC.length]:null)});
+const p21=l=>({s:300+l*90+(l%10===0?l*100:0),i:okI(l===60?'n21_crown':l===30?'n21_blade':l%5===0?'k_'+PC[(l/5-1)%PC.length]:null)});
+function s21H(){
+  s21Track();const s=S.s21,lv=lv21(),into=lv>=S21.MAX?S21.XL:s.xp-lv*S21.XL,d=Math.max(0,Math.ceil((S21.end-Date.now())/864e5));
+  const cell=(r,t,l)=>{
+    const open=lv>=l,done=s[t][l],lock=t==='pr'&&!s.prem,av=open&&!done&&!lock,it=r.i&&ITEMS[r.i];
+    return `<button ${av?'':'disabled'} onclick="s21Claim(${l},'${t}')" class="bp-c ${t==='pr'?'p ':''}${done?'dn':av?'av':'lk'}"><div class="bp-i">${it?art(it):'⭐'}</div><div class="bp-t"><b>⭐ ${fmt(r.s)}</b>${it?`<span class="${RC[it.rarity].t}">${esc(it.name)}</span>`:''}</div><i class="bp-s${av?' go':''}">${done?'✅':lock?'🔒':av?'GET':''}</i></button>`;
+  };
+  let rows='',n=0;
+  for(let l=1;l<=S21.MAX;l++){
+    if(lv>=l){if(!s.fr[l])n++;if(s.prem&&!s.pr[l])n++}
+    rows+=`<div class="bp-row${lv>=l?' open':''}${l%10===0?' ms':''}">${cell(f21(l),'fr',l)}<div class="bp-n">${l}</div>${cell(p21(l),'pr',l)}</div>`;
+  }
+  return `<div class="space-y-3"><div class="bp-hero"><div class="bp-title">🌠 СЕЗОН 21 · НОВА ЕРА</div>
+  <div class="text-[10px] text-slate-400 font-bold mt-1">До кінця сезону ${d} д · 1 рівень = ${S21.XL} XP · XP з кейсів, квестів, ігор</div>
+  <div class="bp-bar mt-3"><i style="width:${lv>=S21.MAX?100:into/S21.XL*100}%"></i></div>
+  <div class="flex justify-between text-[10px] font-black mt-1"><span class="text-cyan-300">РІВЕНЬ ${lv} / ${S21.MAX}</span><span class="text-slate-400">${fmt(s.xp)} XP</span></div></div>
+  ${s.prem?'<div class="bp-prem on">👑 PREMIUM АКТИВНИЙ</div>':`<div class="bp-prem"><div class="text-[10px] text-slate-300 font-bold mb-2">Друга доріжка: більше ⭐, кейс кожні 5 рівнів, ексклюзивні NFT на рівнях 30 і 60.</div><button onclick="s21Prem()" class="bp-btnp">👑 КУПИТИ PREMIUM ЗА ⭐ ${fmt(S21.PREM)}</button></div>`}
+  <div class="glass rounded-3xl p-3 space-y-2"><button onclick="s21All()" ${n?'':'disabled'} class="bp-all">🎁 ЗАБРАТИ ВСЕ ДОСТУПНЕ${n?' ('+n+')':''}</button>
+  <div class="bp-sc"><div class="bp-head"><span class="text-cyan-300">FREE</span><span class="text-slate-500">LV</span><span class="text-amber-300">👑 PREMIUM</span></div>${rows}</div></div></div>`;
+}
+function s21Give(l,t){
+  const s=S.s21;if(l>lv21()||s[t][l]||(t==='pr'&&!s.prem))return null;
+  const r=t==='pr'?p21(l):f21(l);s[t][l]=1;S.stars+=r.s;if(r.i)S.inv.push({id:r.i,uid:nid(S)});return r;
+}
+window.s21Claim=function(l,t){
+  const r=s21Give(l,t);if(!r)return;save();confetti(20);
+  toast('🌠 +⭐ '+fmt(r.s)+(r.i?' + '+ITEMS[r.i].name:''));mRender();
+};
+window.s21All=function(){
+  let sum=0,n=0;
+  for(let l=1;l<=lv21();l++)['fr','pr'].forEach(t=>{const r=s21Give(l,t);if(r){sum+=r.s;n++}});
+  if(n){save();confetti(45);toast('🌠 +⭐ '+fmt(sum)+' · призів: '+n);mRender()}
+};
+window.s21Prem=function(){
+  if(S.s21.prem)return;if(S.stars<S21.PREM)return toast('❌ Недостатньо Stars');
+  if(!confirm('Купити PREMIUM за ⭐ '+fmt(S21.PREM)+'?'))return;
+  S.stars-=S21.PREM;S.s21.prem=true;save();confetti(60);toast('👑 PREMIUM активовано');mRender();
+};
+MT.unshift(['s21','🌠','СЕЗОН 21']);
+const _mr=mRender;
+mRender=function(){if(MORE.t==='s21'){const b=$('mbody');if(b)b.innerHTML=s21H();return}_mr()};
+
+/* ---- 5. ГОЛОВНА: банер сезону + розділ «НОВА ЕРА» ---- */
+function banner(){
+  const s=S.s21||sd(),lv=lv21(),p=lv>=S21.MAX?100:(s.xp-lv*S21.XL)/S21.XL*100,d=Math.max(0,Math.ceil((S21.end-Date.now())/864e5));
+  return `<div onclick="openMore('s21')" class="glass rc" style="cursor:pointer;border-radius:22px;padding:12px;border:1px solid rgba(34,211,238,.4)"><div class="flex justify-between items-center"><div><div class="text-xs font-black text-cyan-300">🌠 СЕЗОН 21 · НОВА ЕРА</div><div class="text-[10px] text-slate-400 font-bold">Рівень ${lv}/${S21.MAX} · до кінця ${d} д · ${s.prem?'👑 PREMIUM':'забери нагороди'}</div></div><span class="fnew">NEW</span></div><div class="bp-bar" style="margin-top:8px"><i style="width:${p}%"></i></div></div>`;
+}
+function novaSec(){
+  const L=CASES.filter(c=>c.cat==='NOVA').sort((a,b)=>a.price-b.price);
+  const card=(c,h)=>{
+    const it=c.items.map(i=>ITEMS[i]).sort((a,b)=>b.val-a.val);
+    return `<div onclick="go('case','${c.id}')" class="fcard rc${h?' fhero':''}" style="--rgb:${c.rgb};${h?'grid-column:span 2':''}"><span class="fbadge">${c.badge}</span><div class="fart"><div class="fa fa-l">${art(it[1])}</div><div class="fa fa-c fl">${art(it[0])}</div><div class="fa fa-r">${art(it[2])}</div></div><div class="fname">${c.name}</div><div class="fmeta"><span class="fprice">⭐ ${fmt(c.price)}</span><span class="fmax">дроп до ⭐ ${fmt(it[0].val)}</span></div></div>`;
+  };
+  return `<div class="fsec"><div class="fhead"><div><div class="ft">🌠 НОВА ЕРА · ПАТЧ 21</div><div class="fs">${L.length} нових кейсів · гарантія RARE+ кожні 10 відкриттів</div></div><span class="fnew">NEW</span></div><div class="grid grid-cols-2 gap-3">${L.map((c,i)=>card(c,i===L.length-1)).join('')}</div></div>`;
+}
+const _rh=renderHome;
+renderHome=function(m){
+  prune();_rh(m);
+  const w=m.firstElementChild;if(!w)return;
+  const h=banner()+novaSec(),hero=w.querySelector('.hero18');
+  if(hero)hero.insertAdjacentHTML('afterend',h);else w.insertAdjacentHTML('afterbegin',h);
+};
+
+/* ---- 6. ПРОМОКОДИ + ДОСЯГНЕННЯ ---- */
+Object.assign(PROMO,{PATCH21:5000,NOVA21:3000,SEASON21:4000});
+ACH.push(
+ ['a9','🌠 Відкрий кейс Нової Ери',()=>Object.keys(S.got||{}).some(k=>k.indexOf('n21_')===0),3000],
+ ['a10','🌠 Сезон 21: рівень 10',()=>lv21()>=10,5000],
+ ['a11','👑 Сезон 21: PREMIUM',()=>!!(S.s21&&S.s21.prem),5000]);
+
+/* ---- 7. ПОДАРУНОК ВСІМ + ВІКНО «ЩО НОВОГО» ---- */
+function welcome(){
+  const en=LG()!=='uk',L=[
+   ['🌠 Новий сезон 21 і Battle Pass на 60 рівнів','🌠 New Season 21 & 60-level Battle Pass'],
+   ['📦 6 нових кейсів: NOVA, AURORA, STEAMPUNK, SAMURAI, ATLANTIS, QUANTUM','📦 6 new cases: NOVA, AURORA, STEAMPUNK, SAMURAI, ATLANTIS, QUANTUM'],
+   ['⏳ Ліміти: BLACK FRIDAY, WINTER WONDER, SANTA SACK','⏳ Limited: BLACK FRIDAY, WINTER WONDER, SANTA SACK'],
+   ['🗄 Старі кейси (SPACE, DIAMOND VAULT, CYBER CRYPTO та ін.) прибрані з продажу — твої предмети й кейси лишились','🗄 Old cases (SPACE, DIAMOND VAULT, CYBER CRYPTO etc.) retired — your items and cases are kept'],
+   ['🍀 Гарантія RARE+ кожні 10 відкриттів','🍀 RARE+ guaranteed every 10 openings'],
+   ['🎁 Новий безкоштовний кейс раз на 3 год','🎁 New free case every 3 hours'],
+   ['🎟 Промокоди: PATCH21, NOVA21, SEASON21','🎟 Promo codes: PATCH21, NOVA21, SEASON21']
+  ].map(x=>`<div class="text-[11px] font-bold text-slate-200 bg-slate-800/50 rounded-xl px-3 py-2">${en?x[1]:x[0]}</div>`).join('');
+  mc.innerHTML=`<div data-nt class="space-y-2 text-left"><div class="text-center text-sm font-black text-cyan-300">🌠 ${en?'PATCH 21 · GLOBAL UPDATE 2.0':'ПАТЧ 21 · ГЛОБАЛЬНЕ ОНОВЛЕННЯ 2.0'}</div>${L}<div class="text-center text-[11px] font-black text-amber-300">🎁 ${en?'Gift: ⭐ 5 000 + 📦 NOVA ERA':'Подарунок: ⭐ 5 000 + 📦 NOVA ERA'}</div><button onclick="closeModal()" class="w-full py-2.5 rounded-xl bg-cyan-500 text-black font-black text-xs">OK</button></div>`;
+  ov.style.display='flex';setTimeout(()=>mc.classList.remove('scale-95','opacity-0'),10);
+}
+function grant(){
+  if(!ME||S.p21)return;
+  S.p21=1;S.stars+=5000;S.inv.push({id:'k_nova',uid:nid(S)});
+  S.s21=Object.assign(sd(),S.s21);S.s21.last=(S.bp&&S.bp.xp)|0;
+  save();confetti(50);setTimeout(welcome,700);
+}
+const _en=enter;
+enter=function(k){S.s21=sd();S.pity=0;S.p21=0;_en(k);S.s21=Object.assign(sd(),S.s21)};
+const _ob=onlineBoot;
+onlineBoot=async function(){const r=await _ob();try{grant()}catch(e){}return r};
+})();
+// ===================== END PATCH v21 =====================
+// ===================== PATCH v22: LIVE-СТРІЧКА = ОСТАННІЙ ДРОП (без прокрутки і повторів) =====================
+// ВСТАВ ПІСЛЯ "END PATCH v21" (або v20) і ПЕРЕД блоком  /* ============ INIT ============ */
+(function(){
+const RCOL={common:'#94a3b8',rare:'#3b82f6',epic:'#a855f7',legendary:'#f59e0b',mythic:'#ef4444'};
+const LG=()=>LSget('sn_lang','en')||'en';
+const TX={
+  last:{uk:'останній дроп',en:'latest drop',ru:'последний дроп',pl:'ostatni drop'},
+  conn:{uk:'Підключення до онлайну…',en:'Connecting…',ru:'Подключение…',pl:'Łączenie…'},
+  load:{uk:'Завантаження…',en:'Loading…',ru:'Загрузка…',pl:'Ładowanie…'},
+  none:{uk:'Поки немає дропів — відкрий кейс, і він зʼявиться першим 🔥',en:'No drops yet — open a case and be the first 🔥',ru:'Пока нет дропов — открой кейс, и он появится первым 🔥',pl:'Brak dropów — otwórz skrzynię i bądź pierwszy 🔥'},
+  now:{uk:'щойно',en:'just now',ru:'только что',pl:'przed chwilą'},
+  m:{uk:'хв тому',en:'min ago',ru:'мин назад',pl:'min temu'},
+  h:{uk:'год тому',en:'h ago',ru:'ч назад',pl:'godz. temu'},
+  jp:{uk:'виграв ДЖЕКПОТ',en:'won the JACKPOT',ru:'выиграл ДЖЕКПОТ',pl:'wygrał JACKPOT'}
+};
+const tx=k=>TX[k][LG()]||TX[k].en;
+const ago=ts=>{
+  const m=Math.floor(Math.max(0,Date.now()-(ts||0))/60000);
+  return m<1?tx('now'):m<60?m+' '+tx('m'):Math.floor(m/60)+' '+tx('h');
+};
+
+document.head.insertAdjacentHTML('beforeend','<style id="lf22">'+
+'@keyframes lf22{0%{transform:scale(.92) translateY(8px);opacity:0}60%{transform:scale(1.03)}100%{transform:none;opacity:1}}'+
+'.lf22{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:18px;border:1px solid var(--c);border:1px solid color-mix(in srgb,var(--c) 60%,transparent);'+
+'background:radial-gradient(120% 140% at 0% 50%,rgba(255,255,255,.07),transparent 60%),linear-gradient(135deg,rgba(15,23,42,.92),rgba(8,12,22,.96));box-shadow:0 0 22px -10px var(--c)}'+
+'.lf22.new{animation:lf22 .6s cubic-bezier(.2,1.3,.4,1)}'+
+'.lf22 .a{width:54px;height:54px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:34px}'+
+'.lf22 .t{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px;line-height:1.25}'+
+'.lf22 .t b{font-size:12px;font-weight:900;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
+'.lf22 .t span{font-size:11px;font-weight:900;color:var(--c);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
+'.lf22 .t small{font-size:9px;font-weight:800;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
+'.lf22 .v{text-align:right;flex-shrink:0}'+
+'.lf22 .v em{display:block;font-style:normal;font-size:12px;font-weight:900;color:#fde68a}'+
+'.lf22 .v i{display:block;font-style:normal;font-size:9px;font-weight:800;color:#64748b;margin-top:2px}'+
+'</style>');
+
+let seen=0;
+ticker=function(){
+  const L=(ON.fd||[]).filter(f=>f&&(f.t==='jp'||ITEMS[f.id])),f=L[L.length-1];
+  let body;
+  if(!ON.ready)body='<div class="lvE">'+tx('conn')+'</div>';
+  else if(!ON.fdl)body='<div class="lvE">'+tx('load')+'</div>';
+  else if(!f)body='<div class="lvE">'+tx('none')+'</div>';
+  else{
+    const isNew=f.ts!==seen&&Date.now()-(f.ts||0)<20000;seen=f.ts;
+    const it=ITEMS[f.id],jp=f.t==='jp',col=jp?'#fbbf24':(RCOL[it.rarity]||'#94a3b8');
+    const pvp=f.t==='pvp'?'⚔️ PvP · ':'';
+    body=`<div class="lf22${isNew?' new':''}" style="--c:${col}"><div class="a">${jp?'🎰':art(it)}</div>
+    <div class="t"><b>${esc(f.name||'Player')}</b><span>${jp?tx('jp'):pvp+esc(it.name)}</span>${!jp&&f.c?`<small>📦 ${esc(f.c)}</small>`:''}</div>
+    <div class="v"><em>⭐ ${fmt(f.val)}</em><i id="lfago" data-ts="${f.ts||0}">${ago(f.ts)}</i></div></div>`;
+  }
+  return `<div id="lvf" class="lvw"><div class="lvh"><span class="text-red-400"><i class="lvd"></i>LIVE</span><span class="text-slate-500">${tx('last')}</span></div>${body}</div>`;
+};
+
+/* оновлюємо «N хв тому» без перемальовування картки (анімація не повторюється) */
+setInterval(()=>{
+  const e=document.getElementById('lfago');
+  if(e)e.textContent=ago(+e.dataset.ts);
+},20000);
+})();
+// ===================== END PATCH v22 =====================
+// ===================== PATCH v23: КІЛЬКА ВІКОН ПРИ ВІДКРИТТІ X2–X5 =====================
+// ВСТАВ ПІСЛЯ "END PATCH v22" (або v21) і ПЕРЕД блоком  /* ============ INIT ============ */
+// При множнику X2…X5 на сторінці кейса зʼявляється стільки рулеток, скільки кейсів відкриваєш.
+// Усі крутяться одночасно, кожна зупиняється на своєму дропі. Логіка випадіння і ціни не змінюються.
+(function(){
+const CW=104,T=45,DUR=4800;
+
+/* ---- малюємо додаткові вікна ---- */
+const _rc=renderCase;
+renderCase=function(m,id){
+  _rc(m,id);
+  const c=cs(id),s=$('strip');
+  if(!c||!s||tokOK()||S.mult<2)return;
+  const box=s.closest('.mask').parentElement;
+  for(let i=2;i<=S.mult;i++){
+    let h='';for(let k=0;k<60;k++)h+=cardHTML(roll(c));
+    box.insertAdjacentHTML('beforeend',
+      `<div class="mask overflow-hidden py-4" style="margin-top:6px;border-top:1px dashed rgba(34,211,238,.28)"><div id="strip${i}" class="flex gap-2" style="transform:translate3d(0,0,0)">${h}</div></div>`);
+  }
+};
+
+/* ---- крутимо всі вікна разом ---- */
+const _sc=spinCase;
+spinCase=function(){
+  const mm=tokOK()?1:S.mult,c=cs(S.cur);
+  if(mm<2||!c)return _sc();
+  const REC=[],_r=roll;
+  roll=function(x){const r=_r(x);REC.push(r);return r};   /* ловимо дропи, які кидає основний spinCase */
+  try{_sc()}finally{roll=_r}
+  if(!S.spin||REC.length<mm)return;                        /* не вистачило Stars / заборонено */
+  for(let i=2;i<=mm;i++){
+    const st=$('strip'+i);if(!st)continue;
+    const W=st.parentElement.clientWidth,cd=st.querySelectorAll('.rcard');
+    if(cd[T])cd[T].outerHTML=cardHTML(REC[i-1]);
+    const target=T*CW+48-W/2+(Math.random()*40-20);let t0=null;
+    const f=ts=>{
+      if(!t0)t0=ts;
+      const p=Math.min((ts-t0)/DUR,1);
+      st.style.transform='translate3d(-'+(target*(1-Math.pow(1-p,4)))+'px,0,0)';
+      if(p<1)requestAnimationFrame(f);
+    };
+    requestAnimationFrame(f);
+  }
+};
+})();
+// ===================== END PATCH v23 =====================
+// ===================== PATCH v24: LIVE-СТРІЧКА — ВІКНО НА КОЖЕН ДРОП ПРИ X2–X5 =====================
+// ВСТАВ ПІСЛЯ "END PATCH v23" (потрібен v22) і ПЕРЕД блоком  /* ============ INIT ============ */
+// Якщо гравець відкрив 2–5 кейсів разом, у стрічці зʼявляється стільки віконець, скільки дропів (усі разом, одним оновленням).
+// Одиночні відкриття працюють як у v22 (одна картка).
+(function(){
+const RCOL={common:'#94a3b8',rare:'#3b82f6',epic:'#a855f7',legendary:'#f59e0b',mythic:'#ef4444'};
+const LG=()=>LSget('sn_lang','en')||'en';
+const TT={now:{uk:'щойно',en:'just now',ru:'только что',pl:'przed chwilą'},m:{uk:'хв тому',en:'min ago',ru:'мин назад',pl:'min temu'},h:{uk:'год тому',en:'h ago',ru:'ч назад',pl:'godz. temu'}};
+const t=k=>TT[k][LG()]||TT[k].en;
+const ago=ts=>{const m=Math.floor(Math.max(0,Date.now()-(ts||0))/60000);return m<1?t('now'):m<60?m+' '+t('m'):Math.floor(m/60)+' '+t('h')};
+
+document.head.insertAdjacentHTML('beforeend','<style id="lf24">'+
+'@keyframes lf24{0%{transform:scale(.85) translateY(10px);opacity:0}60%{transform:scale(1.05)}100%{transform:none;opacity:1}}'+
+'.lf24{padding:10px;border-radius:18px;border:1px solid var(--c);border:1px solid color-mix(in srgb,var(--c) 60%,transparent);'+
+'background:linear-gradient(135deg,rgba(15,23,42,.92),rgba(8,12,22,.96));box-shadow:0 0 22px -10px var(--c)}'+
+'.lf24h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}'+
+'.lf24h b{font-size:12px;font-weight:900;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
+'.lf24h small{display:block;font-size:9px;font-weight:800;color:#64748b;margin-top:1px}'+
+'.lf24h em{font-style:normal;font-size:12px;font-weight:900;color:#fde68a;text-align:right;flex-shrink:0}'+
+'.lf24h i{display:block;font-style:normal;font-size:9px;font-weight:800;color:#64748b}'+
+'.lf24g{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:6px}'+
+'.lf24c{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;border-radius:14px;border:1px solid var(--c);border:1px solid color-mix(in srgb,var(--c) 65%,transparent);background:rgba(8,12,22,.7)}'+
+'.lf24c.new{animation:lf24 .5s cubic-bezier(.2,1.3,.4,1) backwards}'+
+'.lf24c .a{width:44px;height:44px}'+
+'.lf24c b{font-size:8.5px;font-weight:900;color:var(--c);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
+'.lf24c em{font-style:normal;font-size:9px;font-weight:900;color:#fde68a}'+
+'</style>');
+
+/* ---- запис у стрічку: при X2–X5 пишемо ВСІ дропи однією партією (поле b) ---- */
+feedPush=function(got){
+  if(!ON.ready||!ME)return;
+  const ts=Date.now(),multi=got.length>1,b=multi?String(ON.uid).slice(0,6)+ts:null;
+  const rows=got.filter(e=>{const i=ITEMS[e.id];return i&&(multi||RAR.indexOf(i.rarity)>=1)});
+  if(!rows.length)return;
+  const nm=(users()[ME]||{}).n||'Player',cn=(cs(S.cur)||{}).name||'',ref=firebase.database().ref('feed'),upd={};
+  rows.forEach(e=>{
+    const i=ITEMS[e.id],k=ref.push().key;
+    upd[k]=Object.assign({t:'drop',name:nm,uid:ON.uid,id:i.id,val:i.val,c:cn,ts},b?{b}:{});
+  });
+  /* одним оновленням, щоб усі віконця зʼявились разом; якщо правила не дозволяють -- по одному */
+  ref.update(upd).catch(()=>Object.keys(upd).forEach(k=>ref.child(k).set(upd[k]).catch(()=>{})));
+};
+
+/* ---- відображення ---- */
+const _tk=ticker;
+let seenB='';
+ticker=function(){
+  const F=ON.fd||[],last=F[F.length-1];
+  if(!ON.ready||!ON.fdl||!last||!last.b)return _tk();
+  const B=F.filter(x=>x&&x.b===last.b&&ITEMS[x.id]).slice(0,5);
+  if(B.length<2)return _tk();
+  const best=B.reduce((a,x)=>RAR.indexOf(ITEMS[x.id].rarity)>RAR.indexOf(ITEMS[a.id].rarity)?x:a,B[0]);
+  const col=RCOL[ITEMS[best.id].rarity]||'#94a3b8',tot=B.reduce((s,x)=>s+ITEMS[x.id].val,0);
+  const isNew=last.b!==seenB&&Date.now()-(last.ts||0)<20000;seenB=last.b;
+  const cards=B.map((x,i)=>{const it=ITEMS[x.id];
+    return `<div class="lf24c${isNew?' new':''}" style="--c:${RCOL[it.rarity]||'#94a3b8'};animation-delay:${i*.12}s"><div class="a">${art(it)}</div><b>${esc(it.name)}</b><em>⭐ ${fmt(it.val)}</em></div>`}).join('');
+  return `<div id="lvf" class="lvw"><div class="lvh"><span class="text-red-400"><i class="lvd"></i>LIVE</span><span class="text-slate-500">×${B.length}</span></div>
+  <div class="lf24" style="--c:${col}"><div class="lf24h"><div class="min-w-0"><b>${esc(last.name||'Player')}</b>${last.c?`<small>📦 ${esc(last.c)} ×${B.length}</small>`:''}</div><div><em>Σ ⭐ ${fmt(tot)}</em><i id="lfago" data-ts="${last.ts||0}">${ago(last.ts)}</i></div></div>
+  <div class="lf24g">${cards}</div></div></div>`;
+};
+})();
+// ===================== END PATCH v24 =====================
 /* ============ INIT ============ */
 hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
