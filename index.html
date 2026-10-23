@@ -5503,6 +5503,150 @@ ticker=function(){
 };
 })();
 // ===================== END PATCH v24 =====================
+// ===================== PATCH v25: HALLOWEEN 2026 (глобальне оновлення + хелловін-інтерфейс) =====================
+// ВСТАВ ПІСЛЯ "END PATCH v24" і ПЕРЕД блоком  /* ============ INIT ============ */
+(function(){
+const END=Date.UTC(2026,10,8);                       /* кінець івенту: 8 листопада */
+const LG=()=>LSget('sn_lang','en')||'en',L=(a,b)=>LG()==='uk'?a:b;
+const df=(id,o)=>Object.defineProperty(ITEMS,id,{value:o,enumerable:false,writable:true,configurable:true});
+XK.push('hw');S.hw={t:0,w:0};
+
+/* ---------- 1. ТЕМА: помаранчевий / фіолетовий / токсичний зелений ---------- */
+const css=`
+html{background:#08040d}
+body::before{background:radial-gradient(40% 35% at 15% 8%,rgba(249,115,22,.26),transparent 70%),radial-gradient(35% 30% at 92% 18%,rgba(124,58,237,.26),transparent 70%),radial-gradient(45% 40% at 70% 98%,rgba(132,204,22,.12),transparent 70%),radial-gradient(40% 40% at 4% 88%,rgba(190,24,93,.16),transparent 70%)!important}
+.text-cyan-400,.text-cyan-300,.text-cyan-200{color:#fb923c!important}
+.bg-cyan-500{background:#f97316!important}
+.bg-cyan-500\\/20{background:rgba(249,115,22,.2)!important}
+.border-cyan-500\\/40,.border-cyan-400\\/40,.border-cyan-500\\/30{border-color:rgba(249,115,22,.5)!important}
+button.from-cyan-500{--tw-gradient-from:#f97316!important;--tw-gradient-to:#c2410c!important}
+.logo{background:linear-gradient(135deg,#ea580c,#7c3aed)!important;box-shadow:0 0 20px rgba(249,115,22,.65)!important}
+.brand{background:linear-gradient(90deg,#fdba74,#fff 50%,#a3e635)!important;-webkit-background-clip:text!important;background-clip:text!important}
+.chip-lv{border-color:rgba(249,115,22,.5)!important;color:#fdba74!important}
+.inp:focus{border-color:#f97316!important;box-shadow:0 0 0 3px rgba(249,115,22,.2),0 0 24px -6px rgba(249,115,22,.6)!important}
+.mask::after{background:linear-gradient(transparent,#f97316,transparent)!important;box-shadow:0 0 14px #f97316!important}
+header.glass::after{background:linear-gradient(90deg,transparent,#f97316,#7c3aed,#84cc16,#f97316,transparent)!important;background-size:200% 100%!important}
+header.glass::before{content:"🕸️";position:absolute;left:2px;top:-2px;font-size:22px;opacity:.55;pointer-events:none}
+nav button.text-cyan-400{color:#fdba74!important;background:radial-gradient(circle at 50% 30%,rgba(249,115,22,.25),transparent 70%)!important}
+nav button.text-cyan-400::after{background:linear-gradient(90deg,#f97316,#a78bfa)!important;box-shadow:0 0 10px #f97316!important}
+main .glass::before{background:linear-gradient(140deg,rgba(249,115,22,.5),transparent 35%,transparent 65%,rgba(124,58,237,.45))!important}
+.hero18::before{background:conic-gradient(from var(--ang),rgba(249,115,22,.95),rgba(124,58,237,.8),rgba(132,204,22,.8),rgba(249,115,22,.95))!important}
+.h18-o1{background:rgba(249,115,22,.4)!important}.h18-o2{background:rgba(124,58,237,.38)!important}
+.bp-bar i,main .from-cyan-400.to-amber-400{background:linear-gradient(90deg,#f97316,#a78bfa,#84cc16)!important}
+html body>div[class*="bg-cyan-500"][class*="rounded-full"]{background:linear-gradient(135deg,#f97316,#c026d3)!important;color:#fff!important;box-shadow:0 12px 30px -8px rgba(249,115,22,.8)!important}
+#ov{background:radial-gradient(circle at 50% 40%,rgba(249,115,22,.18),rgba(0,0,0,.9) 70%)!important}
+#auth{background:radial-gradient(80% 50% at 50% 0%,rgba(249,115,22,.22),transparent),radial-gradient(60% 40% at 90% 90%,rgba(124,58,237,.2),transparent),#08040d!important}
+#hwfl{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+#hwfl::after{content:"";position:absolute;left:0;right:0;bottom:0;height:140px;background:linear-gradient(transparent,rgba(124,58,237,.16))}
+#hwfl span{position:absolute;bottom:-50px;opacity:.2;animation:hwup linear infinite}
+#hwfl .moon{top:64px;right:14px;bottom:auto;width:54px;height:54px;border-radius:50%;opacity:1;animation:none;
+ background:radial-gradient(circle at 35% 35%,#fffbe0,#fde68a 60%,#d97706);box-shadow:0 0 40px 8px rgba(253,230,138,.35)}
+@keyframes hwup{to{transform:translate3d(30px,-118vh,0) rotate(30deg)}}
+@keyframes hwg{0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,.55)}50%{box-shadow:0 0 0 9px rgba(249,115,22,0)}}
+.hw-hero{position:relative;overflow:hidden;border-radius:28px;padding:16px;text-align:center;border:1px solid rgba(249,115,22,.5);
+ background:radial-gradient(100% 90% at 50% 0%,rgba(249,115,22,.32),transparent 65%),radial-gradient(90% 80% at 100% 100%,rgba(124,58,237,.35),transparent 60%),linear-gradient(170deg,#1a0d22,#0a0510);
+ box-shadow:0 24px 60px -28px rgba(249,115,22,.7)}
+.hw-t{font-family:'Unbounded',Inter,sans-serif;font-weight:800;font-size:19px;background:linear-gradient(90deg,#fdba74,#fff,#a3e635);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hw-b{position:relative;overflow:hidden;width:100%;margin-top:12px;padding:13px;border-radius:18px;font-weight:900;font-size:12px;color:#1a0a00;background:linear-gradient(135deg,#fdba74,#f97316);animation:hwg 2s infinite}
+.hw-b.off{background:rgba(30,20,40,.9);color:#a8a2b8;animation:none;border:1px solid rgba(249,115,22,.3)}
+html.lite #hwfl{display:none}body.spin19 #hwfl{visibility:hidden}
+`;
+document.head.insertAdjacentHTML('beforeend','<style id="hw25">'+css+'</style>');
+{const fl=document.createElement('div');fl.id='hwfl';
+ fl.innerHTML='<i class="moon"></i>'+Array.from({length:12},(_,i)=>`<span style="left:${(i*83+7)%100}%;animation-duration:${14+i%5*4}s;animation-delay:-${i*2.3}s;font-size:${16+i%4*6}px">${['🦇','👻','🎃','🕸️','🦇','💀'][i%6]}</span>`).join('');
+ document.body.appendChild(fl);}
+document.title='snCase — Halloween 🎃';
+{const t=document.querySelector('header .tag');if(t)t.textContent='HALLOWEEN 🎃'}
+
+/* ---------- 2. ПАЛІТРИ, ПРЕДМЕТИ, КЕЙСИ ---------- */
+const P0=PAL.length;
+PAL.push(['#ffd9a0','#f97316','#7c2d12'],['#d9ffa0','#84cc16','#1a3a05'],['#e9d5ff','#7c3aed','#2e1065'],['#ff9a9a','#b91c1c','#450a0a'],
+ ['#f6f0e0','#c2b79b','#4a4231'],['#fff7c2','#fde047','#854d0e'],['#4a3a70','#2a1a50','#0a0518'],['#fff1a8','#f59e0b','#78350f']);
+const PM={p:P0,w:P0+1,s:P0+2,b:P0+3,o:P0+4,m:P0+5,n:P0+6,g:P0+7};
+const RM={c:.15,r:.5,e:1.3,l:3.5,m:9},RN={c:'common',r:'rare',e:'epic',l:'legendary',m:'mythic'};
+const HWI=[];
+function mk(d){
+  const ids=[];
+  d.l.split(',').forEach((s,i)=>{
+    const [k,n,p,r]=s.split('|'),id='h26_'+d.id+'_'+i;
+    df(id,{id,kind:k,name:n.toUpperCase(),pal:PM[p],rarity:RN[r],val:Math.max(10,Math.round(d.price*RM[r]*(1+(i%3)*.12)/10)*10)});
+    ids.push(id);if(r==='c'||r==='r')HWI.push(id);
+  });
+  CASES.push({id:d.id,name:d.name,cat:d.cat||'HALLOWEEN',price:d.price,badge:d.badge,off:0,n:[0,0,0,0,0],items:ids,rgb:d.rgb,fi:ids[ids.length-1],until:END,cd:d.cd});
+}
+[
+{id:'hwfree',name:'BOO FREE',cat:'FREE',price:0,cd:7200,badge:'FREE 🎃 2H',rgb:'249,115,22',l:'pumpkin|Mini Pumpkin|p|c,ghost|Little Boo|o|c,herbs|Witch Herb|w|c,cat|Black Cat|n|c,potion|Green Brew|w|r,lantern|Jack Lantern|p|r'},
+{id:'hw1',name:'TRICK OR TREAT',price:250,badge:'HALLOWEEN 🎃',rgb:'249,115,22',l:'pumpkin|Candy Pumpkin|p|c,ghost|Little Boo|o|c,herbs|Witch Herbs|w|c,cat|Black Cat|n|r,potion|Witch Brew|w|r,lantern|Jack Lantern|p|r,crow|Night Raven|n|e,skull|Bone Skull|o|e,mask|Spooky Mask|s|e,ghost|Banshee|s|l,pumpkin|Golden Pumpkin|g|l,pumpkin|Pumpkin King|g|m'},
+{id:'hw2',name:'WITCH COVEN',price:600,badge:'WITCH 🧙',rgb:'132,204,22',l:'potion|Toad Elixir|w|c,herbs|Nightshade|s|c,key|Rusty Key|n|c,cup|Cauldron Cup|w|r,crow|Coven Raven|s|r,orb|Crystal Ball|s|r,dochat|Witch Hat|s|e,cat|Familiar|n|e,heart|Cursed Heart|b|e,potion|Love Potion|b|l,ring|Moon Ring|m|l,crown|Archwitch Crown|s|m'},
+{id:'hw3',name:'HAUNTED MANSION',price:1300,badge:'HAUNTED 👻',rgb:'124,58,237',l:'lantern|Ghost Lamp|m|c,key|Mansion Key|o|c,ghost|Poltergeist|o|c,mask|Phantom Mask|n|r,skull|Crypt Skull|o|r,orb|Spirit Orb|s|r,crow|Gloom Raven|n|e,shield|Gravestone|n|e,ghost|Wraith|s|e,crown|Vampire Crown|b|l,heart|Heart of Darkness|n|l,ghost|Headless King|g|m'},
+{id:'hw4',name:'GRIM REAPER',price:3000,badge:'REAPER 💀',rgb:'239,68,68',l:'skull|Pale Skull|o|c,sword|Rusty Scythe|n|c,potion|Blood Vial|b|c,plague|Plague Mask|o|r,crow|Death Crow|n|r,key|Grave Key|b|r,sword|Reaper Blade|s|e,ring|Blood Ring|b|e,crown|Bone Crown|o|e,skull|Golden Skull|g|l,heart|Soul Heart|s|l,skull|Death Itself|b|m'}
+].forEach(mk);
+CASES.filter(c=>c.price>0&&!ITEMS['k_'+c.id]).forEach(c=>{
+  const r=c.price<200?'rare':c.price<500?'epic':c.price<1500?'legendary':'mythic';
+  ITEMS['k_'+c.id]={id:'k_'+c.id,kind:'box',name:'📦 '+c.name,pal:{rare:4,epic:5,legendary:6,mythic:14}[r],rarity:r,val:Math.round(c.price*.85),isCase:true,caseId:c.id};
+});
+df('h26_blade',{id:'h26_blade',kind:'sword',name:'HALLOWEEN 26 SCYTHE',pal:PM.b,rarity:'mythic',val:30000});
+Object.assign(PROMO,{HALLOWEEN26:5000,BOO31:3000,TRICK:2500,TREAT:2500});
+ACH.push(['h1','🎃 Хелловін: випади NFT з івенту',()=>Object.keys(S.got||{}).some(k=>k.indexOf('h26_')===0),3000]);
+
+/* ---------- 3. TRICK OR TREAT (раз на ~20 год) ---------- */
+window.hwOpen=function(){
+  if(S.spin)return;S.hw=Object.assign({t:0,w:0},S.hw);
+  if(S.hw.t>Date.now())return toast('🎃 '+L('Наступний кошик через '+Math.ceil((S.hw.t-Date.now())/36e5)+' год','Next basket in '+Math.ceil((S.hw.t-Date.now())/36e5)+' h'));
+  mc.innerHTML=`<div data-nt><div class="text-sm font-black text-orange-300 tracking-widest">🎃 TRICK OR TREAT</div><div class="text-[11px] text-slate-400 font-bold mt-1">${L('Обери гарбуз — усередині сюрприз!','Pick a pumpkin — a surprise inside!')}</div>
+  <div id="hwg" class="grid grid-cols-3 gap-2 my-4">${[0,1,2].map(i=>`<button onclick="hwPick(${i})" class="text-5xl py-5 rounded-2xl bg-slate-800 border border-orange-500/40 fl">🎃</button>`).join('')}</div>
+  <button onclick="closeModal()" class="w-full py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-extrabold">✕</button></div>`;
+  ov.style.display='flex';setTimeout(()=>mc.classList.remove('scale-95','opacity-0'),10);
+};
+window.hwPick=function(){
+  if(S.hw.t>Date.now())return;S.hw.t=Date.now()+72e6;
+  const r=Math.random();let ico,msg;
+  if(r<.5){const n=300+Math.floor(Math.random()*1700);S.stars+=n;ico='🍬';msg='⭐ +'+fmt(n)}
+  else if(r<.78){const id=HWI[Math.random()*HWI.length|0];S.inv.push({id,uid:nid(S)});ico=`<div class="w-16 h-16 mx-auto">${art(ITEMS[id])}</div>`;msg=ITEMS[id].name}
+  else if(r<.9){S.inv.push({id:'k_hw1',uid:nid(S)});ico='📦';msg='TRICK OR TREAT'}
+  else{S.stars+=100;ico='👻';msg=L('Бу! Лише цукерка: ⭐ +100','Boo! Just a candy: ⭐ +100')}
+  save();confetti(40);AU.win(r<.78&&r>=.5?'epic':'rare');
+  mc.innerHTML=`<div data-nt class="space-y-3"><div class="text-xs font-black text-orange-300 tracking-widest">${L('ТВІЙ ПРИЗ','YOUR PRIZE')}</div><div class="text-6xl pop">${ico}</div><div class="text-sm font-black text-amber-300">${msg}</div><button onclick="closeModal();go('home',null,true)" class="w-full py-2.5 rounded-xl bg-orange-500 text-black font-black text-xs">OK</button></div>`;
+};
+
+/* ---------- 4. ГОЛОВНА: хіро-банер і розділ кейсів ---------- */
+function hwSec(){
+  S.hw=Object.assign({t:0,w:0},S.hw);
+  const d=Math.max(0,Math.ceil((END-Date.now())/864e5)),rdy=S.hw.t<=Date.now();
+  const Ls=CASES.filter(c=>c.cat==='HALLOWEEN').sort((a,b)=>a.price-b.price);
+  const card=(c,h)=>{const it=c.items.map(i=>ITEMS[i]).sort((a,b)=>b.val-a.val);
+    return `<div onclick="go('case','${c.id}')" class="fcard rc${h?' fhero':''}" style="--rgb:${c.rgb};${h?'grid-column:span 2':''}"><span class="fbadge">${c.badge}</span><div class="fart"><div class="fa fa-l">${art(it[1])}</div><div class="fa fa-c fl">${art(it[0])}</div><div class="fa fa-r">${art(it[2])}</div></div><div class="fname">${c.name}</div><div class="fmeta"><span class="fprice">⭐ ${fmt(c.price)}</span><span class="fmax">${L('дроп до','up to')} ⭐ ${fmt(it[0].val)}</span></div></div>`};
+  return `<div class="hw-hero"><div class="hw-t">🎃 HALLOWEEN 2026 🦇</div><div class="text-[11px] font-bold text-slate-300 mt-1">${L('Івент триває ще','Event ends in')} ${d} ${L('д','d')} · ${L('4 нові кейси, ексклюзивні NFT, подарунки','4 new cases, exclusive NFTs, gifts')}</div>
+  <button class="hw-b${rdy?'':' off'}" onclick="hwOpen()">${rdy?'🍬 TRICK OR TREAT — '+L('забрати кошик','claim basket'):'⏳ '+L('Наступний кошик через','Next basket in')+' '+Math.ceil((S.hw.t-Date.now())/36e5)+' '+L('год','h')}</button></div>
+  <div class="fsec" style="border-color:rgba(249,115,22,.35)"><div class="fhead"><div><div class="ft">🎃 HALLOWEEN CASES</div><div class="fs">${Ls.length} ${L('кейси до','cases until')} 08.11 · ${L('гарантія RARE+ кожні 10 відкриттів','RARE+ guaranteed every 10 openings')}</div></div><span class="fnew">NEW</span></div><div class="grid grid-cols-2 gap-3">${Ls.map((c,i)=>card(c,i===Ls.length-1)).join('')}</div></div>`;
+}
+const _rh=renderHome;
+renderHome=function(m){
+  _rh(m);const w=m.firstElementChild;if(!w)return;
+  const h=hwSec(),hero=w.querySelector('.hero18');
+  if(hero)hero.insertAdjacentHTML('afterend',h);else w.insertAdjacentHTML('afterbegin',h);
+};
+
+/* ---------- 5. ВІТАЛЬНЕ ВІКНО + ПОДАРУНОК (раз на акаунт) ---------- */
+function welcome(){
+  const rows=[
+   ['🎃 Усе оформлення гри змінено на Хелловін','🎃 The whole game is now Halloween-themed'],
+   ['📦 4 нові кейси: TRICK OR TREAT, WITCH COVEN, HAUNTED MANSION, GRIM REAPER','📦 4 new cases: TRICK OR TREAT, WITCH COVEN, HAUNTED MANSION, GRIM REAPER'],
+   ['🎁 Безкоштовний BOO FREE кейс раз на 2 години','🎁 Free BOO FREE case every 2 hours'],
+   ['🍬 TRICK OR TREAT: гарбуз із сюрпризом кожні ~20 год','🍬 TRICK OR TREAT: a surprise pumpkin every ~20 h'],
+   ['🎟 Промокоди: HALLOWEEN26, BOO31, TRICK, TREAT','🎟 Promo codes: HALLOWEEN26, BOO31, TRICK, TREAT']
+  ].map(x=>`<div class="text-[11px] font-bold text-slate-200 bg-slate-800/50 rounded-xl px-3 py-2">${L(x[0],x[1])}</div>`).join('');
+  mc.innerHTML=`<div data-nt class="space-y-2 text-left"><div class="text-center text-sm font-black text-orange-300">🎃 ${L('ХЕЛЛОВІН · ГЛОБАЛЬНЕ ОНОВЛЕННЯ','HALLOWEEN · GLOBAL UPDATE')}</div>${rows}<div class="text-center text-[11px] font-black text-amber-300">🎁 ${L('Подарунок: ⭐ 3 000 + 📦 TRICK OR TREAT','Gift: ⭐ 3 000 + 📦 TRICK OR TREAT')}</div><button onclick="closeModal()" class="w-full py-2.5 rounded-xl bg-orange-500 text-black font-black text-xs">OK</button></div>`;
+  ov.style.display='flex';setTimeout(()=>mc.classList.remove('scale-95','opacity-0'),10);
+}
+function gift(){
+  S.hw=Object.assign({t:0,w:0},S.hw);if(!ME||S.hw.w)return;
+  S.hw.w=1;S.stars+=3000;S.inv.push({id:'k_hw1',uid:nid(S)});save();confetti(60);setTimeout(welcome,700);
+}
+const _en=enter;enter=function(k){S.hw={t:0,w:0};_en(k)};
+const _ob=onlineBoot;onlineBoot=async function(){const r=await _ob();try{gift()}catch(e){}return r};
+})();
+// ===================== END PATCH v25 =====================
 /* ============ INIT ============ */
 hdr();
 (function(){const s=LSget('sn_sess',null),u=s&&users()[s];if(u&&!u.bot)enter(s);else showAuth('login')})();
